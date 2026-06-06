@@ -40,6 +40,25 @@ function resolveOutputPath(outputDir, outputFileName) {
   return path.join(outputDir || process.cwd(), safeName)
 }
 
+const DEFAULT_SELECTORS = {
+  newSessionButton: '',
+  promptInput: '#prompt-textarea[contenteditable="true"], textarea[name="prompt-textarea"]',
+  sendButton: 'button[data-testid="send-button"], button[aria-label*="发送"], button.composer-submit-button-color',
+  generatedImage: 'img[src*="/backend-api/estuary/content"], img[alt*="已生成图片"], img[src*="oaiusercontent"], img[src*="oaidalleapiprodscus"], img[alt*="生成"], img[alt*="image" i]',
+  downloadButton: '',
+}
+
+function normalizeSelectors(value) {
+  const selectors = value && typeof value === 'object' ? value : {}
+  return {
+    newSessionButton: normalizeText(selectors.newSessionButton),
+    promptInput: normalizeText(selectors.promptInput) || DEFAULT_SELECTORS.promptInput,
+    sendButton: normalizeText(selectors.sendButton) || DEFAULT_SELECTORS.sendButton,
+    generatedImage: normalizeText(selectors.generatedImage) || DEFAULT_SELECTORS.generatedImage,
+    downloadButton: normalizeText(selectors.downloadButton),
+  }
+}
+
 function buildMissingSetup(selectors, pageUrl) {
   const missing = []
   if (!pageUrl) {
@@ -208,7 +227,7 @@ async function captureScreenshotIfNeeded(page, enabled, outputDir, label) {
 exports.run = async function run({ useBrowser, params = {}, artifact, artifactsDir, log }) {
   const pageUrl = normalizeText(params.pageUrl || params.url) || 'https://chatgpt.com/'
   const prompt = normalizeText(params.prompt) || 'A cinematic chrome ant browser mascot, premium product lighting'
-  const selectors = params.selectors && typeof params.selectors === 'object' ? params.selectors : {}
+  const selectors = normalizeSelectors(params.selectors)
   const timeoutMs = normalizeInt(params.timeoutMs, 300000, 5000, 900000)
   const waitAfterLoadMs = normalizeInt(params.waitAfterLoadMs, 1200, 0, 30000)
   const settleMs = normalizeInt(params.settleMs, 2500, 0, 60000)
@@ -224,7 +243,7 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
     return {
       ok: false,
       status: 'needs_page_info',
-      summary: '网页图片生成脚手架已创建，等待补充页面 URL 和选择器。',
+      summary: '网页图片生成缺少必要页面配置。',
       missing,
       expectedFlow: [
         'open_page',

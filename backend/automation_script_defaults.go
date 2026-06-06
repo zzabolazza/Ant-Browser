@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	automationScriptDefaultsMarkerName = "defaults-seeded-v9"
+	automationScriptDefaultsMarkerName = "defaults-seeded-v10"
 )
 
 var automationScriptDefaultsLegacyMarkerNames = []string{
+	"defaults-seeded-v9",
 	"defaults-seeded-v8",
 	"defaults-seeded-v7",
 	"defaults-seeded-v6",
@@ -80,14 +81,20 @@ func (a *App) ensureAutomationScriptDefaults(store *automation.ScriptStore) erro
 		return a.markAutomationScriptDefaultsInitialized()
 	}
 
-	// Migration from v1: existing scripts are present, add any missing built-in baselines once.
+	// Migration: existing scripts are present, refresh built-in baselines and add missing ones once.
 	if a.automationScriptDefaultsInitializedAnyLegacy() {
-		existingIDs := make(map[string]struct{}, len(items))
+		existingByID := make(map[string]automation.ScriptRecord, len(items))
 		for _, item := range items {
-			existingIDs[item.ID] = struct{}{}
+			existingByID[item.ID] = item
 		}
 		for _, bundle := range defaults {
-			if _, exists := existingIDs[bundle.Record.ID]; exists {
+			if existing, exists := existingByID[bundle.Record.ID]; exists {
+				if existing.Source.Type == "builtin" {
+					bundle.Record = mergeBuiltinDefaultScriptForMigration(existing, bundle.Record)
+					if _, err := store.ImportBundle(bundle); err != nil {
+						return err
+					}
+				}
 				continue
 			}
 			if _, err := store.ImportBundle(bundle); err != nil {
@@ -96,4 +103,42 @@ func (a *App) ensureAutomationScriptDefaults(store *automation.ScriptStore) erro
 		}
 	}
 	return a.markAutomationScriptDefaultsInitialized()
+}
+
+func mergeBuiltinDefaultScriptForMigration(existing automation.ScriptRecord, next automation.ScriptRecord) automation.ScriptRecord {
+	next.ID = existing.ID
+	next.CreatedAt = existing.CreatedAt
+	next.Status = existing.Status
+	next.TargetConfig = existing.TargetConfig
+	next.PublicAPI.Enabled = existing.PublicAPI.Enabled
+	if existing.PublicAPI.Path != "" {
+		next.PublicAPI.Path = existing.PublicAPI.Path
+	}
+	if existing.PublicAPI.TimeoutMs > 0 {
+		next.PublicAPI.TimeoutMs = existing.PublicAPI.TimeoutMs
+	}
+	next.PublicAPI.Variables = mergeBuiltinDefaultPublicAPIVariables(
+		existing.PublicAPI.Variables,
+		next.PublicAPI.Variables,
+	)
+	return next
+}
+
+func mergeBuiltinDefaultPublicAPIVariables(existing []automation.ScriptPublicAPIVariable, next []automation.ScriptPublicAPIVariable) []automation.ScriptPublicAPIVariable {
+	existingByName := make(map[string]automation.ScriptPublicAPIVariable, len(existing))
+	for _, variable := range existing {
+		if variable.Name != "" {
+			existingByName[variable.Name] = variable
+		}
+	}
+
+	result := make([]automation.ScriptPublicAPIVariable, 0, len(next))
+	for _, variable := range next {
+		if existingVariable, ok := existingByName[variable.Name]; ok {
+			variable.DefaultValue = existingVariable.DefaultValue
+			variable.Required = existingVariable.Required
+		}
+		result = append(result, variable)
+	}
+	return result
 }

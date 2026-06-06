@@ -1,9 +1,9 @@
 package backend
 
 import (
-	goruntime "runtime"
-
+	"ant-chrome/backend/internal/browser"
 	"ant-chrome/backend/internal/logger"
+	goruntime "runtime"
 )
 
 func (a *App) GetDashboardStats() map[string]interface{} {
@@ -11,36 +11,19 @@ func (a *App) GetDashboardStats() map[string]interface{} {
 	if a.browserMgr != nil {
 		profiles = a.browserMgr.List()
 	}
-	totalInstances := len(profiles)
-	runningInstances := 0
-	for _, profile := range profiles {
-		if profile.Running {
-			runningInstances++
-		}
-	}
-
-	proxyCount := 0
-	coreCount := 0
-	maxProfileLimit := 20
-	if a.config != nil {
-		proxyCount = len(a.config.Browser.Proxies)
-		coreCount = len(a.config.Browser.Cores)
-		if a.config.App.MaxProfileLimit > 0 {
-			maxProfileLimit = a.config.App.MaxProfileLimit
-		}
-	}
+	stats := browser.BuildDashboardStats(profiles, a.config)
 
 	var mem goruntime.MemStats
 	goruntime.ReadMemStats(&mem)
 	memUsedMB := float64(mem.Alloc) / 1024 / 1024
 
 	return map[string]interface{}{
-		"totalInstances":   totalInstances,
-		"runningInstances": runningInstances,
-		"proxyCount":       proxyCount,
-		"coreCount":        coreCount,
+		"totalInstances":   stats.TotalInstances,
+		"runningInstances": stats.RunningInstances,
+		"proxyCount":       stats.ProxyCount,
+		"coreCount":        stats.CoreCount,
 		"memUsedMB":        int(memUsedMB),
-		"maxProfileLimit":  maxProfileLimit,
+		"maxProfileLimit":  stats.MaxProfileLimit,
 		"appVersion":       a.appVersion(),
 	}
 }
@@ -81,12 +64,5 @@ func (a *App) ClearAppLogs() {
 
 // GetRunningInstances 获取运行中实例的详细信息
 func (a *App) GetRunningInstances() []BrowserProfile {
-	all := a.browserMgr.List()
-	result := make([]BrowserProfile, 0)
-	for _, profile := range all {
-		if profile.Running {
-			result = append(result, profile)
-		}
-	}
-	return result
+	return browser.RunningProfiles(a.browserMgr.List())
 }

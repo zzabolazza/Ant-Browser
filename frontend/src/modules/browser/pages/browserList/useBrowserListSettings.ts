@@ -1,0 +1,215 @@
+﻿import { useState } from 'react'
+import { toast } from '../../../../shared/components'
+import { PROJECT_GITHUB_URL } from '../../../../config/links'
+import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime'
+import { fetchDashboardStats, redeemCDKey, redeemGithubStar, reloadConfig } from '../../../dashboard/api'
+import type { BrowserCore, BrowserCoreInput, BrowserSettings } from '../../types'
+import {
+  deleteBrowserCore,
+  fetchBrowserCores,
+  fetchBrowserSettings,
+  saveBrowserCore,
+  saveBrowserSettings,
+  setDefaultBrowserCore,
+  validateBrowserCorePath,
+} from '../../api'
+
+const DEFAULT_BROWSER_SETTINGS: BrowserSettings = {
+  userDataRoot: 'data',
+  defaultFingerprintArgs: [],
+  defaultLaunchArgs: [],
+  defaultStartUrls: [],
+  lightStartEnabled: true,
+  restoreLastSession: false,
+  startReadyTimeoutMs: 3000,
+  startStableWindowMs: 1200,
+}
+
+export function useBrowserListSettings() {
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false)
+  const [settings, setSettings] = useState<BrowserSettings>(DEFAULT_BROWSER_SETTINGS)
+  const [fingerprintText, setFingerprintText] = useState('')
+  const [launchText, setLaunchText] = useState('')
+  const [startUrlsText, setStartUrlsText] = useState('')
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  const [cores, setCores] = useState<BrowserCore[]>([])
+  const [coreModalOpen, setCoreModalOpen] = useState(false)
+  const [coreForm, setCoreForm] = useState<BrowserCoreInput>({ coreId: '', coreName: '', corePath: '', isDefault: false })
+  const [coreValidation, setCoreValidation] = useState<{ valid: boolean; message: string } | null>(null)
+  const [savingCore, setSavingCore] = useState(false)
+
+  const [expandModalOpen, setExpandModalOpen] = useState(false)
+  const [cdKey, setCdKey] = useState('')
+  const [redeeming, setRedeeming] = useState(false)
+  const [maxProfileLimit, setMaxProfileLimit] = useState(20)
+
+  const loadSettings = async () => {
+    const data = await fetchBrowserSettings()
+    setSettings(data)
+    setFingerprintText((data.defaultFingerprintArgs || []).join('\n'))
+    setLaunchText((data.defaultLaunchArgs || []).join('\n'))
+    setStartUrlsText((data.defaultStartUrls || []).join('\n'))
+  }
+
+  const loadCores = async () => {
+    setCores(await fetchBrowserCores())
+  }
+
+  const loadQuota = async () => {
+    try {
+      await reloadConfig()
+      const stats = await fetchDashboardStats()
+      setMaxProfileLimit(stats.maxProfileLimit || 20)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleOpenSettings = async () => {
+    await Promise.all([loadSettings(), loadCores()])
+    setSettingsModalOpen(true)
+  }
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true)
+    try {
+      await saveBrowserSettings({
+        ...settings,
+        defaultFingerprintArgs: fingerprintText.split('\n').map(s => s.trim()).filter(Boolean),
+        defaultLaunchArgs: launchText.split('\n').map(s => s.trim()).filter(Boolean),
+        defaultStartUrls: startUrlsText.split('\n').map(s => s.trim()).filter(Boolean),
+      })
+      toast.success('配置已保存')
+      setSettingsModalOpen(false)
+    } catch (error: any) {
+      toast.error(error?.message || '保存失败')
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  const handleOpenCoreModal = (core?: BrowserCore) => {
+    setCoreForm(core ? { ...core } : { coreId: '', coreName: '', corePath: '', isDefault: false })
+    setCoreValidation(null)
+    setCoreModalOpen(true)
+  }
+
+  const handleValidateCorePath = async () => {
+    if (!coreForm.corePath.trim()) {
+      setCoreValidation({ valid: false, message: '请输入路径' })
+      return
+    }
+    const result = await validateBrowserCorePath(coreForm.corePath)
+    setCoreValidation(result)
+  }
+
+  const handleSaveCore = async () => {
+    if (!coreForm.coreName.trim()) {
+      toast.error('请输入内核名称')
+      return
+    }
+    if (!coreForm.corePath.trim()) {
+      toast.error('请输入内核路径')
+      return
+    }
+    setSavingCore(true)
+    try {
+      await saveBrowserCore(coreForm)
+      toast.success('内核已保存')
+      setCoreModalOpen(false)
+      loadCores()
+    } catch (error: any) {
+      toast.error(error?.message || '保存失败')
+    } finally {
+      setSavingCore(false)
+    }
+  }
+
+  const handleDeleteCore = async (coreId: string) => {
+    if (cores.length <= 1) {
+      toast.error('至少保留一个内核')
+      return
+    }
+    await deleteBrowserCore(coreId)
+    toast.success('内核已删除')
+    loadCores()
+  }
+
+  const handleSetDefaultCore = async (coreId: string) => {
+    await setDefaultBrowserCore(coreId)
+    toast.success('已设为默认')
+    loadCores()
+  }
+
+  const handleRedeem = async () => {
+    if (!cdKey.trim()) return
+    setRedeeming(true)
+    const result = await redeemCDKey(cdKey.trim())
+    setRedeeming(false)
+    if (result.success) {
+      toast.success('兑换成功！此名额已到账')
+      setCdKey('')
+      loadQuota()
+    } else {
+      toast.error(result.message || '兑换失败')
+    }
+  }
+
+  const handleClaimStarGift = async () => {
+    setRedeeming(true)
+    const starRes = await redeemGithubStar()
+    setRedeeming(false)
+    if (starRes.success) {
+      toast.success('感谢您的支持！已额外赠送 50 个永久额度！')
+      setCdKey('')
+      loadQuota()
+    } else {
+      toast.error(starRes.message || '领取失败')
+    }
+  }
+
+  const handleOpenGithubStarGift = async () => {
+    BrowserOpenURL(PROJECT_GITHUB_URL)
+    await handleClaimStarGift()
+  }
+
+  return {
+    settingsModalOpen,
+    setSettingsModalOpen,
+    settings,
+    setSettings,
+    fingerprintText,
+    setFingerprintText,
+    launchText,
+    setLaunchText,
+    startUrlsText,
+    setStartUrlsText,
+    savingSettings,
+    cores,
+    coreModalOpen,
+    setCoreModalOpen,
+    coreForm,
+    setCoreForm,
+    coreValidation,
+    setCoreValidation,
+    savingCore,
+    expandModalOpen,
+    setExpandModalOpen,
+    cdKey,
+    setCdKey,
+    redeeming,
+    maxProfileLimit,
+    loadCores,
+    loadQuota,
+    handleOpenSettings,
+    handleSaveSettings,
+    handleOpenCoreModal,
+    handleValidateCorePath,
+    handleSaveCore,
+    handleDeleteCore,
+    handleSetDefaultCore,
+    handleRedeem,
+    handleOpenGithubStarGift,
+  }
+}

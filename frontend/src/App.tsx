@@ -1,15 +1,11 @@
-import { Suspense, lazy, useEffect, useState } from "react";
-import type { ComponentType } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { Suspense, useEffect, useState } from "react";
+import { BrowserRouter as Router } from "react-router-dom";
 import { ThemeProvider } from "./shared/theme";
 import { Layout } from "./shared/layout";
 import { ToastContainer, Modal, Button, Loading, toast } from "./shared/components";
 import { AlertCircle } from "lucide-react";
+import { AppRoutes } from "./routes/AppRoutes";
+import { lazyNamed } from "./routes/lazyNamed";
 import { useNotificationStore } from "./store/notificationStore";
 import { useBackupStore } from "./store/backupStore";
 import {
@@ -23,127 +19,6 @@ import {
   WindowMinimise,
 } from "./wailsjs/runtime/runtime";
 
-const CHUNK_RELOAD_COOLDOWN_MS = 10000;
-const CHUNK_RELOAD_TS_KEY = "__ant_chunk_reload_ts__";
-
-function isDynamicImportFetchError(error: unknown) {
-  const message =
-    error instanceof Error ? error.message : String(error ?? "");
-  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
-    message,
-  );
-}
-
-function reloadForStaleChunkOnce() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const now = Date.now();
-  try {
-    const lastAttempt = Number(
-      window.sessionStorage.getItem(CHUNK_RELOAD_TS_KEY) || "0",
-    );
-    if (Number.isFinite(lastAttempt) && now - lastAttempt < CHUNK_RELOAD_COOLDOWN_MS) {
-      return false;
-    }
-    window.sessionStorage.setItem(CHUNK_RELOAD_TS_KEY, String(now));
-  } catch {
-    // ignore sessionStorage failures and still try a hard reload
-  }
-
-  window.location.reload();
-  return true;
-}
-
-function lazyNamed<TModule extends Record<string, ComponentType<any>>>(
-  loader: () => Promise<TModule>,
-  exportName: keyof TModule,
-) {
-  return lazy(async () => {
-    let module: TModule;
-    try {
-      module = await loader();
-    } catch (error) {
-      if (isDynamicImportFetchError(error) && reloadForStaleChunkOnce()) {
-        return new Promise<never>(() => {});
-      }
-      throw error;
-    }
-    return {
-      default: module[exportName] as ComponentType<any>,
-    };
-  });
-}
-
-const DashboardPage = lazyNamed(
-  () => import("./modules/dashboard/DashboardPage"),
-  "DashboardPage",
-);
-const SettingsPage = lazyNamed(
-  () => import("./modules/settings/SettingsPage"),
-  "SettingsPage",
-);
-const ProfilePage = lazyNamed(
-  () => import("./modules/profile/ProfilePage"),
-  "ProfilePage",
-);
-const AdminKeygenPage = lazyNamed(
-  () => import("./modules/profile/AdminKeygenPage"),
-  "AdminKeygenPage",
-);
-const ChartsPage = lazyNamed(
-  () => import("./modules/charts/ChartsPage"),
-  "ChartsPage",
-);
-const BrowserListPage = lazyNamed(
-  () => import("./modules/browser/pages/BrowserListPage"),
-  "BrowserListPage",
-);
-const BrowserDetailPage = lazyNamed(
-  () => import("./modules/browser/pages/BrowserDetailPage"),
-  "BrowserDetailPage",
-);
-const BrowserEditPage = lazyNamed(
-  () => import("./modules/browser/pages/BrowserEditPage"),
-  "BrowserEditPage",
-);
-const BrowserCopyPage = lazyNamed(
-  () => import("./modules/browser/pages/BrowserCopyPage"),
-  "BrowserCopyPage",
-);
-const BrowserLogsPage = lazyNamed(
-  () => import("./modules/browser/pages/BrowserLogsPage"),
-  "BrowserLogsPage",
-);
-const ProxyPoolPage = lazyNamed(
-  () => import("./modules/browser/pages/ProxyPoolPage"),
-  "ProxyPoolPage",
-);
-const CoreManagementPage = lazyNamed(
-  () => import("./modules/browser/pages/CoreManagementPage"),
-  "CoreManagementPage",
-);
-const BookmarkSettingsPage = lazyNamed(
-  () => import("./modules/browser/pages/BookmarkSettingsPage"),
-  "BookmarkSettingsPage",
-);
-const LaunchApiDocsPage = lazyNamed(
-  () => import("./modules/browser/pages/LaunchApiDocsPage"),
-  "LaunchApiDocsPage",
-);
-const TagManagementPage = lazyNamed(
-  () => import("./modules/browser/pages/TagManagementPage"),
-  "TagManagementPage",
-);
-const AutomationPage = lazyNamed(
-  () => import("./modules/browser/pages/AutomationPage"),
-  "AutomationPage",
-);
-const AutomationScriptDetailPage = lazyNamed(
-  () => import("./modules/browser/pages/AutomationScriptDetailPage"),
-  "AutomationScriptDetailPage",
-);
 const QuickLaunchModal = lazyNamed(
   () => import("./modules/browser/components/QuickLaunchModal"),
   "QuickLaunchModal",
@@ -399,49 +274,7 @@ function App() {
       <Router>
         <Layout>
           <Suspense fallback={routeFallback}>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/charts" element={<ChartsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/admin/keygen" element={<AdminKeygenPage />} />
-              <Route path="/browser/list" element={<BrowserListPage />} />
-              <Route
-                path="/browser/detail/:id"
-                element={<BrowserDetailPage />}
-              />
-              <Route path="/browser/edit/:id" element={<BrowserEditPage />} />
-              <Route path="/browser/copy/:id" element={<BrowserCopyPage />} />
-              <Route
-                path="/browser/monitor"
-                element={<Navigate to="/browser/list" replace />}
-              />
-              <Route path="/browser/logs" element={<BrowserLogsPage />} />
-              <Route path="/browser/proxy-pool" element={<ProxyPoolPage />} />
-              <Route path="/browser/cores" element={<CoreManagementPage />} />
-              <Route
-                path="/browser/bookmarks"
-                element={<BookmarkSettingsPage />}
-              />
-              <Route path="/browser/automation" element={<AutomationPage />} />
-              <Route
-                path="/browser/automation/:scriptId"
-                element={<AutomationScriptDetailPage />}
-              />
-              <Route
-                path="/system/docs"
-                element={<LaunchApiDocsPage />}
-              />
-              <Route
-                path="/browser/launch-api"
-                element={<Navigate to="/system/docs" replace />}
-              />
-              <Route path="/browser/tags" element={<TagManagementPage />} />
-              <Route
-                path="/system/tutorial"
-                element={<Navigate to="/system/docs" replace />}
-              />
-            </Routes>
+            <AppRoutes />
           </Suspense>
         </Layout>
         <ToastContainer />

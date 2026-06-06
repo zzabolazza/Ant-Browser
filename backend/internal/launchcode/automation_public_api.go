@@ -1,4 +1,4 @@
-package launchcode
+﻿package launchcode
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"ant-chrome/backend/internal/automation"
@@ -138,15 +137,9 @@ func buildAutomationPublicHookRunRequest(record automation.ScriptRecord, r *http
 	if err != nil {
 		return automation.ScriptRunRequest{}, err
 	}
-	selectorText := ""
-	useScriptSelector := true
-	if strings.TrimSpace(input.Code) != "" {
-		encodedSelectorText, err := encodeAutomationPublicHookJSONObject(map[string]interface{}{"code": strings.TrimSpace(input.Code)})
-		if err != nil {
-			return automation.ScriptRunRequest{}, badAutomationRequest("code is invalid")
-		}
-		selectorText = encodedSelectorText
-		useScriptSelector = false
+	targetMode, targetInput, selectorText, useScriptSelector, err := resolveAutomationPublicHookInstance(input)
+	if err != nil {
+		return automation.ScriptRunRequest{}, err
 	}
 	if err := validateAutomationTimeoutMs(input.TimeoutMs); err != nil {
 		return automation.ScriptRunRequest{}, err
@@ -160,6 +153,8 @@ func buildAutomationPublicHookRunRequest(record automation.ScriptRecord, r *http
 	return automation.ScriptRunRequest{
 		ScriptID:          record.ID,
 		SelectorText:      selectorText,
+		TargetMode:        targetMode,
+		TargetInput:       targetInput,
 		ParamsText:        paramsText,
 		UseScriptSelector: useScriptSelector,
 		UseScriptParams:   false,
@@ -168,9 +163,18 @@ func buildAutomationPublicHookRunRequest(record automation.ScriptRecord, r *http
 }
 
 type automationPublicHookRequestBody struct {
-	Code      string                 `json:"code"`
-	Params    map[string]interface{} `json:"params"`
-	TimeoutMs int                    `json:"timeoutMs"`
+	Code      string                        `json:"code"`
+	Instance  *automationPublicHookInstance `json:"instance"`
+	Params    map[string]interface{}        `json:"params"`
+	TimeoutMs int                           `json:"timeoutMs"`
+}
+
+type automationPublicHookInstance struct {
+	Type               string                          `json:"type"`
+	Selector           automation.ScriptTargetSelector `json:"selector"`
+	TemplateSelector   automation.ScriptTargetSelector `json:"templateSelector"`
+	CreateNameTemplate string                          `json:"createNameTemplate"`
+	ProfileName        string                          `json:"profileName"`
 }
 
 func decodeAutomationPublicHookRequestBody(body []byte) (automationPublicHookRequestBody, error) {
@@ -189,6 +193,61 @@ func decodeAutomationPublicHookRequestBody(body []byte) (automationPublicHookReq
 		input.Params = map[string]interface{}{}
 	}
 	return input, nil
+}
+
+func resolveAutomationPublicHookInstance(input automationPublicHookRequestBody) (string, any, string, bool, error) {
+	legacyCode := strings.TrimSpace(input.Code)
+	if input.Instance == nil {
+		if legacyCode == "" {
+			return "", nil, "", true, nil
+		}
+		encodedSelectorText, err := encodeAutomationPublicHookJSONObject(map[string]interface{}{"code": legacyCode})
+		if err != nil {
+			return "", nil, "", true, badAutomationRequest("code is invalid")
+		}
+		return "", nil, encodedSelectorText, false, nil
+	}
+
+	if legacyCode != "" {
+		return "", nil, "", true, badAutomationRequest("code and instance cannot be used together")
+	}
+
+	switch strings.ToLower(strings.TrimSpace(input.Instance.Type)) {
+	case "script-default":
+		return "", nil, "", true, nil
+	case "existing", "rotate":
+		selector := input.Instance.Selector
+		if automationPublicHookTargetSelectorEmpty(selector) {
+			return "", nil, "", true, badAutomationRequest("instance.selector is required")
+		}
+		return strings.ToLower(strings.TrimSpace(input.Instance.Type)), selector, "", false, nil
+	case "create":
+		targetInput := map[string]interface{}{
+			"templateSelector": input.Instance.TemplateSelector,
+		}
+		if automationPublicHookTargetSelectorEmpty(input.Instance.TemplateSelector) {
+			return "", nil, "", true, badAutomationRequest("instance.templateSelector is required")
+		}
+		if name := strings.TrimSpace(input.Instance.CreateNameTemplate); name != "" {
+			targetInput["createNameTemplate"] = name
+		} else if name := strings.TrimSpace(input.Instance.ProfileName); name != "" {
+			targetInput["profileName"] = name
+		}
+		return "create", targetInput, "", false, nil
+	case "":
+		return "", nil, "", true, badAutomationRequest("instance.type is required")
+	default:
+		return "", nil, "", true, badAutomationRequest("instance.type is unsupported")
+	}
+}
+
+func automationPublicHookTargetSelectorEmpty(selector automation.ScriptTargetSelector) bool {
+	return strings.TrimSpace(selector.Code) == "" &&
+		strings.TrimSpace(selector.ProfileID) == "" &&
+		strings.TrimSpace(selector.ProfileName) == "" &&
+		strings.TrimSpace(selector.GroupID) == "" &&
+		len(selector.Keywords) == 0 &&
+		len(selector.Tags) == 0
 }
 
 func encodeAutomationPublicHookJSONObject(obj map[string]interface{}) (string, error) {
@@ -232,7 +291,7 @@ func resolveAutomationPublicHookRequestBody(record automation.ScriptRecord, body
 	}
 	values := input.Params
 
-	bodyText := replaceAutomationPublicHookPlaceholderValue(config.RequestBodyText, "code", input.Code)
+	bodyText := replaceAutomationPublicHookPlaceholderValue(config.RequestBodyText, "code", automationPublicHookInstanceCode(input))
 	for _, variable := range config.Variables {
 		name := strings.TrimSpace(variable.Name)
 		if name == "" {
@@ -250,7 +309,7 @@ func resolveAutomationPublicHookRequestBody(record automation.ScriptRecord, body
 			continue
 		}
 
-		rawValue := interface{}(variable.DefaultValue)
+		rawValue := automationPublicHookVariableDefaultValue(variable, input)
 		if incomingValue, ok := values[name]; ok {
 			rawValue = incomingValue
 		}
@@ -278,6 +337,25 @@ func resolveAutomationPublicHookRequestBody(record automation.ScriptRecord, body
 		return nil, badAutomationRequest("resolved request body must be a JSON object")
 	}
 	return encoded, nil
+}
+
+func automationPublicHookInstanceCode(input automationPublicHookRequestBody) string {
+	if code := strings.TrimSpace(input.Code); code != "" {
+		return code
+	}
+	if input.Instance == nil {
+		return ""
+	}
+	return strings.TrimSpace(input.Instance.Selector.Code)
+}
+
+func automationPublicHookVariableDefaultValue(variable automation.ScriptPublicAPIVariable, input automationPublicHookRequestBody) interface{} {
+	if strings.TrimSpace(variable.Name) == "code" {
+		if code := automationPublicHookInstanceCode(input); code != "" {
+			return code
+		}
+	}
+	return variable.DefaultValue
 }
 
 func mergeAutomationPublicHookDefaultParams(record automation.ScriptRecord, body map[string]interface{}) map[string]interface{} {
@@ -406,148 +484,3 @@ func decodeJSONObjectBody(body []byte, fieldName string) (map[string]interface{}
 	return obj, true, nil
 }
 
-func resolveAutomationPublicHookTimeout(r *http.Request, requestTimeout int, fallback int) int {
-	if requestTimeout > 0 {
-		return requestTimeout
-	}
-
-	if r != nil {
-		if raw := strings.TrimSpace(r.URL.Query().Get("timeoutMs")); raw != "" {
-			if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
-				return parsed
-			}
-		}
-	}
-
-	return fallback
-}
-
-func writeAutomationPublicHookResponse(w http.ResponseWriter, record automation.ScriptRecord, run *automation.ScriptRunRecord) {
-	_ = record
-	parsedPayload, resultPayload, hasResult := decodeAutomationRunPayloadValue(run.ResultText)
-	if run.Status != "success" {
-		writeJSON(w, http.StatusOK, compactAutomationPublicHookFailure(run))
-		return
-	}
-
-	response := map[string]interface{}{
-		"ok":      true,
-		"status":  run.Status,
-		"summary": run.Summary,
-		"message": run.Summary,
-		"data":    map[string]interface{}{},
-		"result":  map[string]interface{}{},
-	}
-
-	if hasResult {
-		data := compactAutomationPublicHookData(resultPayload, run)
-		response["data"] = data
-		response["result"] = data
-	} else if parsedPayload != nil {
-		data := compactAutomationPublicHookData(parsedPayload, run)
-		response["data"] = data
-		response["result"] = data
-	}
-
-	writeJSON(w, http.StatusOK, response)
-}
-
-func compactAutomationPublicHookFailure(run *automation.ScriptRunRecord) map[string]interface{} {
-	response := map[string]interface{}{
-		"ok":      false,
-		"status":  run.Status,
-		"summary": run.Summary,
-		"message": run.Summary,
-		"data":    map[string]interface{}{},
-		"result":  map[string]interface{}{},
-	}
-	if strings.TrimSpace(run.Error) != "" {
-		response["error"] = run.Error
-	}
-	return response
-}
-
-func compactAutomationPublicHookData(payload interface{}, run *automation.ScriptRunRecord) interface{} {
-	data := compactAutomationPublicHookResult(payload, run)
-	delete(data, "ok")
-	delete(data, "summary")
-	return data
-}
-
-func compactAutomationPublicHookResult(payload interface{}, run *automation.ScriptRunRecord) map[string]interface{} {
-	obj, ok := payload.(map[string]interface{})
-	if !ok {
-		result := map[string]interface{}{"ok": true}
-		if strings.TrimSpace(run.Summary) != "" {
-			result["summary"] = run.Summary
-		}
-		if payload != nil {
-			result["result"] = payload
-		}
-		return result
-	}
-
-	if !hasAutomationPublicHookDownloadField(obj) {
-		result := make(map[string]interface{}, len(obj)+1)
-		result["ok"] = true
-		for key, value := range obj {
-			if key != "ok" && value != nil {
-				result[key] = value
-			}
-		}
-		if _, exists := result["summary"]; !exists && strings.TrimSpace(run.Summary) != "" {
-			result["summary"] = run.Summary
-		}
-		return result
-	}
-
-	result := map[string]interface{}{"ok": true}
-
-	for _, key := range []string{
-		"downloadAddress",
-		"downloadPath",
-		"outputPath",
-		"sourceImageUrl",
-		"sourceDownloadUrl",
-		"screenshotPath",
-		"pageScreenshotPath",
-		"contentType",
-		"imageWidth",
-		"imageHeight",
-		"status",
-		"summary",
-		"error",
-	} {
-		if value, exists := obj[key]; exists && value != nil {
-			result[key] = value
-		}
-	}
-	return result
-}
-
-func hasAutomationPublicHookDownloadField(obj map[string]interface{}) bool {
-	for _, key := range []string{"downloadAddress", "downloadPath", "outputPath"} {
-		if value, exists := obj[key]; exists && value != nil && strings.TrimSpace(fmt.Sprint(value)) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-func decodeAutomationRunPayloadValue(raw string) (interface{}, interface{}, bool) {
-	trimmed := strings.TrimSpace(raw)
-	if trimmed == "" {
-		return nil, nil, false
-	}
-
-	var payload interface{}
-	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
-		return nil, nil, false
-	}
-
-	if obj, ok := payload.(map[string]interface{}); ok {
-		result, exists := obj["result"]
-		return payload, result, exists
-	}
-	return payload, nil, false
-}

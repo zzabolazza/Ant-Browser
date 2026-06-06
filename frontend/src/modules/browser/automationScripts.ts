@@ -45,6 +45,13 @@ export {
   suggestAutomationScriptPublicAPIPath,
 } from "./automationScripts/publicApi";
 export {
+  buildAutomationScriptPublicAPIRequestBodyWithTargetCode,
+  normalizeAutomationScriptPublicAPIRequestBodyForInvoke,
+  readAutomationScriptPublicAPIInstanceType,
+  readAutomationScriptPublicAPIParamObject,
+  readAutomationScriptPublicAPITargetCode,
+} from "./automationScripts/publicApiInstances";
+export {
   canRefreshAutomationScriptSource,
   getAutomationScriptRefreshLabel,
   getAutomationScriptSourceLabel,

@@ -17,6 +17,48 @@ func TestNormalizePathInputConvertsWindowsSeparators(t *testing.T) {
 	}
 }
 
+func TestResolveUserDataDir(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	got, err := ResolveUserDataDir(func(path string) string {
+		return filepath.Join(root, path)
+	}, "profiles", "profile-a")
+	if err != nil {
+		t.Fatalf("ResolveUserDataDir() 返回错误: %v", err)
+	}
+	want := filepath.Join(root, "profiles", "profile-a")
+	if got != want {
+		t.Fatalf("ResolveUserDataDir() = %q, want %q", got, want)
+	}
+}
+
+func TestResolveUserDataDirUsesDefaultRoot(t *testing.T) {
+	t.Parallel()
+
+	got, err := ResolveUserDataDir(func(path string) string { return filepath.Join("app", path) }, "", "profile-a")
+	if err != nil {
+		t.Fatalf("ResolveUserDataDir() 返回错误: %v", err)
+	}
+	want := filepath.Join("app", "data", "profile-a")
+	if got != want {
+		t.Fatalf("ResolveUserDataDir() = %q, want %q", got, want)
+	}
+}
+
+func TestResolveExistingPathUsesResolverForRelativePath(t *testing.T) {
+	t.Parallel()
+
+	got, err := ResolveExistingPath(func(path string) string { return filepath.Join("app", path) }, "chrome/core", "不能为空")
+	if err != nil {
+		t.Fatalf("ResolveExistingPath() 返回错误: %v", err)
+	}
+	want := filepath.Join("app", "chrome/core")
+	if got != want {
+		t.Fatalf("ResolveExistingPath() = %q, want %q", got, want)
+	}
+}
+
 func TestEnsureExecutableRepairsMissingExecBitsOnUnix(t *testing.T) {
 	t.Parallel()
 

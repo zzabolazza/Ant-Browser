@@ -242,6 +242,7 @@ export namespace automation {
 	export class ScriptRunRequest {
 	    scriptId: string;
 	    selectorText: string;
+	    targetMode?: string;
 	    targetInput?: any;
 	    paramsText: string;
 	    useScriptSelector: boolean;
@@ -256,6 +257,7 @@ export namespace automation {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scriptId = source["scriptId"];
 	        this.selectorText = source["selectorText"];
+	        this.targetMode = source["targetMode"];
 	        this.targetInput = source["targetInput"];
 	        this.paramsText = source["paramsText"];
 	        this.useScriptSelector = source["useScriptSelector"];

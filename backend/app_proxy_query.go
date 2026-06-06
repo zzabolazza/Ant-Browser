@@ -1,43 +1,22 @@
 package backend
 
 import (
+	"ant-chrome/backend/internal/browser"
 	"ant-chrome/backend/internal/proxy"
 )
 
 func (a *App) BrowserProxyList() []BrowserProxy {
-	if a.browserMgr.ProxyDAO != nil {
-		if list, err := a.browserMgr.ProxyDAO.List(); err == nil {
-			return list
-		}
-	}
-	return append([]BrowserProxy{}, a.config.Browser.Proxies...)
+	return browser.ListProxiesWithFallback(a.browserMgr.ProxyDAO, a.config.Browser.Proxies)
 }
 
 // BrowserProxyListGroups 获取所有代理分组名称
 func (a *App) BrowserProxyListGroups() []string {
-	if a.browserMgr.ProxyDAO != nil {
-		if groups, err := a.browserMgr.ProxyDAO.ListGroups(); err == nil {
-			return groups
-		}
-	}
-	return nil
+	return browser.ListProxyGroups(a.browserMgr.ProxyDAO)
 }
 
 // BrowserProxyListByGroup 按分组名称查询代理
 func (a *App) BrowserProxyListByGroup(groupName string) []BrowserProxy {
-	if a.browserMgr.ProxyDAO != nil {
-		if list, err := a.browserMgr.ProxyDAO.ListByGroup(groupName); err == nil {
-			return list
-		}
-	}
-
-	var result []BrowserProxy
-	for _, item := range a.config.Browser.Proxies {
-		if item.GroupName == groupName {
-			result = append(result, item)
-		}
-	}
-	return result
+	return browser.ListProxiesByGroupWithFallback(a.browserMgr.ProxyDAO, groupName, a.config.Browser.Proxies)
 }
 
 // ValidateProxyConfig 验证代理配置是否支持
@@ -67,10 +46,5 @@ func (a *App) TestProxyRealConnectivity(proxyId string) ProxyTestResult {
 
 // getLatestProxies 获取最新的代理列表，优先从数据库读取
 func (a *App) getLatestProxies() []BrowserProxy {
-	if a.browserMgr.ProxyDAO != nil {
-		if list, err := a.browserMgr.ProxyDAO.List(); err == nil && len(list) > 0 {
-			return list
-		}
-	}
-	return a.config.Browser.Proxies
+	return browser.LatestProxiesWithFallback(a.browserMgr.ProxyDAO, a.config.Browser.Proxies)
 }

@@ -1,4 +1,4 @@
-package backend
+package snapshot
 
 import (
 	"archive/zip"
@@ -10,8 +10,7 @@ import (
 	"strings"
 )
 
-// zipDir 递归压缩 src 目录为 dest zip 文件
-func zipDir(src, dest string) error {
+func ZipDir(src, dest string) error {
 	f, err := os.Create(dest)
 	if err != nil {
 		return err
@@ -51,8 +50,7 @@ func zipDir(src, dest string) error {
 	})
 }
 
-// unzipTo 解压 src zip 文件到 dest 目录
-func unzipTo(src, dest string) error {
+func UnzipTo(src, dest string) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return err

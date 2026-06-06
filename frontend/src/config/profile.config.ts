@@ -1,4 +1,4 @@
-import { projectConfig } from './project.config'
+import { projectConfig } from './projectBase.config'
 import { PROJECT_GITHUB_URL } from './links'
 
 export type ProfileIconKey =

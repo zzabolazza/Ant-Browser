@@ -164,48 +164,46 @@ function isPlainAutomationJSONObject(
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
-function hasSameAutomationJSONShape(
-  left: Record<string, unknown>,
-  right: Record<string, unknown>,
-): boolean {
-  const leftKeys = Object.keys(left).sort();
-  const rightKeys = Object.keys(right).sort();
-  if (leftKeys.length !== rightKeys.length) {
-    return false;
-  }
+const AUTOMATION_SCRIPT_PUBLIC_API_INTERNAL_PARAM_KEYS = new Set([
+  "pageUrl",
+  "url",
+  "selectors",
+  "outputFileName",
+  "captureScreenshot",
+]);
 
-  for (let index = 0; index < leftKeys.length; index += 1) {
-    if (leftKeys[index] !== rightKeys[index]) {
-      return false;
+function buildAutomationScriptPublicAPIExampleParams(
+  script: Pick<AutomationScriptRecord, "paramsText">,
+): Record<string, unknown> {
+  const params = safeParseAutomationScriptPublicAPIJSONObject(script.paramsText) || {};
+  const result: Record<string, unknown> = {};
+  Object.entries(params).forEach(([key, value]) => {
+    if (!AUTOMATION_SCRIPT_PUBLIC_API_INTERNAL_PARAM_KEYS.has(key)) {
+      result[key] = value;
     }
-  }
-
-  return leftKeys.every((key) => {
-    const leftValue = left[key];
-    const rightValue = right[key];
-
-    if (Array.isArray(leftValue) || Array.isArray(rightValue)) {
-      return Array.isArray(leftValue) && Array.isArray(rightValue);
-    }
-    if (
-      isPlainAutomationJSONObject(leftValue) &&
-      isPlainAutomationJSONObject(rightValue)
-    ) {
-      return hasSameAutomationJSONShape(leftValue, rightValue);
-    }
-    return true;
   });
+  return result;
+}
+
+function hasAutomationScriptPublicAPIExampleParams(
+  script: Pick<AutomationScriptRecord, "paramsText">,
+  params: Record<string, unknown>,
+): boolean {
+  const expectedParams = buildAutomationScriptPublicAPIExampleParams(script);
+  return Object.keys(expectedParams).every((key) => key in params);
 }
 
 function buildAutomationScriptPublicAPIDefaultRequestExample(
-  script: Pick<AutomationScriptRecord, "paramsText" | "selectorText">,
+  script: Pick<AutomationScriptRecord, "id" | "name" | "paramsText" | "selectorText">,
   config: AutomationScriptPublicAPIConfig,
 ): string {
-  const params = safeParseAutomationScriptPublicAPIJSONObject(script.paramsText) || {};
+  const params = buildAutomationScriptPublicAPIExampleParams(script);
 
   return JSON.stringify(
     {
-      code: "",
+      instance: {
+        type: "script-default",
+      },
       params,
       timeoutMs: config.timeoutMs,
     },
@@ -231,7 +229,7 @@ function buildAutomationScriptPublicAPIDefaultResponseExample(): string {
 
 
 function isLegacyAutomationScriptPublicAPIRequestExample(
-  script: Pick<AutomationScriptRecord, "paramsText" | "selectorText">,
+  script: Pick<AutomationScriptRecord, "id" | "name" | "paramsText" | "selectorText">,
   parsedBody: Record<string, unknown>,
 ): boolean {
   const allowedLegacyKeys = new Set(["code", "launchCode", "param", "params", "timeoutMs"]);
@@ -249,11 +247,9 @@ function isLegacyAutomationScriptPublicAPIRequestExample(
     return false;
   }
 
-  const expectedParams = safeParseAutomationScriptPublicAPIJSONObject(script.paramsText);
   if (
-    expectedParams &&
     paramsValue !== undefined &&
-    !hasSameAutomationJSONShape(paramsValue, expectedParams)
+    !hasAutomationScriptPublicAPIExampleParams(script, paramsValue)
   ) {
     return false;
   }
@@ -262,7 +258,7 @@ function isLegacyAutomationScriptPublicAPIRequestExample(
 }
 
 function shouldUseDerivedAutomationScriptPublicAPIRequestBody(
-  script: Pick<AutomationScriptRecord, "paramsText" | "selectorText">,
+  script: Pick<AutomationScriptRecord, "id" | "name" | "paramsText" | "selectorText">,
   config: AutomationScriptPublicAPIConfig,
 ): boolean {
   const sourceText = config.requestBodyText.trim();
@@ -289,12 +285,12 @@ function shouldUseDerivedAutomationScriptPublicAPIRequestBody(
     return true;
   }
 
-  const allowedKeys = new Set(["code", "params", "timeoutMs"]);
+  const allowedKeys = new Set(["code", "instance", "params", "timeoutMs"]);
   if (Object.keys(parsedBody).some((key) => !allowedKeys.has(key))) {
     return false;
   }
 
-  if (!("code" in parsedBody)) {
+  if (!("code" in parsedBody) && !("instance" in parsedBody)) {
     return false;
   }
 
@@ -303,18 +299,24 @@ function shouldUseDerivedAutomationScriptPublicAPIRequestBody(
     return false;
   }
 
+  const instanceValue = parsedBody.instance;
+  if (instanceValue !== undefined) {
+    if (!isPlainAutomationJSONObject(instanceValue)) {
+      return false;
+    }
+    if (String(instanceValue.type || "").trim() !== "script-default") {
+      return false;
+    }
+  }
+
   const paramsValue = parsedBody.params;
   if (paramsValue !== undefined && !isPlainAutomationJSONObject(paramsValue)) {
     return false;
   }
 
-  const expectedParams = safeParseAutomationScriptPublicAPIJSONObject(
-    script.paramsText,
-  );
   if (
-    expectedParams &&
     paramsValue !== undefined &&
-    !hasSameAutomationJSONShape(paramsValue, expectedParams)
+    !hasAutomationScriptPublicAPIExampleParams(script, paramsValue)
   ) {
     return false;
   }
@@ -344,7 +346,7 @@ function shouldUseDerivedAutomationScriptPublicAPIResponseBody(
 }
 
 export function buildAutomationScriptPublicAPIRequestExample(
-  script: Pick<AutomationScriptRecord, "paramsText" | "selectorText">,
+  script: Pick<AutomationScriptRecord, "id" | "name" | "paramsText" | "selectorText">,
   config: AutomationScriptPublicAPIConfig,
 ): string {
   if (!shouldUseDerivedAutomationScriptPublicAPIRequestBody(script, config)) {

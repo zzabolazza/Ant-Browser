@@ -179,7 +179,7 @@ export function AutomationScriptDetailBodyPanels({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <CompactMetaField
                 label="入参"
-                value={<code>{"code / param / timeoutMs"}</code>}
+                value={<code>{"instance / params / timeoutMs"}</code>}
               />
               <CompactMetaField
                 label="出参"

@@ -58,8 +58,9 @@ func TestDefaultScriptBundles(t *testing.T) {
 			t.Fatalf("expected public api to be enabled for %q", bundle.Record.ID)
 		}
 		if bundle.Record.ID == WebImageGenerateScriptID {
-			if len(bundle.Record.PublicAPI.Variables) != 1 || bundle.Record.PublicAPI.Variables[0].Name != "prompt" {
-				t.Fatalf("expected web image script to expose prompt variable, got %+v", bundle.Record.PublicAPI.Variables)
+			variables := bundle.Record.PublicAPI.Variables
+			if len(variables) != 2 || variables[0].Name != "code" || variables[1].Name != "prompt" {
+				t.Fatalf("expected web image script to expose code and prompt variables, got %+v", variables)
 			}
 		}
 		if len(bundle.Files) == 0 {
