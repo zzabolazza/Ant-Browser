@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/metacubex/mihomo/adapter"
+	"github.com/metacubex/mihomo/component/resolver"
 
 	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/logger"
@@ -62,6 +63,7 @@ func SpeedTest(
 	if testURL == "" {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: "测速目标 URL 为空"}
 	}
+	enableMihomoIPv6()
 
 	resolvedSrc := src
 	if IsChainSocks5Proxy(src) {
@@ -103,4 +105,8 @@ func SpeedTest(
 
 	adapter.UnifiedDelay.Store(true)
 	return unifiedDelayTest(proxyId, proxyInstance, testURL, cfg.Timeout)
+}
+
+func enableMihomoIPv6() {
+	resolver.DisableIPv6 = false
 }

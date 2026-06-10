@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+
+	"github.com/metacubex/mihomo/component/resolver"
 )
 
 func TestProxyConfigToMappingStandardProxy(t *testing.T) {
@@ -28,6 +30,17 @@ func TestProxyConfigToMappingStandardProxy(t *testing.T) {
 	}
 	if got := mapping["password"]; got != "pass" {
 		t.Fatalf("password = %v, want pass", got)
+	}
+}
+
+func TestEnableMihomoIPv6(t *testing.T) {
+	resolver.DisableIPv6 = true
+	t.Cleanup(func() { resolver.DisableIPv6 = true })
+
+	enableMihomoIPv6()
+
+	if resolver.DisableIPv6 {
+		t.Fatal("expected mihomo IPv6 resolver to be enabled")
 	}
 }
 
