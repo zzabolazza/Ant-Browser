@@ -32,7 +32,7 @@ func (m *XrayManager) buildRuntimeConfigWithRoute(key string, outbounds []interf
 	cfgPath := filepath.Join(baseDir, "xray-config.json")
 	cfg := map[string]interface{}{
 		"log": map[string]interface{}{
-			"loglevel": "info",
+			"loglevel": "warning",
 			"error":    filepath.Join(baseDir, "xray-error.log"),
 		},
 		"inbounds": []interface{}{

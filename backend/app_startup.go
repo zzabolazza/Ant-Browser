@@ -202,7 +202,7 @@ func (a *App) startupInitSpeedScheduler() {
 	a.speedScheduler = browser.NewProxySpeedScheduler(
 		a.browserMgr.ProxyDAO,
 		func(proxyId string) (bool, int64, string) {
-			r := proxy.SpeedTest(proxyId, a.config.Browser.Proxies, a.xrayMgr, a.singboxMgr, nil)
+			r := proxy.TestRealConnectivityWithConfig(proxyId, a.config.Browser.Proxies, a.xrayMgr, a.singboxMgr, nil)
 			return r.Ok, r.LatencyMs, r.Error
 		},
 		5*time.Minute,

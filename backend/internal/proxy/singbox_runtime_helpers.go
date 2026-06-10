@@ -87,7 +87,7 @@ func (m *SingBoxManager) buildConfig(key string, outbound map[string]interface{}
 
 	cfg := map[string]interface{}{
 		"log": map[string]interface{}{
-			"level":     "info",
+			"level":     "warn",
 			"output":    filepath.Join(baseDir, "singbox.log"),
 			"timestamp": true,
 		},

@@ -43,7 +43,7 @@ func (a *App) TestProxyConnectivity(proxyId string, proxyConfig string) ProxyTes
 // 参考 Clash URLTest 策略：多 URL fallback + 复用桥接 + TCP ping 降级
 func (a *App) TestProxyRealConnectivity(proxyId string) ProxyTestResult {
 	proxies := a.getLatestProxies()
-	result := proxy.SpeedTest(proxyId, proxies, a.xrayMgr, a.singboxMgr, nil)
+	result := proxy.TestRealConnectivityWithConfig(proxyId, proxies, a.xrayMgr, a.singboxMgr, nil)
 	return ProxyTestResult{ProxyId: result.ProxyId, Ok: result.Ok, LatencyMs: result.LatencyMs, Error: result.Error}
 }
 

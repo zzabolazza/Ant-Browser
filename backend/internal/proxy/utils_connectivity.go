@@ -61,16 +61,34 @@ func TestRealConnectivityWithSingBox(
 	xrayMgr *XrayManager,
 	singboxMgr *SingBoxManager,
 ) TestResult {
+	return TestRealConnectivityWithConfig(proxyId, proxies, xrayMgr, singboxMgr, nil)
+}
+
+func TestRealConnectivityWithConfig(
+	proxyId string,
+	proxies []config.BrowserProxy,
+	xrayMgr *XrayManager,
+	singboxMgr *SingBoxManager,
+	cfg *SpeedTestConfig,
+) TestResult {
 	src := resolveProxyConfig("", proxies, proxyId)
 	if src == "" {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: "代理配置为空"}
 	}
 
 	targetURL := strings.TrimSpace(DefaultSpeedTestURL)
+	timeout := 15 * time.Second
+	if cfg != nil {
+		if len(cfg.URLs) > 0 && strings.TrimSpace(cfg.URLs[0]) != "" {
+			targetURL = strings.TrimSpace(cfg.URLs[0])
+		}
+		if cfg.Timeout > 0 {
+			timeout = cfg.Timeout
+		}
+	}
 	if targetURL == "" {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: "真实连通性测试目标 URL 为空"}
 	}
-	const timeout = 15 * time.Second
 
 	client, err := buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, timeout)
 	if err != nil {
