@@ -8,9 +8,11 @@ interface ProxyPoolHeaderProps {
   onOpenSettings: () => void
   onRefreshAllSources: () => void
   onTestAll: () => void
+  onWarmupAll: () => void
   refreshingAllSources: boolean
   testingAll: boolean
   totalCount: number
+  warmingAllBridges: boolean
 }
 
 export function ProxyPoolHeader({
@@ -21,9 +23,11 @@ export function ProxyPoolHeader({
   onOpenSettings,
   onRefreshAllSources,
   onTestAll,
+  onWarmupAll,
   refreshingAllSources,
   testingAll,
   totalCount,
+  warmingAllBridges,
 }: ProxyPoolHeaderProps) {
   return (
     <div className="flex items-center justify-between">
@@ -56,6 +60,15 @@ export function ProxyPoolHeader({
           disabled={totalCount === 0}
         >
           检测IP健康
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={onWarmupAll}
+          loading={warmingAllBridges}
+          disabled={totalCount === 0}
+        >
+          预热全部
         </Button>
         <Button
           size="sm"

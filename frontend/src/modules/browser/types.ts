@@ -147,6 +147,39 @@ export interface ProxyIPHealthResult {
   updatedAt: string
 }
 
+export interface ProxyBridgeWarmupResult {
+  proxyId: string
+  ok: boolean
+  engine: string
+  socksUrl: string
+  latencyMs: number
+  error: string
+}
+
+
+export interface ProxyLocationOption {
+  label: string
+  timezone: string
+  lang: string
+}
+
+export interface ProxyLocationResolveResult {
+  proxyId: string
+  ok: boolean
+  auto: boolean
+  source: string
+  error: string
+  ip: string
+  country: string
+  region: string
+  city: string
+  timezone: string
+  lang: string
+  health?: ProxyIPHealthResult
+  alternates?: ProxyLocationOption[]
+  resolvedAt: string
+}
+
 export interface BrowserCoreExtended {
   coreId: string
   chromeVersion: string

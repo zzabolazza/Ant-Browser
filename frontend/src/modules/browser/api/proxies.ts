@@ -1,4 +1,4 @@
-﻿import type { BrowserProxy, ProxyIPHealthResult } from '../types'
+﻿import type { BrowserProxy, ProxyBridgeWarmupResult, ProxyIPHealthResult, ProxyLocationResolveResult } from '../types'
 import { getBindings, getGoApp, getMockProxies, nowISOString, setMockProxies } from './runtime'
 
 export interface ClashImportURLResult {
@@ -117,6 +117,46 @@ export async function browserProxyBatchTestSpeed(proxyIds: string[], concurrency
   return proxyIds.map((proxyId) => ({ proxyId, ok: true, latencyMs: Math.floor(100 + Math.random() * 400), error: '' }))
 }
 
+export async function browserProxyWarmupBridge(proxyId: string): Promise<ProxyBridgeWarmupResult> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyWarmupBridge) {
+    return (await bindings.BrowserProxyWarmupBridge(proxyId)) || {
+      proxyId,
+      ok: false,
+      engine: '',
+      socksUrl: '',
+      latencyMs: 0,
+      error: '调用失败',
+    }
+  }
+  await sleep(200)
+  return { proxyId, ok: true, engine: 'mock', socksUrl: '', latencyMs: 0, error: '' }
+}
+
+export async function browserProxyWarmupBridgeWithConfig(proxyId: string, proxyConfig: string): Promise<ProxyBridgeWarmupResult> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyWarmupBridgeWithConfig) {
+    return (await bindings.BrowserProxyWarmupBridgeWithConfig(proxyId, proxyConfig)) || {
+      proxyId,
+      ok: false,
+      engine: '',
+      socksUrl: '',
+      latencyMs: 0,
+      error: '调用失败',
+    }
+  }
+  return browserProxyWarmupBridge(proxyId)
+}
+
+export async function browserProxyBatchWarmupBridge(proxyIds: string[], concurrency: number = 5): Promise<ProxyBridgeWarmupResult[]> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyBatchWarmupBridge) {
+    return (await bindings.BrowserProxyBatchWarmupBridge(proxyIds, concurrency)) || []
+  }
+  await sleep(400)
+  return proxyIds.map((proxyId) => ({ proxyId, ok: true, engine: 'mock', socksUrl: '', latencyMs: 0, error: '' }))
+}
+
 export async function browserProxyCheckIPHealth(proxyId: string): Promise<ProxyIPHealthResult> {
   const bindings: any = await getBindings()
   if (bindings?.BrowserProxyCheckIPHealth) {
@@ -156,6 +196,42 @@ export async function browserProxyCheckIPHealth(proxyId: string): Promise<ProxyI
     asOrganization: 'Mock ISP',
     rawData: {},
     updatedAt: nowISOString(),
+  }
+}
+
+export async function browserProxyResolveLocation(proxyId: string): Promise<ProxyLocationResolveResult> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyResolveLocation) {
+    return (await bindings.BrowserProxyResolveLocation(proxyId)) || {
+      proxyId,
+      ok: false,
+      auto: false,
+      source: 'location',
+      error: '调用失败',
+      ip: '',
+      country: '',
+      region: '',
+      city: '',
+      timezone: '',
+      lang: '',
+      resolvedAt: nowISOString(),
+    }
+  }
+
+  await sleep(400)
+  return {
+    proxyId,
+    ok: true,
+    auto: true,
+    source: 'mock',
+    error: '',
+    ip: '127.0.0.1',
+    country: 'US',
+    region: 'New York',
+    city: 'New York',
+    timezone: 'America/New_York',
+    lang: 'en-US',
+    resolvedAt: nowISOString(),
   }
 }
 

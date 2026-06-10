@@ -12,6 +12,7 @@ import { useBrowserListDerived, useBrowserListViewState } from './browserList/us
 import { useBrowserListSettings } from './browserList/useBrowserListSettings'
 import { useBrowserListData } from './browserList/useBrowserListData'
 import { useBrowserProfileActions } from './browserList/useBrowserProfileActions'
+import { warmupProfileProxyBeforeStart } from '../utils/proxyWarmup'
 import {
   copyBrowserProfile,
   deleteBrowserProfile,
@@ -172,6 +173,7 @@ export function BrowserListPage() {
       if (!profile || profile.running) continue
       updatePendingIds(setStartingIds, id, true)
       try {
+        await warmupProfileProxyBeforeStart(profile)
         const startedProfile = await startBrowserInstance(id)
         mergeProfileState(startedProfile)
         success++

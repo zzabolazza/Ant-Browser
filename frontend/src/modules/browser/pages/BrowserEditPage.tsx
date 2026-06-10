@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FolderOpen, Layers } from 'lucide-react'
 import { Button, Card, ConfirmModal, FormItem, Input, Modal, Select, Textarea, toast } from '../../../shared/components'
-import type { BrowserCore, BrowserProfileInput, BrowserProxy, BrowserGroup } from '../types'
-import { createBrowserProfile, fetchAllTags, fetchBrowserCores, fetchBrowserProfiles, fetchBrowserProxies, fetchBrowserSettings, fetchGroups, openUserDataDir, updateBrowserProfile, validateProxyConfig } from '../api'
+import type { BrowserCore, BrowserProfileInput, BrowserProxy, BrowserGroup, ProxyLocationResolveResult } from '../types'
+import { browserProxyResolveLocation, createBrowserProfile, fetchAllTags, fetchBrowserCores, fetchBrowserProfiles, fetchBrowserProxies, fetchBrowserSettings, fetchGroups, openUserDataDir, updateBrowserProfile, validateProxyConfig } from '../api'
 import { FingerprintPanel } from '../components/FingerprintPanel'
+import { applyLocaleToFingerprintArgs } from '../utils/fingerprintSerializer'
 import { TagInput } from '../components/TagInput'
 import { GroupSelector } from '../components/GroupSelector'
 import { ProxyPickerModal } from '../components/ProxyPickerModal'
@@ -76,6 +77,8 @@ export function BrowserEditPage() {
   const [isDirty, setIsDirty] = useState(false)
   const [leaveConfirm, setLeaveConfirm] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [locationResolving, setLocationResolving] = useState(false)
+  const [locationResult, setLocationResult] = useState<ProxyLocationResolveResult | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -198,6 +201,30 @@ export function BrowserEditPage() {
     if (isDirty) { setLeaveConfirm(true) } else { navigate('/browser/list') }
   }
 
+  const handleApplyProxyLocation = async () => {
+    if (proxyMode !== 'pool' || !formData.proxyId || formData.proxyId === directProxyID) {
+      toast.error('请选择代理池中的非直连节点')
+      return
+    }
+    setLocationResolving(true)
+    setLocationResult(null)
+    try {
+      const result = await browserProxyResolveLocation(formData.proxyId)
+      setLocationResult(result)
+      if (!result.ok || !result.lang || !result.timezone) {
+        toast.error(result.error || '无法根据代理 IP 匹配定位')
+        return
+      }
+      const nextArgs = applyLocaleToFingerprintArgs(formData.fingerprintArgs, result.lang, result.timezone)
+      handleChange('fingerprintArgs', nextArgs)
+      toast.success(`已设置 ${result.lang} / ${result.timezone}`)
+    } catch (error: unknown) {
+      toast.error((error as Error)?.message || '代理定位失败')
+    } finally {
+      setLocationResolving(false)
+    }
+  }
+
   const defaultCore = cores.find(c => c.isDefault)
   const selectedPoolProxy = proxies.find((proxy) => proxy.proxyId === formData.proxyId)
 
@@ -314,7 +341,7 @@ export function BrowserEditPage() {
               <div className="flex gap-2">
                 <Select
                   value={formData.proxyId}
-                  onChange={e => handleChange('proxyId', e.target.value)}
+                  onChange={e => { handleChange('proxyId', e.target.value); setLocationResult(null) }}
                   options={
                     proxies.length > 0
                       ? proxies.map(p => ({ value: p.proxyId, label: p.proxyName || p.proxyId }))
@@ -325,7 +352,23 @@ export function BrowserEditPage() {
                 <Button variant="secondary" size="sm" onClick={() => setProxyPickerOpen(true)} title="按分组选择代理">
                   <Layers className="w-4 h-4" />
                 </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleApplyProxyLocation}
+                  loading={locationResolving}
+                  disabled={!formData.proxyId || formData.proxyId === directProxyID}
+                >
+                  按代理匹配定位
+                </Button>
               </div>
+              {locationResult && (
+                <div className="mt-2 text-xs text-[var(--color-text-muted)]">
+                  {locationResult.ok
+                    ? `出口 ${locationResult.ip || '-'} · ${[locationResult.country, locationResult.region, locationResult.city].filter(Boolean).join(' / ') || '-'} · ${locationResult.lang} · ${locationResult.timezone}`
+                    : locationResult.error || '未匹配到定位'}
+                </div>
+              )}
             </FormItem>
           ) : (
             <FormItem label="本地代理地址" hint="支持 http://、https://、socks5://">
@@ -347,7 +390,7 @@ export function BrowserEditPage() {
       <ProxyPickerModal
         open={proxyPickerOpen}
         currentProxyId={formData.proxyId}
-        onSelect={proxy => handleChange('proxyId', proxy.proxyId)}
+        onSelect={proxy => { handleChange('proxyId', proxy.proxyId); setLocationResult(null) }}
         onProxyListUpdated={handleProxyListUpdated}
         onProxyDeleted={handleProxyDeleted}
         onClose={() => setProxyPickerOpen(false)}

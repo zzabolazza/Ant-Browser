@@ -20,7 +20,7 @@ type XrayManager struct {
 	Bridges      map[string]*XrayBridge
 	OnBridgeDied func(key string, err error) // 桥接进程意外退出回调
 	mu           sync.Mutex
-	launchMu     sync.Mutex
+	launchLocks  map[string]*xrayLaunchLock
 	stopCh       chan struct{}
 	stopOnce     sync.Once
 }
@@ -28,10 +28,11 @@ type XrayManager struct {
 // NewXrayManager 创建 Xray 管理器
 func NewXrayManager(cfg *config.Config, appRoot string) *XrayManager {
 	manager := &XrayManager{
-		Config:  cfg,
-		AppRoot: appRoot,
-		Bridges: make(map[string]*XrayBridge),
-		stopCh:  make(chan struct{}),
+		Config:      cfg,
+		AppRoot:     appRoot,
+		Bridges:     make(map[string]*XrayBridge),
+		launchLocks: make(map[string]*xrayLaunchLock),
+		stopCh:      make(chan struct{}),
 	}
 	go manager.cleanupLoop()
 	return manager

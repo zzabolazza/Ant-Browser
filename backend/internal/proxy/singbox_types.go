@@ -4,17 +4,26 @@ import (
 	"ant-chrome/backend/internal/config"
 	"os/exec"
 	"sync"
+	"time"
 )
 
 // SingBoxBridge sing-box 桥接进程
 type SingBoxBridge struct {
-	NodeKey   string
-	Port      int
-	Cmd       *exec.Cmd
-	Pid       int
-	Running   bool
-	Stopping  bool
-	LastError string
+	NodeKey      string
+	Port         int
+	Cmd          *exec.Cmd
+	Pid          int
+	Running      bool
+	Stopping     bool
+	LastError    string
+	Outbound     map[string]interface{}
+	LastUsedAt   time.Time
+	Restarting   bool
+	RestartCount int
+	ExitDone     chan struct{}
+	ExitErr      error
+	exitMu       sync.Mutex
+	waitOnce     sync.Once
 }
 
 // SingBoxManager sing-box 桥接管理器

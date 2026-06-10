@@ -35,6 +35,8 @@ interface ProxyPoolTableCardProps {
   onTestOne: (record: ProxyDisplayInfo) => void
   onToggleAll: () => void
   onToggleOne: (proxyId: string) => void
+  onWarmupOne: (record: ProxyDisplayInfo) => void
+  onWarmupSelected: () => void
   protocolOptions: string[]
   refreshingSourceIds: Set<string>
   selectedCount: number
@@ -43,6 +45,8 @@ interface ProxyPoolTableCardProps {
   sortColumn: string
   sortOrder: SortOrder
   latencyMap: Record<string, number>
+  warmingBridgeIds: Set<string>
+  warmingAllBridges: boolean
 }
 
 export function ProxyPoolTableCard({
@@ -74,6 +78,8 @@ export function ProxyPoolTableCard({
   onTestOne,
   onToggleAll,
   onToggleOne,
+  onWarmupOne,
+  onWarmupSelected,
   protocolOptions,
   refreshingSourceIds,
   selectedCount,
@@ -82,6 +88,8 @@ export function ProxyPoolTableCard({
   sortColumn,
   sortOrder,
   latencyMap,
+  warmingBridgeIds,
+  warmingAllBridges,
 }: ProxyPoolTableCardProps) {
   const hasActiveFilters = filterProtocol !== 'all' || !!filterKeyword || filterGroup !== 'all'
 
@@ -199,7 +207,7 @@ export function ProxyPoolTableCard({
     {
       key: 'actions',
       title: '操作',
-      width: '320px',
+      width: '380px',
       render: (_, record) => {
         const isBuiltin = BUILTIN_PROXY_IDS.has(record.proxyId)
         const sourceId = record.sourceId || ''
@@ -216,6 +224,15 @@ export function ProxyPoolTableCard({
                 刷新订阅
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(event) => { event.stopPropagation(); onWarmupOne(record) }}
+              loading={warmingBridgeIds.has(record.proxyId)}
+              disabled={record.proxyConfig === 'direct://'}
+            >
+              预热
+            </Button>
             <Button
               size="sm"
               variant="ghost"
@@ -275,8 +292,10 @@ export function ProxyPoolTableCard({
     onRefreshSingleSource,
     onTestOne,
     onToggleOne,
+    onWarmupOne,
     refreshingSourceIds,
     selectedIds,
+    warmingBridgeIds,
   ])
 
   return (
@@ -343,9 +362,14 @@ export function ProxyPoolTableCard({
           </label>
         )}
         {selectedCount > 0 && (
-          <Button size="sm" variant="danger" onClick={onOpenBatchDelete}>
-            删除所选 ({selectedCount})
-          </Button>
+          <>
+            <Button size="sm" variant="secondary" onClick={onWarmupSelected} loading={warmingAllBridges}>
+              预热所选 ({selectedCount})
+            </Button>
+            <Button size="sm" variant="danger" onClick={onOpenBatchDelete}>
+              删除所选 ({selectedCount})
+            </Button>
+          </>
         )}
       </div>
       <Table

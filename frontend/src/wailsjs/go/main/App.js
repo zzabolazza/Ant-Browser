@@ -286,8 +286,16 @@ export function BrowserProxyBatchTestSpeed(arg1, arg2) {
   return window['go']['main']['App']['BrowserProxyBatchTestSpeed'](arg1, arg2);
 }
 
+export function BrowserProxyBatchWarmupBridge(arg1, arg2) {
+  return window['go']['main']['App']['BrowserProxyBatchWarmupBridge'](arg1, arg2);
+}
+
 export function BrowserProxyCheckIPHealth(arg1) {
   return window['go']['main']['App']['BrowserProxyCheckIPHealth'](arg1);
+}
+
+export function BrowserProxyResolveLocation(arg1) {
+  return window['go']['main']['App']['BrowserProxyResolveLocation'](arg1);
 }
 
 export function BrowserProxyFetchClashByURL(arg1) {
@@ -304,6 +312,14 @@ export function BrowserProxyListByGroup(arg1) {
 
 export function BrowserProxyListGroups() {
   return window['go']['main']['App']['BrowserProxyListGroups']();
+}
+
+export function BrowserProxyWarmupBridge(arg1) {
+  return window['go']['main']['App']['BrowserProxyWarmupBridge'](arg1);
+}
+
+export function BrowserProxyWarmupBridgeWithConfig(arg1, arg2) {
+  return window['go']['main']['App']['BrowserProxyWarmupBridgeWithConfig'](arg1, arg2);
 }
 
 export function BrowserProxyTestSpeed(arg1) {

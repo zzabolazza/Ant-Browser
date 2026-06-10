@@ -140,3 +140,15 @@ password: test-password
 		t.Fatalf("expected missing server and port to fail")
 	}
 }
+
+func TestBuildSingBoxAnyTLSRequiresPassword(t *testing.T) {
+	src := `
+type: anytls
+server: anytls.example.com
+port: 443
+`
+
+	if _, err := BuildSingBoxOutbound(src); err == nil {
+		t.Fatalf("expected missing password to fail")
+	}
+}

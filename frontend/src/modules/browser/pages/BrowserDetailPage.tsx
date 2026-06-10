@@ -17,6 +17,7 @@ import {
 import { CookieManagerCard } from '../components/CookieManagerCard'
 import { SnapshotTab } from '../components/SnapshotTab'
 import { resolveActionErrorMessage, resolveActionFeedback } from '../utils/actionErrors'
+import { warmupProfileProxyBeforeStart } from '../utils/proxyWarmup'
 
 const resolveRuntimeStatus = (running: boolean, debugReady: boolean) => {
   if (!running) return { variant: 'warning' as const, label: '已停止' }
@@ -128,6 +129,7 @@ export function BrowserDetailPage() {
   const handleStart = async () => {
     setPendingAction('starting')
     try {
+      await warmupProfileProxyBeforeStart(profile)
       const startedProfile = await startBrowserInstance(profile.profileId)
       if (startedProfile) {
         setProfile(startedProfile)
@@ -169,6 +171,7 @@ export function BrowserDetailPage() {
   const handleRestart = async () => {
     setPendingAction('restarting')
     try {
+      await warmupProfileProxyBeforeStart(profile)
       const restartedProfile = await restartBrowserInstance(profile.profileId)
       if (restartedProfile) {
         setProfile(restartedProfile)

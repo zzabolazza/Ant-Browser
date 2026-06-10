@@ -151,7 +151,11 @@ export function BrowserProxyBatchCheckIPHealth(arg1:Array<string>,arg2:number):P
 
 export function BrowserProxyBatchTestSpeed(arg1:Array<string>,arg2:number):Promise<Array<backend.ProxyTestResult>>;
 
+export function BrowserProxyBatchWarmupBridge(arg1:Array<string>,arg2:number):Promise<Array<backend.ProxyBridgeWarmupResult>>;
+
 export function BrowserProxyCheckIPHealth(arg1:string):Promise<backend.ProxyIPHealthResult>;
+
+export function BrowserProxyResolveLocation(arg1:string):Promise<backend.ProxyLocationResolveResult>;
 
 export function BrowserProxyFetchClashByURL(arg1:string):Promise<Record<string, any>>;
 
@@ -160,6 +164,10 @@ export function BrowserProxyList():Promise<Array<config.BrowserProxy>>;
 export function BrowserProxyListByGroup(arg1:string):Promise<Array<config.BrowserProxy>>;
 
 export function BrowserProxyListGroups():Promise<Array<string>>;
+
+export function BrowserProxyWarmupBridge(arg1:string):Promise<backend.ProxyBridgeWarmupResult>;
+
+export function BrowserProxyWarmupBridgeWithConfig(arg1:string,arg2:string):Promise<backend.ProxyBridgeWarmupResult>;
 
 export function BrowserProxyTestSpeed(arg1:string):Promise<backend.ProxyTestResult>;
 

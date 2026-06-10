@@ -4,8 +4,10 @@ import { EventsOn } from '../../../../wailsjs/runtime/runtime'
 import {
   browserProxyBatchCheckIPHealth,
   browserProxyBatchTestSpeed,
+  browserProxyBatchWarmupBridge,
   browserProxyCheckIPHealth,
   browserProxyTestSpeed,
+  browserProxyWarmupBridge,
 } from '../../api'
 import type { ProxyIPHealthResult } from '../../types'
 import type { ProxyDisplayInfo } from './helpers'
@@ -22,6 +24,8 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
   const [ipHealthMap, setIPHealthMap] = useState<Record<string, ProxyIPHealthResult>>({})
   const [checkingIPHealthIds, setCheckingIPHealthIds] = useState<Set<string>>(new Set())
   const [checkingAllIPHealth, setCheckingAllIPHealth] = useState(false)
+  const [warmingBridgeIds, setWarmingBridgeIds] = useState<Set<string>>(new Set())
+  const [warmingAllBridges, setWarmingAllBridges] = useState(false)
   const [ipHealthDetailOpen, setIPHealthDetailOpen] = useState(false)
   const [currentIPHealthDetail, setCurrentIPHealthDetail] = useState<ProxyIPHealthResult | null>(null)
 
@@ -102,6 +106,48 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
     }
   }
 
+  const handleWarmupOne = async (record: ProxyDisplayInfo) => {
+    if (record.proxyConfig === 'direct://') {
+      toast.info('直连模式无需预热')
+      return
+    }
+    if (warmingBridgeIds.has(record.proxyId)) return
+
+    setWarmingBridgeIds(prev => new Set(prev).add(record.proxyId))
+    try {
+      const result = await browserProxyWarmupBridge(record.proxyId)
+      if (result.ok) toast.success(`${record.proxyName} 已预热`)
+      else toast.error(result.error || `${record.proxyName} 预热失败`)
+    } finally {
+      setWarmingBridgeIds(prev => {
+        const next = new Set(prev)
+        next.delete(record.proxyId)
+        return next
+      })
+    }
+  }
+
+  const handleWarmupAll = async (items: ProxyDisplayInfo[]) => {
+    const testable = items.filter(p => p.proxyConfig !== 'direct://')
+    if (testable.length === 0) return
+    setWarmingAllBridges(true)
+    const ids = testable.map(p => p.proxyId)
+    setWarmingBridgeIds(prev => new Set([...Array.from(prev), ...ids]))
+    try {
+      const results = await browserProxyBatchWarmupBridge(ids, 5)
+      const failed = results.filter(r => !r.ok).length
+      if (failed > 0) toast.info(`预热完成：成功 ${results.length - failed}，失败 ${failed}`)
+      else toast.success(`预热完成：共 ${results.length} 条`)
+    } finally {
+      setWarmingBridgeIds(prev => {
+        const next = new Set(prev)
+        ids.forEach(id => next.delete(id))
+        return next
+      })
+      setWarmingAllBridges(false)
+    }
+  }
+
   const handleCheckOneIPHealth = async (record: ProxyDisplayInfo) => {
     if (record.proxyConfig === 'direct://') {
       toast.info('直连模式无需检测')
@@ -178,6 +224,8 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
     ipHealthMap,
     checkingIPHealthIds,
     checkingAllIPHealth,
+    warmingBridgeIds,
+    warmingAllBridges,
     ipHealthDetailOpen,
     setIPHealthDetailOpen,
     currentIPHealthDetail,
@@ -185,6 +233,8 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
     setIPHealthMap,
     handleTestOne,
     handleTestAll,
+    handleWarmupOne,
+    handleWarmupAll,
     handleCheckOneIPHealth,
     handleCheckAllIPHealth,
     openIPHealthDetail,

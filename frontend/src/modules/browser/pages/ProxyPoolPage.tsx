@@ -162,6 +162,8 @@ export function ProxyPoolPage() {
     ipHealthMap,
     checkingIPHealthIds,
     checkingAllIPHealth,
+    warmingBridgeIds,
+    warmingAllBridges,
     ipHealthDetailOpen,
     setIPHealthDetailOpen,
     currentIPHealthDetail,
@@ -169,6 +171,8 @@ export function ProxyPoolPage() {
     setIPHealthMap,
     handleTestOne,
     handleTestAll,
+    handleWarmupOne,
+    handleWarmupAll,
     handleCheckOneIPHealth,
     handleCheckAllIPHealth,
     openIPHealthDetail,
@@ -336,9 +340,11 @@ export function ProxyPoolPage() {
         onOpenImport={() => setImportModalOpen(true)}
         onRefreshAllSources={() => void handleRefreshAllSources(false)}
         onTestAll={() => void handleTestAll(filteredList)}
+        onWarmupAll={() => void handleWarmupAll(filteredList)}
         refreshingAllSources={refreshingAllSources}
         testingAll={testingAll}
         totalCount={filteredList.length}
+        warmingAllBridges={warmingAllBridges}
       />
 
       <ProxyPoolTableCard
@@ -378,6 +384,8 @@ export function ProxyPoolPage() {
         onTestOne={(record) => void handleTestOne(record)}
         onToggleAll={handleToggleAll}
         onToggleOne={handleToggleOne}
+        onWarmupOne={(record) => void handleWarmupOne(record)}
+        onWarmupSelected={() => void handleWarmupAll(filteredList.filter(item => selectedIds.has(item.proxyId)))}
         protocolOptions={protocolOptions}
         refreshingSourceIds={refreshingSourceIds}
         selectedCount={selectedCount}
@@ -385,6 +393,8 @@ export function ProxyPoolPage() {
         someFilteredSelected={someFilteredSelected}
         sortColumn={sortColumn}
         sortOrder={sortOrder}
+        warmingAllBridges={warmingAllBridges}
+        warmingBridgeIds={warmingBridgeIds}
       />
 
       <ProxyPoolImportModal

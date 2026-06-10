@@ -138,7 +138,7 @@ func buildSingBoxAnyTLSFromClash(node map[string]interface{}) (map[string]interf
 	}
 	skipVerify := getMapBool(node, "skip-cert-verify")
 
-	if host == "" || port == 0 {
+	if host == "" || port == 0 || password == "" {
 		return nil, fmt.Errorf("anytls node info incomplete")
 	}
 
