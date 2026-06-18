@@ -8,6 +8,7 @@ import { AppRoutes } from "./routes/AppRoutes";
 import { lazyNamed } from "./routes/lazyNamed";
 import { useNotificationStore } from "./store/notificationStore";
 import { useBackupStore } from "./store/backupStore";
+import { installWailsOperationLogger } from "./utils/wailsOperationLogger";
 import {
   ForceQuit as ForceQuitApp,
   QuitAppOnly as QuitAppOnlyApp,
@@ -69,6 +70,45 @@ function useWailsNotifications() {
       offCrashed?.();
       offBridgeFailed?.();
       offBridgeDied?.();
+    };
+  }, [addNotification]);
+}
+
+function useGlobalErrorNotifications() {
+  const addNotification = useNotificationStore((s) => s.addNotification);
+
+  useEffect(() => {
+    const toMessage = (value: unknown) => {
+      if (value instanceof Error) return value.message || String(value);
+      if (typeof value === "string") return value;
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    };
+
+    const handleError = (event: ErrorEvent) => {
+      addNotification({
+        type: "error",
+        title: "前端异常",
+        message: event.message || toMessage(event.error) || "未知脚本错误",
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      addNotification({
+        type: "error",
+        title: "未处理异步异常",
+        message: toMessage(event.reason) || "未知 Promise 异常",
+      });
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
   }, [addNotification]);
 }
@@ -246,7 +286,11 @@ function CloseConfirmModal() {
 }
 
 function App() {
+  useEffect(() => {
+    installWailsOperationLogger();
+  }, []);
   useWailsNotifications();
+  useGlobalErrorNotifications();
   const [quickLaunchOpen, setQuickLaunchOpen] = useState(false);
   const routeFallback = (
     <div className="flex min-h-[240px] items-center justify-center py-10">

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, Search } from 'lucide-react'
 import { Button, Input, Modal, toast } from '../../../shared/components'
-import type { BrowserExtension, BrowserProfile, BrowserProfileExtensionSettings } from '../types'
+import type { BrowserExtension, BrowserGroupWithCount, BrowserProfile, BrowserProfileExtensionSettings } from '../types'
 import { fetchBrowserProfileExtensionSettings, saveBrowserProfileExtensionSettings, type BrowserExtensionManualDownloadFile, type BrowserExtensionManualInstallGuide } from '../api/extensions'
+import { fetchGroups } from '../api/groups'
 import { fetchBrowserProfiles } from '../api/profiles'
 import { extensionHistoryActionLabel, formatExtensionTime, sameStringSet, type ExtensionHistoryRecord } from './extensionManagementUtils'
+
+const UNGROUPED_PROFILE_GROUP_ID = '__ungrouped__'
 
 export interface ExtensionProfileLimitModalProps {
   open: boolean
@@ -15,6 +18,7 @@ export interface ExtensionProfileLimitModalProps {
 
 export function ExtensionProfileLimitModal({ open, extension, allExtensions, onClose }: ExtensionProfileLimitModalProps) {
   const [profiles, setProfiles] = useState<BrowserProfile[]>([])
+  const [groups, setGroups] = useState<BrowserGroupWithCount[]>([])
   const [settingsByProfile, setSettingsByProfile] = useState<Record<string, BrowserProfileExtensionSettings>>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -25,11 +29,55 @@ export function ExtensionProfileLimitModal({ open, extension, allExtensions, onC
     () => allExtensions.filter((item) => item.enabled).map((item) => item.extensionId),
     [allExtensions],
   )
+  const groupNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    groups.forEach((group) => map.set(group.groupId, group.groupName))
+    return map
+  }, [groups])
+
+  const profileGroups = useMemo(() => {
+    const buckets = new Map<string, BrowserProfile[]>()
+    profiles.forEach((profile) => {
+      const groupId = (profile.groupId || '').trim() || UNGROUPED_PROFILE_GROUP_ID
+      if (!buckets.has(groupId)) buckets.set(groupId, [])
+      buckets.get(groupId)!.push(profile)
+    })
+
+    const sections = groups
+      .filter((group) => buckets.has(group.groupId))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.groupName.localeCompare(b.groupName))
+      .map((group) => ({
+        groupId: group.groupId,
+        groupName: group.groupName,
+        profiles: buckets.get(group.groupId) || [],
+      }))
+
+    for (const [groupId, items] of buckets.entries()) {
+      if (groupId === UNGROUPED_PROFILE_GROUP_ID) continue
+      if (!sections.some((section) => section.groupId === groupId)) {
+        sections.push({
+          groupId,
+          groupName: groupNameMap.get(groupId) || `分组 ${groupId}`,
+          profiles: items,
+        })
+      }
+    }
+
+    if (buckets.has(UNGROUPED_PROFILE_GROUP_ID)) {
+      sections.push({
+        groupId: UNGROUPED_PROFILE_GROUP_ID,
+        groupName: '未分组',
+        profiles: buckets.get(UNGROUPED_PROFILE_GROUP_ID) || [],
+      })
+    }
+
+    return sections
+  }, [profiles, groups, groupNameMap])
 
   useEffect(() => {
     if (!open || !extension) return
     setLoading(true)
-    fetchBrowserProfiles().then(async (profileItems) => {
+    Promise.all([fetchBrowserProfiles(), fetchGroups()]).then(async ([profileItems, groupItems]) => {
       const profileSettings = await Promise.all(profileItems.map(async (profile) => ({
         profile,
         settings: await fetchBrowserProfileExtensionSettings(profile.profileId),
@@ -39,6 +87,7 @@ export function ExtensionProfileLimitModal({ open, extension, allExtensions, onC
         settingsMap[profile.profileId] = settings
       })
       setProfiles(profileItems)
+      setGroups(groupItems)
       setSettingsByProfile(settingsMap)
       setSelectedIds(profileItems
         .filter((profile) => {
@@ -55,6 +104,17 @@ export function ExtensionProfileLimitModal({ open, extension, allExtensions, onC
     setSelectedIds((current) => {
       if (checked) return current.includes(profileId) ? current : [...current, profileId]
       return current.filter((item) => item !== profileId)
+    })
+  }
+
+  const toggleGroup = (profileIds: string[], checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      profileIds.forEach((profileId) => {
+        if (checked) next.add(profileId)
+        else next.delete(profileId)
+      })
+      return Array.from(next)
     })
   }
 
@@ -105,25 +165,46 @@ export function ExtensionProfileLimitModal({ open, extension, allExtensions, onC
           <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-3 py-2 text-sm text-[var(--color-text-secondary)]">
             勾选的实例会加载此插件；未勾选的实例会排除此插件。
           </div>
-          <div className="max-h-[420px] space-y-2 overflow-auto pr-1">
-            {profiles.map((profile) => (
-              <label key={profile.profileId} className="flex items-start gap-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={selectedSet.has(profile.profileId)}
-                  onChange={(event) => toggleProfile(profile.profileId, event.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded accent-[var(--color-accent)]"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
-                    <span>{profile.profileName || profile.profileId}</span>
-                    {profile.running ? <span className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700">运行中</span> : null}
-                    {settingsByProfile[profile.profileId]?.configured ? <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-normal text-[var(--color-text-muted)]">已单独配置</span> : null}
+          <div className="max-h-[420px] space-y-3 overflow-auto pr-1">
+            {profileGroups.map((group) => {
+              const groupProfileIds = group.profiles.map((profile) => profile.profileId)
+              const selectedCount = groupProfileIds.filter((profileId) => selectedSet.has(profileId)).length
+              const allSelected = groupProfileIds.length > 0 && selectedCount === groupProfileIds.length
+
+              return (
+                <section key={group.groupId} className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
+                  <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border-muted)] px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">{group.groupName}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">已选 {selectedCount} / {groupProfileIds.length}</div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => toggleGroup(groupProfileIds, !allSelected)}>
+                      {allSelected ? '取消本组' : '选择本组'}
+                    </Button>
                   </div>
-                  <div className="mt-1 break-all font-mono text-xs text-[var(--color-text-muted)]">{profile.profileId}</div>
-                </div>
-              </label>
-            ))}
+                  <div className="divide-y divide-[var(--color-border-muted)]">
+                    {group.profiles.map((profile) => (
+                      <label key={profile.profileId} className="flex items-start gap-3 px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedSet.has(profile.profileId)}
+                          onChange={(event) => toggleProfile(profile.profileId, event.target.checked)}
+                          className="mt-1 h-4 w-4 shrink-0 rounded accent-[var(--color-accent)]"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--color-text-primary)]">
+                            <span>{profile.profileName || profile.profileId}</span>
+                            {profile.running ? <span className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700">运行中</span> : null}
+                            {settingsByProfile[profile.profileId]?.configured ? <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 text-xs font-normal text-[var(--color-text-muted)]">已单独配置</span> : null}
+                          </div>
+                          <div className="mt-1 break-all font-mono text-xs text-[var(--color-text-muted)]">{profile.profileId}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
 
             {profiles.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">

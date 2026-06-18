@@ -223,15 +223,7 @@ export function AutomationScriptHistoryModal({
       }
     >
       <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-medium text-[var(--color-text-primary)]">
-              查看所有脚本最近的调用情况
-            </div>
-            <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-              表格里只保留关键信息，点击某一行可展开查看错误、返回内容和完整摘要。
-            </div>
-          </div>
+        <div className="flex items-center justify-end">
           <Button
             size="sm"
             variant="secondary"
@@ -274,31 +266,31 @@ export function AutomationScriptHistoryModal({
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-sm)]">
             <div className="max-h-[58vh] overflow-auto">
-              <table className="w-full min-w-[1040px]">
+              <table className="w-full min-w-[1120px]">
                 <thead className="sticky top-0 z-10 bg-[var(--color-bg-muted)]">
                   <tr>
-                    <th className="w-14 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-14 whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       展开
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[170px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       调用时间
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[230px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       脚本
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[90px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       状态
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[150px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       类型
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[110px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       耗时
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       摘要
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <th className="w-[120px] whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       操作
                     </th>
                   </tr>
@@ -316,7 +308,7 @@ export function AutomationScriptHistoryModal({
                           onKeyDown={(event) => handleRowKeyDown(event, run.id)}
                           className="cursor-pointer transition-colors duration-150 hover:bg-[var(--color-bg-muted)]/55 focus:outline-none focus-visible:bg-[var(--color-accent-muted)]/40"
                         >
-                          <td className="px-3 py-4 align-top text-[var(--color-text-muted)]">
+                          <td className="whitespace-nowrap px-3 py-4 align-top text-[var(--color-text-muted)]">
                             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-border-muted)] bg-[var(--color-bg-muted)]">
                               {expanded ? (
                                 <ChevronDown className="h-4 w-4" />
@@ -325,12 +317,12 @@ export function AutomationScriptHistoryModal({
                               )}
                             </span>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
                             <div className="whitespace-nowrap font-medium">
                               {formatDateTime(run.startedAt)}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
                             <div
                               className="max-w-[180px] truncate font-medium"
                               title={run.scriptName || "未命名脚本"}
@@ -338,16 +330,18 @@ export function AutomationScriptHistoryModal({
                               {run.scriptName || "未命名脚本"}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm">
-                            <Badge
-                              variant={getRunStatusBadgeVariant(run.status)}
-                              size="sm"
-                              dot
-                            >
-                              {getRunStatusLabel(run.status)}
-                            </Badge>
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm">
+                            <span className="inline-flex whitespace-nowrap">
+                              <Badge
+                                variant={getRunStatusBadgeVariant(run.status)}
+                                size="sm"
+                                dot
+                              >
+                                {getRunStatusLabel(run.status)}
+                              </Badge>
+                            </span>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-secondary)]">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-[var(--color-text-secondary)]">
                             <div
                               className="max-w-[140px] truncate"
                               title={run.scriptType || "-"}
@@ -355,10 +349,10 @@ export function AutomationScriptHistoryModal({
                               {run.scriptType || "-"}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-[var(--color-text-primary)]">
                             {formatDuration(run.durationMs)}
                           </td>
-                          <td className="px-4 py-4 align-top text-sm text-[var(--color-text-secondary)]">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-[var(--color-text-secondary)]">
                             <div
                               className="max-w-[320px] truncate"
                               title={run.summary || "未返回摘要"}
@@ -366,7 +360,7 @@ export function AutomationScriptHistoryModal({
                               {run.summary || "未返回摘要"}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top text-sm">
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm">
                             <Button
                               size="sm"
                               variant="secondary"

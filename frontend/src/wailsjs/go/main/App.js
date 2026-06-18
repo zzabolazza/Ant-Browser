@@ -454,6 +454,10 @@ export function ForceQuit() {
   return window['go']['main']['App']['ForceQuit']();
 }
 
+export function FrontendOperationLog(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['FrontendOperationLog'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function GenerateCDKeys(arg1) {
   return window['go']['main']['App']['GenerateCDKeys'](arg1);
 }

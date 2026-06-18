@@ -21,10 +21,7 @@ export function CoreSettingsCard({ settings, onEdit }: CoreSettingsCardProps) {
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p className="text-xs text-[var(--color-text-muted)] mb-1">用户数据根目录</p>
-          <p className="text-sm text-[var(--color-text-primary)]">{settings.userDataRoot || '-'}</p>
-        </div>
+        <SettingsValue label="用户数据根目录" value={settings.userDataRoot || '-'} />
         <SettingsList label="默认指纹参数" values={settings.defaultFingerprintArgs} />
         <SettingsList label="默认启动参数" values={settings.defaultLaunchArgs} />
         <SettingsList label="默认启动页面" values={settings.defaultStartUrls} />
@@ -41,7 +38,9 @@ function SettingsValue({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-[var(--color-text-muted)] mb-1">{label}</p>
-      <p className="text-sm text-[var(--color-text-primary)]">{value}</p>
+      <div className="min-h-9 rounded-md bg-[var(--color-bg-subtle)] px-3 py-2 text-sm leading-5 text-[var(--color-text-primary)]">
+        {value}
+      </div>
     </div>
   )
 }
@@ -51,11 +50,13 @@ function SettingsList({ label, values }: { label: string; values: string[] }) {
     <div>
       <p className="text-xs text-[var(--color-text-muted)] mb-1">{label}</p>
       {values.length > 0 ? (
-        <pre className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-subtle)] p-2 rounded max-h-20 overflow-auto">
+        <pre className="min-h-9 max-h-20 overflow-auto rounded-md bg-[var(--color-bg-subtle)] px-3 py-2 text-sm leading-5 text-[var(--color-text-primary)]">
           {values.join('\n')}
         </pre>
       ) : (
-        <p className="text-sm text-[var(--color-text-primary)]">-</p>
+        <div className="min-h-9 rounded-md bg-[var(--color-bg-subtle)] px-3 py-2 text-sm leading-5 text-[var(--color-text-primary)]">
+          -
+        </div>
       )}
     </div>
   )

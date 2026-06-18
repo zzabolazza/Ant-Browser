@@ -236,6 +236,8 @@ export function FetchRemoteAuthorProfile(arg1:string,arg2:number):Promise<Record
 
 export function ForceQuit():Promise<void>;
 
+export function FrontendOperationLog(arg1:string,arg2:string,arg3:boolean,arg4:number,arg5:string):Promise<void>;
+
 export function GenerateCDKeys(arg1:number):Promise<Array<string>>;
 
 export function GetAppConfig():Promise<Record<string, any>>;
