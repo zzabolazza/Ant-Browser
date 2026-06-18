@@ -1,9 +1,11 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -71,40 +73,132 @@ func TestRealConnectivityWithConfig(
 	singboxMgr *SingBoxManager,
 	cfg *SpeedTestConfig,
 ) TestResult {
+	return TestRealConnectivityWithRuntimeConfig(proxyId, proxies, xrayMgr, singboxMgr, nil, config.BrowserConnectorXray, cfg)
+}
+
+func TestRealConnectivityWithRuntimeConfig(
+	proxyId string,
+	proxies []config.BrowserProxy,
+	xrayMgr *XrayManager,
+	singboxMgr *SingBoxManager,
+	clashMgr *ClashManager,
+	connectorType string,
+	cfg *SpeedTestConfig,
+) TestResult {
 	src := resolveProxyConfig("", proxies, proxyId)
 	if src == "" {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: "代理配置为空"}
 	}
 
-	targetURL := strings.TrimSpace(DefaultSpeedTestURL)
+	targetURLs := defaultRealConnectivityTargets()
 	timeout := 15 * time.Second
 	if cfg != nil {
-		if len(cfg.URLs) > 0 && strings.TrimSpace(cfg.URLs[0]) != "" {
-			targetURL = strings.TrimSpace(cfg.URLs[0])
+		if len(cfg.URLs) > 0 {
+			configuredURLs := normalizeSpeedTestURLs(cfg.URLs)
+			if len(configuredURLs) > 0 {
+				targetURLs = append(configuredURLs, targetURLs...)
+			}
 		}
 		if cfg.Timeout > 0 {
 			timeout = cfg.Timeout
 		}
 	}
-	if targetURL == "" {
+	targetURLs = uniqueSpeedTestURLs(targetURLs)
+	if len(targetURLs) == 0 {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: "真实连通性测试目标 URL 为空"}
 	}
 
-	client, err := buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, timeout)
+	client, err := buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, clashMgr, connectorType, timeout)
 	if err != nil {
 		return TestResult{ProxyId: proxyId, Ok: false, Error: err.Error()}
 	}
 
-	start := time.Now()
-	resp, err := client.Get(targetURL)
-	latency := time.Since(start).Milliseconds()
-	if err != nil {
-		return TestResult{ProxyId: proxyId, Ok: false, LatencyMs: latency, Error: err.Error()}
+	var lastErr error
+	var lastLatency int64
+	for _, targetURL := range targetURLs {
+		start := time.Now()
+		resp, err := client.Get(targetURL)
+		latency := time.Since(start).Milliseconds()
+		lastLatency = latency
+		if err != nil {
+			lastErr = err
+			if isTimeoutError(err) {
+				if endpointResult := tcpPingFallback(proxyId, src, minPositiveDuration(timeout, 5*time.Second), nil); endpointResult.Ok {
+					return endpointResult
+				}
+			}
+			continue
+		}
+		_ = resp.Body.Close()
+		if isSpeedTestSuccessStatus(resp.StatusCode) {
+			return TestResult{ProxyId: proxyId, Ok: true, LatencyMs: latency}
+		}
+		lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
-		return TestResult{ProxyId: proxyId, Ok: false, LatencyMs: latency, Error: fmt.Sprintf("HTTP %d", resp.StatusCode)}
+	if endpointResult := tcpPingFallback(proxyId, src, minPositiveDuration(timeout, 5*time.Second), nil); endpointResult.Ok {
+		return endpointResult
 	}
-	return TestResult{ProxyId: proxyId, Ok: true, LatencyMs: latency}
+	if lastErr != nil {
+		return TestResult{ProxyId: proxyId, Ok: false, LatencyMs: lastLatency, Error: lastErr.Error()}
+	}
+	return TestResult{ProxyId: proxyId, Ok: false, LatencyMs: lastLatency, Error: "真实连通性测试失败"}
+}
+
+func defaultRealConnectivityTargets() []string {
+	return []string{
+		DefaultSpeedTestURL,
+		"https://cp.cloudflare.com/generate_204",
+		"https://www.cloudflare.com/cdn-cgi/trace",
+		"http://www.msftconnecttest.com/connecttest.txt",
+	}
+}
+
+func normalizeSpeedTestURLs(urls []string) []string {
+	result := make([]string, 0, len(urls))
+	for _, item := range urls {
+		if item = strings.TrimSpace(item); item != "" {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func uniqueSpeedTestURLs(urls []string) []string {
+	result := make([]string, 0, len(urls))
+	seen := map[string]struct{}{}
+	for _, item := range normalizeSpeedTestURLs(urls) {
+		key := strings.ToLower(item)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+	return result
+}
+
+func isSpeedTestSuccessStatus(statusCode int) bool {
+	return statusCode == http.StatusNoContent || (statusCode >= 200 && statusCode < 400)
+}
+
+func minPositiveDuration(a time.Duration, b time.Duration) time.Duration {
+	if a <= 0 {
+		return b
+	}
+	if b <= 0 || a < b {
+		return a
+	}
+	return b
+}
+
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if os.IsTimeout(err) {
+		return true
+	}
+	var netErr net.Error
+	return errors.As(err, &netErr) && netErr.Timeout()
 }

@@ -142,6 +142,53 @@ var migrations = []migration{
 			`ALTER TABLE browser_bookmarks ADD COLUMN open_on_start INTEGER NOT NULL DEFAULT 0`,
 		},
 	},
+	{
+		version: 8,
+		desc:    "添加 Chrome 插件包管理表",
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS browser_extensions (
+				extension_id  TEXT PRIMARY KEY,
+				name          TEXT NOT NULL,
+				version       TEXT NOT NULL DEFAULT '',
+				description   TEXT NOT NULL DEFAULT '',
+				manifest_json TEXT NOT NULL DEFAULT '{}',
+				source_url    TEXT NOT NULL DEFAULT '',
+				install_dir   TEXT NOT NULL,
+				enabled       INTEGER NOT NULL DEFAULT 1,
+				installed_at  TEXT NOT NULL DEFAULT '',
+				updated_at    TEXT NOT NULL DEFAULT ''
+			)`,
+			`CREATE INDEX IF NOT EXISTS idx_browser_extensions_enabled ON browser_extensions(enabled)`,
+		},
+	},
+	{
+		version: 9,
+		desc:    "添加实例插件绑定表",
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS browser_profile_extension_settings (
+				profile_id  TEXT PRIMARY KEY,
+				configured  INTEGER NOT NULL DEFAULT 0,
+				updated_at  TEXT NOT NULL DEFAULT ''
+			)`,
+			`CREATE TABLE IF NOT EXISTS browser_profile_extensions (
+				profile_id    TEXT NOT NULL,
+				extension_id  TEXT NOT NULL,
+				enabled       INTEGER NOT NULL DEFAULT 1,
+				created_at    TEXT NOT NULL DEFAULT '',
+				updated_at    TEXT NOT NULL DEFAULT '',
+				PRIMARY KEY (profile_id, extension_id)
+			)`,
+			`CREATE INDEX IF NOT EXISTS idx_browser_profile_extensions_profile ON browser_profile_extensions(profile_id)`,
+			`CREATE INDEX IF NOT EXISTS idx_browser_profile_extensions_extension ON browser_profile_extensions(extension_id)`,
+		},
+	},
+	{
+		version: 10,
+		desc:    "插件表添加图标缓存字段",
+		stmts: []string{
+			`ALTER TABLE browser_extensions ADD COLUMN icon_data_url TEXT NOT NULL DEFAULT ''`,
+		},
+	},
 	// ── 新版本在此追加，格式：
 	// {
 	//     version: 4,

@@ -38,6 +38,10 @@ export function AutomationScriptExport(arg1) {
   return window['go']['main']['App']['AutomationScriptExport'](arg1);
 }
 
+export function AutomationScriptExportBatchZip(arg1) {
+  return window['go']['main']['App']['AutomationScriptExportBatchZip'](arg1);
+}
+
 export function AutomationScriptExportDirectory(arg1) {
   return window['go']['main']['App']['AutomationScriptExportDirectory'](arg1);
 }
@@ -178,6 +182,58 @@ export function BrowserExportCookies(arg1) {
   return window['go']['main']['App']['BrowserExportCookies'](arg1);
 }
 
+export function BrowserExtensionDelete(arg1) {
+  return window['go']['main']['App']['BrowserExtensionDelete'](arg1);
+}
+
+export function BrowserExtensionInstall(arg1) {
+  return window['go']['main']['App']['BrowserExtensionInstall'](arg1);
+}
+
+export function BrowserExtensionInstallLocalDirectory() {
+  return window['go']['main']['App']['BrowserExtensionInstallLocalDirectory']();
+}
+
+export function BrowserExtensionInstallLocalFile() {
+  return window['go']['main']['App']['BrowserExtensionInstallLocalFile']();
+}
+
+export function BrowserExtensionInstallManualDownloadFile(arg1) {
+  return window['go']['main']['App']['BrowserExtensionInstallManualDownloadFile'](arg1);
+}
+
+export function BrowserExtensionInstallWithProxy(arg1) {
+  return window['go']['main']['App']['BrowserExtensionInstallWithProxy'](arg1);
+}
+
+export function BrowserExtensionList() {
+  return window['go']['main']['App']['BrowserExtensionList']();
+}
+
+export function BrowserExtensionListManualDownloadFiles() {
+  return window['go']['main']['App']['BrowserExtensionListManualDownloadFiles']();
+}
+
+export function BrowserExtensionLookup(arg1) {
+  return window['go']['main']['App']['BrowserExtensionLookup'](arg1);
+}
+
+export function BrowserExtensionLookupWithProxy(arg1) {
+  return window['go']['main']['App']['BrowserExtensionLookupWithProxy'](arg1);
+}
+
+export function BrowserExtensionManualInstallGuide(arg1) {
+  return window['go']['main']['App']['BrowserExtensionManualInstallGuide'](arg1);
+}
+
+export function BrowserExtensionOpenManualDownloadDir() {
+  return window['go']['main']['App']['BrowserExtensionOpenManualDownloadDir']();
+}
+
+export function BrowserExtensionSetEnabled(arg1, arg2) {
+  return window['go']['main']['App']['BrowserExtensionSetEnabled'](arg1, arg2);
+}
+
 export function BrowserGetAllTags() {
   return window['go']['main']['App']['BrowserGetAllTags']();
 }
@@ -250,6 +306,14 @@ export function BrowserProfileDelete(arg1) {
   return window['go']['main']['App']['BrowserProfileDelete'](arg1);
 }
 
+export function BrowserProfileExtensionGet(arg1) {
+  return window['go']['main']['App']['BrowserProfileExtensionGet'](arg1);
+}
+
+export function BrowserProfileExtensionSave(arg1, arg2, arg3) {
+  return window['go']['main']['App']['BrowserProfileExtensionSave'](arg1, arg2, arg3);
+}
+
 export function BrowserProfileGetCode(arg1) {
   return window['go']['main']['App']['BrowserProfileGetCode'](arg1);
 }
@@ -298,6 +362,22 @@ export function BrowserProxyCheckIPHealth(arg1) {
   return window['go']['main']['App']['BrowserProxyCheckIPHealth'](arg1);
 }
 
+export function BrowserProxyCoreDownload(arg1) {
+  return window['go']['main']['App']['BrowserProxyCoreDownload'](arg1);
+}
+
+export function BrowserProxyCoreDownloadInfo(arg1) {
+  return window['go']['main']['App']['BrowserProxyCoreDownloadInfo'](arg1);
+}
+
+export function BrowserProxyCoreOpenLocal(arg1) {
+  return window['go']['main']['App']['BrowserProxyCoreOpenLocal'](arg1);
+}
+
+export function BrowserProxyCoreStatus(arg1) {
+  return window['go']['main']['App']['BrowserProxyCoreStatus'](arg1);
+}
+
 export function BrowserProxyFetchClashByURL(arg1) {
   return window['go']['main']['App']['BrowserProxyFetchClashByURL'](arg1);
 }
@@ -312,6 +392,10 @@ export function BrowserProxyListByGroup(arg1) {
 
 export function BrowserProxyListGroups() {
   return window['go']['main']['App']['BrowserProxyListGroups']();
+}
+
+export function BrowserProxyProbeBrowserPage(arg1) {
+  return window['go']['main']['App']['BrowserProxyProbeBrowserPage'](arg1);
 }
 
 export function BrowserProxyResolveLocation(arg1) {

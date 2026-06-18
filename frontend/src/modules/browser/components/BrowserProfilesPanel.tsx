@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Copy, Key, Play, RotateCcw, Settings, Square, Trash2 } from 'lucide-react'
+import { Copy, Key, Play, Puzzle, RotateCcw, Settings, Square, Trash2 } from 'lucide-react'
 
 import { Badge, Button, Card, Table } from '../../../shared/components'
 import type { TableColumn } from '../../../shared/components/Table'
@@ -35,6 +35,7 @@ interface BrowserProfilesPanelProps {
   onStop: (profileId: string) => void
   onRestart: (profileId: string) => void
   onOpenKeywords: (profile: BrowserProfile) => void
+  onOpenExtensions: (profile: BrowserProfile) => void
   onOpenCopy: (profile: BrowserProfile) => void
   onDelete: (profileId: string) => void
 }
@@ -74,6 +75,7 @@ function BrowserProfileCard({
   onStop,
   onRestart,
   onOpenKeywords,
+  onOpenExtensions,
   onOpenCopy,
   onDelete,
 }: {
@@ -91,6 +93,7 @@ function BrowserProfileCard({
   onStop: (profileId: string) => void
   onRestart: (profileId: string) => void
   onOpenKeywords: (profile: BrowserProfile) => void
+  onOpenExtensions: (profile: BrowserProfile) => void
   onOpenCopy: (profile: BrowserProfile) => void
   onDelete: (profileId: string) => void
 }) {
@@ -139,6 +142,7 @@ function BrowserProfileCard({
           <span className="w-px h-4 bg-[var(--color-border-muted)] mx-1"></span>
           <Button size="sm" variant="ghost" onClick={() => onRestart(profile.profileId)} title="重启" className="px-3" disabled={isBusy}><RotateCcw className="w-4 h-4 mr-1.5" />重启</Button>
           <Button size="sm" variant="ghost" onClick={() => onOpenKeywords(profile)} title="关键字管理" className="px-3" disabled={isBusy}><Key className="w-4 h-4 mr-1.5" />关键字</Button>
+          <Button size="sm" variant="ghost" onClick={() => onOpenExtensions(profile)} title="插件配置" className="px-3" disabled={isBusy}><Puzzle className="w-4 h-4 mr-1.5" />插件</Button>
           <Link to={`/browser/edit/${profile.profileId}`}><Button size="sm" variant="ghost" title="配置" className="px-3" disabled={isBusy}><Settings className="w-4 h-4 mr-1.5" />配置</Button></Link>
           <Button size="sm" variant="ghost" onClick={() => onOpenCopy(profile)} title="克隆" className="px-3" disabled={isBusy}><Copy className="w-4 h-4 mr-1.5" />克隆</Button>
           <Button size="sm" variant="ghost" onClick={() => onDelete(profile.profileId)} title="删除" className="px-3 text-red-500 hover:text-red-600 hover:bg-red-50" disabled={isBusy}><Trash2 className="w-4 h-4 mr-1.5" />删除</Button>
@@ -196,6 +200,7 @@ export function BrowserProfilesPanel({
   onStop,
   onRestart,
   onOpenKeywords,
+  onOpenExtensions,
   onOpenCopy,
   onDelete,
 }: BrowserProfilesPanelProps) {
@@ -292,7 +297,7 @@ export function BrowserProfilesPanel({
     {
       key: 'actions',
       title: '操作',
-      width: 252,
+      width: 292,
       align: 'right',
       render: (_, record) => {
         const isStarting = isProfileStarting(record.profileId)
@@ -312,6 +317,7 @@ export function BrowserProfilesPanel({
             )}
             <Button size="sm" variant="ghost" onClick={() => onRestart(record.profileId)} title="重启" disabled={isBusy}><RotateCcw className="w-3.5 h-3.5" /></Button>
             <Button size="sm" variant="ghost" onClick={() => onOpenKeywords(record)} title="关键字" disabled={isBusy}><Key className="w-3.5 h-3.5" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => onOpenExtensions(record)} title="插件" disabled={isBusy}><Puzzle className="w-3.5 h-3.5" /></Button>
             <Link to={`/browser/edit/${record.profileId}`}><Button size="sm" variant="ghost" title="配置" disabled={isBusy}><Settings className="w-3.5 h-3.5" /></Button></Link>
             <Button size="sm" variant="ghost" onClick={() => onOpenCopy(record)} title="克隆" disabled={isBusy}><Copy className="w-3.5 h-3.5" /></Button>
             <Button size="sm" variant="ghost" onClick={() => onDelete(record.profileId)} title="删除" disabled={isBusy}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>
@@ -353,6 +359,7 @@ export function BrowserProfilesPanel({
                   onStop={onStop}
                   onRestart={onRestart}
                   onOpenKeywords={onOpenKeywords}
+                  onOpenExtensions={onOpenExtensions}
                   onOpenCopy={onOpenCopy}
                   onDelete={onDelete}
                 />

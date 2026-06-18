@@ -87,61 +87,61 @@ func automationScriptTaskKey(scriptID string, selector map[string]any) string {
 	return "script:" + strings.TrimSpace(scriptID)
 }
 
-func (a *App) runPlaywrightScript(ctx context.Context, script automation.ScriptRecord, input automation.ScriptRunRequest) (string, string, string) {
+func (a *App) runPlaywrightScript(ctx context.Context, script automation.ScriptRecord, input automation.ScriptRunRequest) (string, string, string, string) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if a.automationMgr == nil {
-		return "", "脚本执行失败", "automation runtime manager is not initialized"
+		return "", "", "脚本执行失败", "automation runtime manager is not initialized"
 	}
 	if a.config == nil || !a.config.Automation.Enabled {
-		return "", "脚本执行失败", "自动化支持尚未启用"
+		return "", "", "脚本执行失败", "自动化支持尚未启用"
 	}
 	if err := ctx.Err(); err != nil {
-		return "", "脚本执行失败", automationRunContextErrorMessage(err)
+		return "", "", "脚本执行失败", automationRunContextErrorMessage(err)
 	}
 	if err := a.automationMgr.EnsureInstalled(ctx); err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 	if err := ctx.Err(); err != nil {
-		return "", "脚本执行失败", automationRunContextErrorMessage(err)
+		return "", "", "脚本执行失败", automationRunContextErrorMessage(err)
 	}
 
 	state := a.automationMgr.CurrentState()
 	if !state.Ready {
-		return "", "脚本执行失败", "自动化运行时尚未就绪"
+		return "", "", "脚本执行失败", "自动化运行时尚未就绪"
 	}
 
 	paramsText := resolveAutomationRunJSONText(input.ParamsText, script.ParamsText, input.UseScriptParams)
 
 	selector, targetSummary, err := a.resolveAutomationEffectiveSelector(script, input, false)
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 	selector, taskProfileID, err := a.ensurePlaywrightTargetReady(selector)
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 	if err := ctx.Err(); err != nil {
-		return "", "脚本执行失败", automationRunContextErrorMessage(err)
+		return "", "", "脚本执行失败", automationRunContextErrorMessage(err)
 	}
 	params, err := parseAutomationJSONObject(paramsText, false)
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 
 	baseURL, authHeader, authValue, err := a.automationDemoEndpoint()
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 
 	scriptPath, artifactDir, cleanup, err := a.preparePlaywrightScriptWorkspace(state.RuntimeDir, script)
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 	defer cleanup()
 	if err := ctx.Err(); err != nil {
-		return "", "脚本执行失败", automationRunContextErrorMessage(err)
+		return "", "", "脚本执行失败", automationRunContextErrorMessage(err)
 	}
 
 	taskResult, err := a.automationMgr.RunScriptTask(ctx, automation.ScriptTaskRequest{
@@ -156,7 +156,7 @@ func (a *App) runPlaywrightScript(ctx context.Context, script automation.ScriptR
 		Timeout:          automationScriptRunTimeout(input),
 	})
 	if err != nil {
-		return "", "脚本执行失败", err.Error()
+		return "", "", "脚本执行失败", err.Error()
 	}
 	if taskResult.TaskKey == "" && taskProfileID != "" {
 		taskResult.TaskKey = taskProfileID
@@ -166,7 +166,7 @@ func (a *App) runPlaywrightScript(ctx context.Context, script automation.ScriptR
 		if errorText == "" {
 			errorText = "playwright script returned ok=false"
 		}
-		return taskResult.ResultText, appendAutomationRunSummary(taskResult.Summary, targetSummary), errorText
+		return taskResult.ResultText, taskResult.LogText, appendAutomationRunSummary(taskResult.Summary, targetSummary), errorText
 	}
-	return taskResult.ResultText, appendAutomationRunSummary(taskResult.Summary, targetSummary), ""
+	return taskResult.ResultText, taskResult.LogText, appendAutomationRunSummary(taskResult.Summary, targetSummary), ""
 }

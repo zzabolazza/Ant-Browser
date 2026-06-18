@@ -75,6 +75,7 @@ type Settings struct {
 	RestoreLastSession     bool     `json:"restoreLastSession"`
 	StartReadyTimeoutMs    int      `json:"startReadyTimeoutMs"`
 	StartStableWindowMs    int      `json:"startStableWindowMs"`
+	DefaultConnectorType   string   `json:"defaultConnectorType"`
 }
 
 // CoreInput 内核配置输入
@@ -144,11 +145,12 @@ type Manager struct {
 	CodeProvider     CodeProvider
 
 	// DAO 层（注入后使用 SQLite 存储，未注入时降级到 config.yaml）
-	ProfileDAO  ProfileDAO
-	ProxyDAO    ProxyDAO
-	CoreDAO     CoreDAO
-	BookmarkDAO BookmarkDAO
-	GroupDAO    GroupDAO
+	ProfileDAO   ProfileDAO
+	ProxyDAO     ProxyDAO
+	CoreDAO      CoreDAO
+	BookmarkDAO  BookmarkDAO
+	GroupDAO     GroupDAO
+	ExtensionDAO ExtensionDAO
 }
 
 // XrayBridge Xray 桥接进程

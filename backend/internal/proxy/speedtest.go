@@ -66,16 +66,32 @@ func SpeedTest(
 	enableMihomoIPv6()
 
 	resolvedSrc := src
-	if IsChainSocks5Proxy(src) {
+	if IsChainSocks5Proxy(src) || RequiresBridge(src, proxies, proxyId) {
 		if xrayMgr == nil {
-			log.Warn("链式代理测速缺少 Xray 管理器，降级到 TCP ping",
+			log.Warn("代理测速缺少 Xray 管理器，降级到 TCP ping",
 				logger.F("proxy_id", proxyId),
 			)
 			return tcpPingFallback(proxyId, src, cfg.TCPTimeout, log)
 		}
 		bridgeSocksURL, bridgeErr := xrayMgr.EnsureBridge(src, proxies, proxyId)
 		if bridgeErr != nil {
-			log.Warn("链式代理桥接失败，降级到 TCP ping",
+			log.Warn("代理桥接失败，降级到 TCP ping",
+				logger.F("proxy_id", proxyId),
+				logger.F("error", bridgeErr.Error()),
+			)
+			return tcpPingFallback(proxyId, src, cfg.TCPTimeout, log)
+		}
+		resolvedSrc = strings.TrimSpace(bridgeSocksURL)
+	} else if IsSingBoxProtocol(src) {
+		if singboxMgr == nil {
+			log.Warn("sing-box 协议测速缺少管理器，降级到 TCP ping",
+				logger.F("proxy_id", proxyId),
+			)
+			return tcpPingFallback(proxyId, src, cfg.TCPTimeout, log)
+		}
+		bridgeSocksURL, bridgeErr := singboxMgr.EnsureBridge(src, proxies, proxyId)
+		if bridgeErr != nil {
+			log.Warn("sing-box 协议桥接失败，降级到 TCP ping",
 				logger.F("proxy_id", proxyId),
 				logger.F("error", bridgeErr.Error()),
 			)

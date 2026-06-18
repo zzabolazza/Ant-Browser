@@ -135,13 +135,27 @@ async function submitPrompt(page, selector, timeoutMs) {
   return { step: 'submit_prompt', selector: '', submitMode: 'keyboard-enter' }
 }
 
-async function waitForGeneratedImage(page, selector, timeoutMs) {
+async function waitForGeneratedImage(page, selector, timeoutMs, onProgress) {
   const locator = page.locator(selector)
   const deadline = Date.now() + timeoutMs
+  const startedAt = Date.now()
+  let lastProgressAt = 0
   const loginRequiredPattern = /requires you to be logged in|需要登录|登录以获取|登录以|log in|sign in/i
   while (Date.now() < deadline) {
-    if ((await locator.count().catch(() => 0)) > 0 && await locator.first().isVisible().catch(() => false)) {
+    const matchedCount = await locator.count().catch(() => 0)
+    const firstVisible = matchedCount > 0 && await locator.first().isVisible().catch(() => false)
+    if (firstVisible) {
       break
+    }
+    const now = Date.now()
+    if (typeof onProgress === 'function' && now - lastProgressAt >= 10000) {
+      lastProgressAt = now
+      onProgress({
+        elapsedMs: now - startedAt,
+        remainingMs: Math.max(0, deadline - now),
+        matchedCount,
+        firstVisible,
+      })
     }
     const bodyText = await page.locator('body').innerText({ timeout: 1000 }).catch(() => '')
     if (loginRequiredPattern.test(bodyText)) {
@@ -167,6 +181,14 @@ async function waitForGeneratedImage(page, selector, timeoutMs) {
     }
   })
   return { step: 'wait_image', selector, imageInfo }
+}
+
+function fileSize(pathname) {
+  try {
+    return fs.statSync(pathname).size
+  } catch {
+    return 0
+  }
 }
 
 async function downloadByButton(page, selector, timeoutMs) {
@@ -237,9 +259,15 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
     ? artifact(outputFileName)
     : resolveOutputPath(artifactsDir, outputFileName)
   const steps = []
+  const writeLog = (event, details = {}) => {
+    if (typeof log === 'function') {
+      log(`web-image-generate-download:${event}`, details)
+    }
+  }
 
   const missing = buildMissingSetup(selectors, pageUrl)
   if (missing.length > 0) {
+    writeLog('setup-missing', { missing, pageUrl })
     return {
       ok: false,
       status: 'needs_page_info',
@@ -255,16 +283,29 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
     }
   }
 
-  log && log('web-image-generate-download:start', {
+  writeLog('start', {
     pageUrl,
     promptLength: prompt.length,
+    outputFileName,
+    timeoutMs,
+    waitAfterLoadMs,
+    settleMs,
+    captureScreenshot,
     hasDownloadButton: Boolean(normalizeText(selectors.downloadButton)),
+    selectors: {
+      hasNewSessionButton: Boolean(normalizeText(selectors.newSessionButton)),
+      hasPromptInput: Boolean(normalizeText(selectors.promptInput)),
+      hasSendButton: Boolean(normalizeText(selectors.sendButton)),
+      hasGeneratedImage: Boolean(normalizeText(selectors.generatedImage)),
+      hasDownloadButton: Boolean(normalizeText(selectors.downloadButton)),
+    },
   })
 
   if (typeof useBrowser !== 'function') {
     throw new Error('automation runtime does not provide useBrowser')
   }
 
+  writeLog('open-page:start', { pageUrl, waitUntil: 'domcontentloaded', reuseCurrentPage: true })
   const { page } = await useBrowser({
     url: pageUrl,
     waitUntil: 'domcontentloaded',
@@ -273,13 +314,18 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
     bringToFront: true,
   })
   if (waitAfterLoadMs > 0) {
+    writeLog('open-page:wait-after-load', { waitAfterLoadMs })
     await page.waitForTimeout(waitAfterLoadMs)
   }
-  steps.push({ step: 'open_page', url: pageUrl })
+  steps.push({ step: 'open_page', url: pageUrl, currentUrl: page.url() })
+  writeLog('open-page:done', { requestedUrl: pageUrl, currentUrl: page.url() })
 
+  writeLog('login-check:start', { currentUrl: page.url() })
   const loginRequired = await detectLoginRequired(page)
   if (loginRequired) {
+    writeLog('login-check:failed', loginRequired)
     const screenshotPath = await captureScreenshotIfNeeded(page, true, path.dirname(outputPath), 'needs-login')
+    writeLog('screenshot:capture', { reason: 'needs_login', screenshotPath })
     return {
       ok: false,
       status: 'needs_login',
@@ -288,18 +334,39 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
       steps: [...steps, { step: 'check_login', ok: false, ...loginRequired }],
     }
   }
+  writeLog('login-check:passed', { currentUrl: page.url() })
 
   if (normalizeText(selectors.newSessionButton)) {
-    steps.push(await clickWhenReady(page, selectors.newSessionButton, timeoutMs, 'create_new_session'))
+    writeLog('new-session:start', { selector: selectors.newSessionButton })
+    const step = await clickWhenReady(page, selectors.newSessionButton, timeoutMs, 'create_new_session')
+    steps.push(step)
+    writeLog('new-session:done', step)
   } else {
-    steps.push({ step: 'create_new_session', skipped: true, reason: 'selectors.newSessionButton is empty' })
+    const step = { step: 'create_new_session', skipped: true, reason: 'selectors.newSessionButton is empty' }
+    steps.push(step)
+    writeLog('new-session:skipped', step)
   }
-  steps.push(await fillPrompt(page, selectors.promptInput, prompt, timeoutMs))
-  steps.push(await submitPrompt(page, selectors.sendButton, timeoutMs))
-  const generatedImageStep = await waitForGeneratedImage(page, selectors.generatedImage, timeoutMs)
+
+  writeLog('prompt-input:start', { selector: selectors.promptInput, promptLength: prompt.length })
+  const promptStep = await fillPrompt(page, selectors.promptInput, prompt, timeoutMs)
+  steps.push(promptStep)
+  writeLog('prompt-input:done', promptStep)
+
+  writeLog('submit:start', { selector: selectors.sendButton || '', mode: normalizeText(selectors.sendButton) ? 'button' : 'keyboard-enter' })
+  const submitStep = await submitPrompt(page, selectors.sendButton, timeoutMs)
+  steps.push(submitStep)
+  writeLog('submit:done', submitStep)
+
+  writeLog('wait-image:start', { selector: selectors.generatedImage, timeoutMs })
+  const generatedImageStep = await waitForGeneratedImage(page, selectors.generatedImage, timeoutMs, (progress) => {
+    writeLog('wait-image:progress', progress)
+  })
   steps.push(generatedImageStep)
+  writeLog('wait-image:done', generatedImageStep)
   if (generatedImageStep && generatedImageStep.ok === false) {
+    writeLog('wait-image:failed', generatedImageStep)
     const screenshotPath = await captureScreenshotIfNeeded(page, true, path.dirname(outputPath), 'needs-login')
+    writeLog('screenshot:capture', { reason: generatedImageStep.status || 'failed', screenshotPath })
     return {
       ok: false,
       status: generatedImageStep.status || 'failed',
@@ -310,11 +377,14 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
   }
 
   if (settleMs > 0) {
+    writeLog('settle:start', { settleMs })
     await page.waitForTimeout(settleMs)
+    writeLog('settle:done', { settleMs })
   }
 
   let downloadInfo
   if (normalizeText(selectors.downloadButton)) {
+    writeLog('download:start', { mode: 'download-button', selector: selectors.downloadButton, outputPath })
     const download = await downloadByButton(page, selectors.downloadButton, timeoutMs)
     await download.saveAs(outputPath)
     downloadInfo = {
@@ -322,11 +392,17 @@ exports.run = async function run({ useBrowser, params = {}, artifact, artifactsD
       suggestedFilename: download.suggestedFilename(),
     }
   } else {
+    writeLog('download:start', { mode: 'image-url', selector: selectors.generatedImage, outputPath })
     downloadInfo = await downloadByImageURL(page, selectors.generatedImage, timeoutMs, outputPath)
   }
-  steps.push({ step: 'download_image', outputPath, ...downloadInfo })
+  const downloadStep = { step: 'download_image', outputPath, bytes: fileSize(outputPath), ...downloadInfo }
+  steps.push(downloadStep)
+  writeLog('download:done', downloadStep)
 
+  writeLog('screenshot:optional-start', { enabled: captureScreenshot })
   const screenshotPath = await captureScreenshotIfNeeded(page, captureScreenshot, path.dirname(outputPath), 'done')
+  writeLog('screenshot:optional-done', { enabled: captureScreenshot, screenshotPath })
+  writeLog('completed', { outputPath, bytes: fileSize(outputPath), screenshotPath, stepCount: steps.length })
 
   return {
     ok: true,

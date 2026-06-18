@@ -80,6 +80,7 @@ export function normalizeAutomationScriptRunRecord(
     summary: String(payload?.summary || ""),
     error: String(payload?.error || ""),
     resultText: String(payload?.resultText || ""),
+    logText: String(payload?.logText || ""),
     startedAt: String(payload?.startedAt || ""),
     finishedAt: String(payload?.finishedAt || ""),
     durationMs: Number(payload?.durationMs) || 0,

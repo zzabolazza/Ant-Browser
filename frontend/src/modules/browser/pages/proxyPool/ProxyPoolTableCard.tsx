@@ -13,6 +13,7 @@ interface ProxyPoolTableCardProps {
   filterGroup: string
   filterKeyword: string
   filterProtocol: string
+  filterAvailableOnly: boolean
   globalAutoRefreshEnabled: boolean
   globalRefreshInterval: number
   globalRefreshIntervalM: string
@@ -26,6 +27,7 @@ interface ProxyPoolTableCardProps {
   onFilterGroupChange: (nextValue: string) => void
   onFilterKeywordChange: (nextValue: string) => void
   onFilterProtocolChange: (nextValue: string) => void
+  onFilterAvailableOnlyChange: (checked: boolean) => void
   onGlobalAutoRefreshEnabledChange: (checked: boolean) => void
   onGlobalRefreshIntervalMChange: (nextValue: string) => void
   onOpenBatchDelete: () => void
@@ -56,6 +58,7 @@ export function ProxyPoolTableCard({
   filterGroup,
   filterKeyword,
   filterProtocol,
+  filterAvailableOnly,
   globalAutoRefreshEnabled,
   globalRefreshInterval,
   globalRefreshIntervalM,
@@ -69,6 +72,7 @@ export function ProxyPoolTableCard({
   onFilterGroupChange,
   onFilterKeywordChange,
   onFilterProtocolChange,
+  onFilterAvailableOnlyChange,
   onGlobalAutoRefreshEnabledChange,
   onGlobalRefreshIntervalMChange,
   onOpenBatchDelete,
@@ -91,7 +95,7 @@ export function ProxyPoolTableCard({
   warmingBridgeIds,
   warmingAllBridges,
 }: ProxyPoolTableCardProps) {
-  const hasActiveFilters = filterProtocol !== 'all' || !!filterKeyword || filterGroup !== 'all'
+  const hasActiveFilters = filterProtocol !== 'all' || !!filterKeyword || filterGroup !== 'all' || filterAvailableOnly
 
   const renderLatency = (record: ProxyDisplayInfo) => {
     if (record.proxyConfig === 'direct://') {
@@ -327,6 +331,15 @@ export function ProxyPoolTableCard({
         {hasActiveFilters && (
           <Button size="sm" variant="ghost" onClick={onClearFilters}>清除筛选</Button>
         )}
+        <label className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={filterAvailableOnly}
+            onChange={event => onFilterAvailableOnlyChange(event.target.checked)}
+            className="w-4 h-4 rounded border-[var(--color-border-default)] accent-[var(--color-accent)] cursor-pointer"
+          />
+          只展示可用
+        </label>
         <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-2 py-1.5">
           <span className="text-xs text-[var(--color-text-muted)]">全局自动刷新</span>
           <Switch

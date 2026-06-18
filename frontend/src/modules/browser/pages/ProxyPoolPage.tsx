@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ConfirmModal, toast } from '../../../shared/components'
 import type { SortOrder } from '../../../shared/components/Table'
 import type { BrowserProxy, ProxyIPHealthResult } from '../types'
@@ -22,6 +22,7 @@ import {
 import { ProxyPoolHeader } from './proxyPool/ProxyPoolHeader'
 import { ProxyPoolTableCard } from './proxyPool/ProxyPoolTableCard'
 import { ProxyPoolCheckSettingsModal } from './proxyPool/ProxyPoolCheckSettingsModal'
+import { ProxyCoreDownloadModal } from './proxyPool/ProxyCoreDownloadModal'
 import { useProxySourceRefresh } from './proxyPool/useProxySourceRefresh'
 import { useProxyImportFlow } from './proxyPool/useProxyImportFlow'
 import { useProxyChecks } from './proxyPool/useProxyChecks'
@@ -29,16 +30,41 @@ import { useProxySelection } from './proxyPool/useProxySelection'
 import { useProxyCheckSettingsModal } from './proxyPool/useProxyCheckSettingsModal'
 import { useProxyGlobalRefreshConfig } from './proxyPool/useProxyGlobalRefreshConfig'
 import { useProxyDeleteFlow } from './proxyPool/useProxyDeleteFlow'
+import { useProxyCoreDownload } from './proxyPool/useProxyCoreDownload'
+import { useProxyPoolFilter } from './proxyPool/useProxyPoolFilter'
 
 export function ProxyPoolPage() {
   const [proxies, setProxies] = useState<BrowserProxy[]>([])
   const [displayList, setDisplayList] = useState<ProxyDisplayInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const {
+    browserSettings,
+    connectorSwitching,
+    coreDownloadOpen,
+    coreDownloadType,
+    setCoreDownloadType,
+    coreDownloadGOOS,
+    setCoreDownloadGOOS,
+    coreDownloadGOARCH,
+    setCoreDownloadGOARCH,
+    coreDownloadProxy,
+    setCoreDownloadProxy,
+    coreDownloadProgress,
+    currentCoreStatus,
+    downloadCoreStatus,
+    downloadCoreStatusLoading,
+    loadBrowserSettings,
+    handleSwitchConnector,
+    handleStartCoreDownload,
+    openCoreDownload,
+    closeCoreDownload,
+  } = useProxyCoreDownload()
   const [groups, setGroups] = useState<string[]>([])
 
   const [filterProtocol, setFilterProtocol] = useState<string>('all')
   const [filterKeyword, setFilterKeyword] = useState('')
   const [filterGroup, setFilterGroup] = useState<string>('all')
+  const [filterAvailableOnly, setFilterAvailableOnly] = useState(false)
   const [sortColumn, setSortColumn] = useState<string>('') // 默认不排序
   const [sortOrder, setSortOrder] = useState<SortOrder>(undefined)
 
@@ -73,55 +99,10 @@ export function ProxyPoolPage() {
     groupName: '',
   })
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    loadProxies()
-  }, [])
-
-
-  const loadProxies = async () => {
-    setLoading(true)
-    try {
-      const raw = await fetchBrowserProxies()
-      const proxyList = ensureBuiltinProxies(raw)
-      const persistedLatency: Record<string, number> = {}
-      const persistedIPHealth: Record<string, ProxyIPHealthResult> = {}
-      proxyList.forEach(proxy => {
-        if (proxy.lastTestedAt) {
-          persistedLatency[proxy.proxyId] = (proxy.lastTestOk ?? false)
-            ? (proxy.lastLatencyMs ?? -2)
-            : -2
-        }
-        if (proxy.lastIPHealthJson) {
-          try {
-            const parsed = JSON.parse(proxy.lastIPHealthJson) as ProxyIPHealthResult
-            if (parsed && typeof parsed === 'object' && parsed.proxyId) {
-              persistedIPHealth[proxy.proxyId] = parsed
-            }
-          } catch {
-            // ignore bad historical json
-          }
-        }
-      })
-
-      setProxies(proxyList)
-      setDisplayList(toDisplayList(proxyList))
-      setLatencyMap(prev => ({ ...persistedLatency, ...prev }))
-      setIPHealthMap(prev => ({ ...persistedIPHealth, ...prev }))
-      const grps = await fetchBrowserProxyGroups()
-      setGroups(grps)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
-  // 直接保存完整列表，内置代理保护由后端负责
   const saveProxies = useCallback(async (list: BrowserProxy[]) => {
     await saveBrowserProxies(list)
     setProxies(list)
     setDisplayList(toDisplayList(list))
-    // 刷新分组列表（可能有新分组加入）
     const grps = await fetchBrowserProxyGroups()
     setGroups(grps)
   }, [])
@@ -178,64 +159,58 @@ export function ProxyPoolPage() {
     openIPHealthDetail,
   } = useProxyChecks({ proxies })
 
-  const protocolOptions = useMemo(
-    () => ['all', ...Array.from(new Set(displayList.map(p => p.type).filter(t => t !== '-')))],
-    [displayList]
-  )
+  const loadProxies = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [list, groupList] = await Promise.all([
+        fetchBrowserProxies(),
+        fetchBrowserProxyGroups(),
+      ])
+      const finalList = await ensureBuiltinProxies(list)
+      setProxies(finalList)
+      setDisplayList(toDisplayList(finalList))
+      setGroups(groupList)
 
-  const getLatencySortTuple = (proxyId: string): [number, number] => {
-    const v = latencyMap[proxyId]
-    if (v === undefined) return [5, Number.MAX_SAFE_INTEGER]
-    if (v === -1) return [1, Number.MAX_SAFE_INTEGER] // 测试中
-    if (v === -2) return [2, Number.MAX_SAFE_INTEGER] // 超时
-    if (v === -3) return [3, Number.MAX_SAFE_INTEGER] // 不支持
-    if (v === -4) return [4, Number.MAX_SAFE_INTEGER] // 失败
-    return [0, v] // 正常延迟
-  }
+      setLatencyMap(prev => {
+        const validIds = new Set(finalList.map(p => p.proxyId))
+        const next: Record<string, number> = {}
+        Object.entries(prev).forEach(([proxyId, latency]) => {
+          if (validIds.has(proxyId)) next[proxyId] = latency
+        })
+        return next
+      })
 
-  const compareText = (a: string, b: string) => a.localeCompare(b, 'zh-CN')
-
-  const compareByColumn = (a: ProxyDisplayInfo, b: ProxyDisplayInfo, column: string) => {
-    switch (column) {
-      case 'proxyName':
-        return compareText(a.proxyName || '', b.proxyName || '')
-      case 'groupName':
-        return compareText(a.groupName || '', b.groupName || '')
-      case 'type':
-        return compareText(a.type || '', b.type || '')
-      case 'server':
-        return compareText(a.server || '', b.server || '')
-      case 'port':
-      
-
-  return (a.port || 0) - (b.port || 0)
-      case 'latency': {
-        const [rankA, valA] = getLatencySortTuple(a.proxyId)
-        const [rankB, valB] = getLatencySortTuple(b.proxyId)
-        if (rankA !== rankB) return rankA - rankB
-        if (valA !== valB) return valA - valB
-        return compareText(a.proxyName || '', b.proxyName || '')
-      }
-      default:
-        return 0
+      setIPHealthMap(prev => {
+        const validIds = new Set(finalList.map(p => p.proxyId))
+        const next: Record<string, ProxyIPHealthResult> = {}
+        Object.entries(prev).forEach(([proxyId, health]) => {
+          if (validIds.has(proxyId)) next[proxyId] = health
+        })
+        return next
+      })
+    } catch (error: any) {
+      toast.error(error?.message || '加载代理失败')
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [setIPHealthMap, setLatencyMap])
 
-  const filteredList = useMemo(() => {
-    const filtered = displayList.filter(p => {
-      const matchProtocol = filterProtocol === 'all' || p.type === filterProtocol
-      const matchKeyword = !filterKeyword || p.proxyName.toLowerCase().includes(filterKeyword.toLowerCase()) || p.server.toLowerCase().includes(filterKeyword.toLowerCase())
-      const matchGroup = filterGroup === 'all' || p.groupName === filterGroup
-      return matchProtocol && matchKeyword && matchGroup
-    })
+  useEffect(() => {
+    void loadProxies()
+    void loadBrowserSettings()
+  }, [loadProxies, loadBrowserSettings])
 
-    if (!sortColumn || !sortOrder) return filtered
-
-    return [...filtered].sort((a, b) => {
-      const cmp = compareByColumn(a, b, sortColumn)
-      return sortOrder === 'asc' ? cmp : -cmp
-    })
-  }, [displayList, filterProtocol, filterKeyword, filterGroup, sortColumn, sortOrder, latencyMap])
+  const { protocolOptions, filteredList } = useProxyPoolFilter({
+    displayList,
+    filterProtocol,
+    filterKeyword,
+    filterGroup,
+    filterAvailableOnly,
+    sortColumn,
+    sortOrder,
+    latencyMap,
+    ipHealthMap,
+  })
 
   const {
     selectedIds,
@@ -318,12 +293,6 @@ export function ProxyPoolPage() {
       setSaving(false)
     }
   }
-
-
-
-
-
-
   const {
     deleteConfirmOpen,
     setDeleteConfirmOpen,
@@ -334,17 +303,20 @@ export function ProxyPoolPage() {
     <div className="space-y-5 animate-fade-in">
       <ProxyPoolHeader
         checkingAllIPHealth={checkingAllIPHealth}
+        connectorSwitching={connectorSwitching}
+        currentConnectorStatus={currentCoreStatus?.message || '未知'}
+        currentConnectorType={browserSettings?.defaultConnectorType || 'xray'}
         hasURLImportSources={hasURLImportSources}
         onCheckAllIPHealth={() => void handleCheckAllIPHealth(filteredList)}
         onOpenSettings={() => void openCheckSettings()}
+        onSwitchConnector={() => void handleSwitchConnector()}
         onOpenImport={() => setImportModalOpen(true)}
+        onOpenCoreDownload={openCoreDownload}
         onRefreshAllSources={() => void handleRefreshAllSources(false)}
         onTestAll={() => void handleTestAll(filteredList)}
-        onWarmupAll={() => void handleWarmupAll(filteredList)}
         refreshingAllSources={refreshingAllSources}
         testingAll={testingAll}
         totalCount={filteredList.length}
-        warmingAllBridges={warmingAllBridges}
       />
 
       <ProxyPoolTableCard
@@ -354,6 +326,7 @@ export function ProxyPoolPage() {
         filterGroup={filterGroup}
         filterKeyword={filterKeyword}
         filterProtocol={filterProtocol}
+        filterAvailableOnly={filterAvailableOnly}
         globalAutoRefreshEnabled={globalAutoRefreshEnabled}
         globalRefreshInterval={globalRefreshInterval}
         globalRefreshIntervalM={globalRefreshIntervalM}
@@ -366,12 +339,14 @@ export function ProxyPoolPage() {
           setFilterProtocol('all')
           setFilterKeyword('')
           setFilterGroup('all')
+          setFilterAvailableOnly(false)
         }}
         onDelete={handleDeleteClick}
         onEdit={handleEdit}
         onFilterGroupChange={setFilterGroup}
         onFilterKeywordChange={setFilterKeyword}
         onFilterProtocolChange={setFilterProtocol}
+        onFilterAvailableOnlyChange={setFilterAvailableOnly}
         onGlobalAutoRefreshEnabledChange={setGlobalAutoRefreshEnabled}
         onGlobalRefreshIntervalMChange={setGlobalRefreshIntervalM}
         onOpenBatchDelete={() => setBatchDeleteConfirmOpen(true)}
@@ -482,6 +457,23 @@ export function ProxyPoolPage() {
         onCheckTargetsTextChange={setCheckTargetsText}
       />
 
+      <ProxyCoreDownloadModal
+        open={coreDownloadOpen}
+        core={coreDownloadType}
+        goos={coreDownloadGOOS}
+        goarch={coreDownloadGOARCH}
+        downloadProxy={coreDownloadProxy}
+        progress={coreDownloadProgress}
+        status={downloadCoreStatus}
+        statusLoading={downloadCoreStatusLoading}
+        onCoreChange={setCoreDownloadType}
+        onGOOSChange={setCoreDownloadGOOS}
+        onGOARCHChange={setCoreDownloadGOARCH}
+        onDownloadProxyChange={setCoreDownloadProxy}
+        onClose={closeCoreDownload}
+        onStart={handleStartCoreDownload}
+      />
+
       <ConfirmModal open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} onConfirm={handleDeleteConfirm}
         title="确认删除" content="确定要删除这个代理吗？此操作不可恢复。" confirmText="删除" danger />
 
@@ -490,5 +482,3 @@ export function ProxyPoolPage() {
     </div>
   )
 }
-
-

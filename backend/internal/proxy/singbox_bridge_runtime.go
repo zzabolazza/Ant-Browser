@@ -30,7 +30,13 @@ func (m *SingBoxManager) EnsureBridge(proxyConfig string, proxies []config.Brows
 	key := computeNodeKey(src)
 
 	if socksURL, reused := m.tryReuseBridge(key); reused {
-		log.Info("复用 sing-box 桥接", logger.F("key", key[:8]), logger.F("socks_url", socksURL))
+		log.Info("复用 sing-box 桥接", logger.F("engine", "sing-box"), logger.F("key", key[:8]), logger.F("socks_url", socksURL))
+		return socksURL, nil
+	}
+	unlockLaunch := m.lockLaunchForKey(key)
+	defer unlockLaunch()
+	if socksURL, reused := m.tryReuseBridge(key); reused {
+		log.Info("复用 sing-box 桥接", logger.F("engine", "sing-box"), logger.F("key", key[:8]), logger.F("socks_url", socksURL))
 		return socksURL, nil
 	}
 
@@ -62,7 +68,7 @@ func (m *SingBoxManager) EnsureBridge(proxyConfig string, proxies []config.Brows
 		}
 
 		if socksURL, reused := m.registerBridge(key, bridge); reused {
-			log.Info("复用已就绪 sing-box 桥接", logger.F("key", key[:8]), logger.F("socks_url", socksURL))
+			log.Info("复用已就绪 sing-box 桥接", logger.F("engine", "sing-box"), logger.F("key", key[:8]), logger.F("socks_url", socksURL))
 			bridge.Stopping = true
 			m.stopBridgeProcess(bridge)
 			return socksURL, nil
@@ -112,7 +118,7 @@ func (m *SingBoxManager) launchBridgeOnPort(log *logger.Logger, key string, bina
 		LastUsedAt: time.Now(),
 	}
 	bridge.startExitWatcher()
-	log.Info("sing-box 启动", logger.F("key", key[:8]), logger.F("pid", bridge.Pid), logger.F("port", port))
+	log.Info("sing-box 内核进程已启动", logger.F("engine", "sing-box"), logger.F("key", key[:8]), logger.F("pid", bridge.Pid), logger.F("port", port))
 
 	if err := m.waitBridgeSocksReady(bridge, 10*time.Second); err != nil {
 		if stderrFile != nil {
@@ -252,6 +258,10 @@ func (m *SingBoxManager) logBridgeStartupError(log *logger.Logger, cfgPath strin
 
 // StopAll 关闭所有 sing-box 桥接进程
 func (m *SingBoxManager) StopAll() {
+	m.stopOnce.Do(func() {
+		close(m.stopCh)
+	})
+
 	m.mu.Lock()
 	bridges := make([]*SingBoxBridge, 0, len(m.Bridges))
 	for key, bridge := range m.Bridges {

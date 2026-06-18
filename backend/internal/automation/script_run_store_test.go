@@ -14,6 +14,7 @@ func TestScriptRunStoreSaveAndList(t *testing.T) {
 		ScriptName: "脚本 1",
 		Status:     "success",
 		Summary:    "ok",
+		LogText:    "2026-04-02T09:00:00Z 打开页面",
 		StartedAt:  "2026-04-02T09:00:00Z",
 		FinishedAt: "2026-04-02T09:00:01Z",
 		DurationMs: 1000,
@@ -23,6 +24,9 @@ func TestScriptRunStoreSaveAndList(t *testing.T) {
 	}
 	if first.ID != "run-1" {
 		t.Fatalf("expected run id run-1, got %q", first.ID)
+	}
+	if first.LogText != "2026-04-02T09:00:00Z 打开页面" {
+		t.Fatalf("expected run log text to be persisted, got %q", first.LogText)
 	}
 
 	if _, err := store.Save(ScriptRunRecord{

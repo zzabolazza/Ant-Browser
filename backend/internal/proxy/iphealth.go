@@ -159,7 +159,7 @@ func buildIPHealthHTTPClient(
 	singboxMgr *SingBoxManager,
 	timeout time.Duration,
 ) (*http.Client, error) {
-	return buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, timeout)
+	return buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, nil, config.BrowserConnectorXray, timeout)
 }
 
 func resolveIPHealthSource(cfg *IPHealthConfig, targetURL string) string {

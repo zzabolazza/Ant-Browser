@@ -88,6 +88,22 @@ func (a *App) shouldBlockClose(ctx context.Context) bool {
 	return backend.ShouldBlockClose(a.App, ctx)
 }
 
+func (a *App) BrowserExtensionManualInstallGuide(query string) (backend.BrowserExtensionManualInstallGuide, error) {
+	return a.App.BrowserExtensionManualInstallGuide(query)
+}
+
+func (a *App) BrowserExtensionOpenManualDownloadDir() error {
+	return a.App.BrowserExtensionOpenManualDownloadDir()
+}
+
+func (a *App) BrowserExtensionListManualDownloadFiles() ([]backend.BrowserExtensionManualDownloadFile, error) {
+	return a.App.BrowserExtensionListManualDownloadFiles()
+}
+
+func (a *App) BrowserExtensionInstallManualDownloadFile(fileName string) (backend.BrowserExtension, error) {
+	return a.App.BrowserExtensionInstallManualDownloadFile(fileName)
+}
+
 func main() {
 	// 确定应用根目录：
 	// 1. 生产环境：exe 所在目录（快捷方式启动时 CWD 可能不对，需要修正）
@@ -137,6 +153,17 @@ func main() {
 	if err := backend.EnsureRuntimeLayout(appRoot); err != nil {
 		log.Printf("准备用户数据目录失败: %v", err)
 	}
+	singleInstance, primaryInstance, err := acquireSingleInstance(appRoot)
+	if err != nil {
+		log.Printf("单实例检查失败: %v", err)
+	}
+	if !primaryInstance {
+		if startupDebugEnabled {
+			log.Printf("检测到已有应用实例，已请求唤醒并退出当前进程")
+		}
+		return
+	}
+	defer singleInstance.Close()
 	if startupDebugEnabled && backend.RuntimeUsesDetachedState(appRoot) {
 		log.Printf("检测到安装目录需要只读运行，状态目录切换到: %s", backend.RuntimeStateRoot(appRoot))
 	}
@@ -169,6 +196,18 @@ func main() {
 
 	var wailsCtx context.Context
 	startupReached := make(chan struct{})
+	go func() {
+		for range singleInstance.activation {
+			if wailsCtx == nil {
+				continue
+			}
+			runtime.WindowShow(wailsCtx)
+			runtime.WindowUnminimise(wailsCtx)
+			runtime.WindowSetAlwaysOnTop(wailsCtx, true)
+			runtime.WindowSetAlwaysOnTop(wailsCtx, false)
+			activateExistingSingleInstanceWindow(os.Getpid())
+		}
+	}()
 
 	if startupDebugEnabled {
 		go func() {
@@ -222,6 +261,7 @@ func main() {
 				OnShow: func() {
 					runtime.WindowShow(wailsCtx)
 					runtime.WindowUnminimise(wailsCtx)
+					activateExistingSingleInstanceWindow(os.Getpid())
 				},
 				OnQuitAppOnly: func() {
 					app.QuitAppOnly()

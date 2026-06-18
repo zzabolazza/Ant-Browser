@@ -435,6 +435,20 @@ async function runScriptTask(payload, chromium) {
       artifacts: Array.from(new Set(artifacts)),
       result: normalizedResult,
     };
+  } catch (error) {
+    return {
+      ok: false,
+      summary: '脚本执行失败',
+      error: error && error.message ? error.message : String(error),
+      title: '',
+      url: '',
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      isolatedPage: false,
+      logs,
+      artifacts: Array.from(new Set(artifacts)),
+      result: null,
+    };
   } finally {
     await Promise.all(Array.from(connectedBrowsers, (browser) => closeBrowserConnection(browser)));
   }

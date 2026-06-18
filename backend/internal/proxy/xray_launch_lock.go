@@ -2,7 +2,7 @@ package proxy
 
 import "sync"
 
-type xrayLaunchLock struct {
+type bridgeLaunchLock struct {
 	mu   sync.Mutex
 	refs int
 }
@@ -13,11 +13,11 @@ func (m *XrayManager) lockLaunchForKey(key string) func() {
 	}
 	m.mu.Lock()
 	if m.launchLocks == nil {
-		m.launchLocks = make(map[string]*xrayLaunchLock)
+		m.launchLocks = make(map[string]*bridgeLaunchLock)
 	}
 	lock := m.launchLocks[key]
 	if lock == nil {
-		lock = &xrayLaunchLock{}
+		lock = &bridgeLaunchLock{}
 		m.launchLocks[key] = lock
 	}
 	lock.refs++

@@ -53,6 +53,10 @@ const BookmarkSettingsPage = lazyNamed(
   () => import("../modules/browser/pages/BookmarkSettingsPage"),
   "BookmarkSettingsPage",
 );
+const ExtensionManagementPage = lazyNamed(
+  () => import("../modules/browser/pages/ExtensionManagementPage"),
+  "ExtensionManagementPage",
+);
 const LaunchApiDocsPage = lazyNamed(
   () => import("../modules/browser/pages/LaunchApiDocsPage"),
   "LaunchApiDocsPage",
@@ -89,6 +93,7 @@ export function AppRoutes() {
       <Route path="/browser/logs" element={<BrowserLogsPage />} />
       <Route path="/browser/proxy-pool" element={<ProxyPoolPage />} />
       <Route path="/browser/cores" element={<CoreManagementPage />} />
+      <Route path="/browser/extensions" element={<ExtensionManagementPage />} />
       <Route path="/browser/bookmarks" element={<BookmarkSettingsPage />} />
       <Route path="/browser/automation" element={<AutomationPage />} />
       <Route

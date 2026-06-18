@@ -19,6 +19,26 @@ type ProxyTestResult struct {
 	Error     string `json:"error"`
 }
 
+type ProxyBrowserProbeRequest struct {
+	ProxyId     string   `json:"proxyId"`
+	URLs        []string `json:"urls"`
+	Concurrency int      `json:"concurrency"`
+	TimeoutMs   int      `json:"timeoutMs"`
+}
+
+type ProxyBrowserProbeResult struct {
+	ProxyId     string `json:"proxyId"`
+	Ok          bool   `json:"ok"`
+	TotalMs     int64  `json:"totalMs"`
+	AverageMs   int64  `json:"averageMs"`
+	P95Ms       int64  `json:"p95Ms"`
+	Bytes       int64  `json:"bytes"`
+	Completed   int    `json:"completed"`
+	Failed      int    `json:"failed"`
+	Concurrency int    `json:"concurrency"`
+	Error       string `json:"error"`
+}
+
 // ProxyBridgeWarmupResult 代理桥接预热结果。
 type ProxyBridgeWarmupResult struct {
 	ProxyId   string `json:"proxyId"`

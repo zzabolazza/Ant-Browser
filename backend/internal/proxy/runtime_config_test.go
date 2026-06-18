@@ -31,6 +31,35 @@ func TestXrayRuntimeConfigUsesWarningLogLevel(t *testing.T) {
 	}
 }
 
+func TestXrayRuntimeConfigEnablesBrowserSniffing(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Browser.UserDataRoot = t.TempDir()
+	manager := &XrayManager{Config: cfg, AppRoot: t.TempDir()}
+
+	cfgPath, err := manager.buildRuntimeConfigWithRoute(
+		"sniffing-test",
+		[]interface{}{map[string]interface{}{"protocol": "freedom", "tag": "proxy-out"}},
+		[]interface{}{},
+		19094,
+		"",
+	)
+	if err != nil {
+		t.Fatalf("buildRuntimeConfigWithRoute returned error: %v", err)
+	}
+
+	runtimeConfig := readRuntimeConfigMap(t, cfgPath)
+	inbounds := runtimeConfig["inbounds"].([]interface{})
+	inbound := inbounds[0].(map[string]interface{})
+	sniffing := inbound["sniffing"].(map[string]interface{})
+	if sniffing["enabled"] != true {
+		t.Fatalf("sniffing.enabled = %v, want true", sniffing["enabled"])
+	}
+	destOverride := sniffing["destOverride"].([]interface{})
+	if len(destOverride) != 3 || destOverride[0] != "http" || destOverride[1] != "tls" || destOverride[2] != "quic" {
+		t.Fatalf("sniffing.destOverride = %#v, want [http tls quic]", destOverride)
+	}
+}
+
 func TestSingBoxRuntimeConfigUsesWarnLogLevel(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Browser.UserDataRoot = t.TempDir()

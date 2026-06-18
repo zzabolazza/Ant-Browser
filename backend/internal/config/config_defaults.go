@@ -9,6 +9,22 @@ import (
 
 var defaultBrowserStartURLs = []string{}
 
+const (
+	BrowserConnectorXray   = "xray"
+	BrowserConnectorMihomo = "mihomo"
+)
+
+func NormalizeBrowserConnectorType(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case BrowserConnectorMihomo, "clash", "clash-meta":
+		return BrowserConnectorMihomo
+	case BrowserConnectorXray, "sing-box", "singbox", "sing_box", "":
+		return BrowserConnectorXray
+	default:
+		return BrowserConnectorXray
+	}
+}
+
 func DefaultBrowserStartURLs() []string {
 	return append([]string{}, defaultBrowserStartURLs...)
 }
@@ -119,6 +135,7 @@ func normalizeConfig(config *Config) {
 	if config.Browser.StartStableWindowMs <= 0 {
 		config.Browser.StartStableWindowMs = defaultConfig.Browser.StartStableWindowMs
 	}
+	config.Browser.DefaultConnectorType = NormalizeBrowserConnectorType(config.Browser.DefaultConnectorType)
 	if config.Browser.DefaultBookmarks == nil {
 		config.Browser.DefaultBookmarks = []BrowserBookmark{}
 	}
@@ -246,6 +263,7 @@ func DefaultConfig() *Config {
 			RestoreLastSession:     false,
 			StartReadyTimeoutMs:    3000,
 			StartStableWindowMs:    1200,
+			DefaultConnectorType:   BrowserConnectorXray,
 		},
 		ProxyCheck: ProxyCheckConfig{
 			BridgeStartTimeoutMs: 15000,

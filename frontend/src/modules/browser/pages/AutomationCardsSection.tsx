@@ -8,8 +8,10 @@ interface AutomationCardsSectionProps {
   loading: boolean;
   cards: AutomationCardPresentation[];
   scripts: AutomationScriptRecord[];
+  selectedScriptIds: string[];
   onCreate: () => void;
   onImport: () => void;
+  onToggleScriptSelection: (scriptId: string, selected: boolean) => void;
   onOpenScript: (scriptId: string) => void;
   onRunAutomationScript: (script: AutomationScriptRecord) => void;
   onOpenPublicApi: (script: AutomationScriptRecord, options?: { focusTest?: boolean }) => void;
@@ -19,13 +21,16 @@ export function AutomationCardsSection({
   loading,
   cards,
   scripts,
+  selectedScriptIds,
   onCreate,
   onImport,
+  onToggleScriptSelection,
   onOpenScript,
   onRunAutomationScript,
   onOpenPublicApi,
 }: AutomationCardsSectionProps) {
   const scriptMap = new Map(scripts.map((script) => [script.id, script]));
+  const selectedScriptIdSet = new Set(selectedScriptIds);
 
   return (
       <section className="rounded-[28px] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-3 shadow-[var(--shadow-sm)] md:p-4">
@@ -88,6 +93,12 @@ export function AutomationCardsSection({
                     onOpen={onOpen}
                     onRunScript={runScriptAction}
                     onRunAPI={onRunAPI}
+                    selected={scriptId ? selectedScriptIdSet.has(scriptId) : false}
+                    onSelectedChange={
+                      scriptId
+                        ? (selected) => onToggleScriptSelection(scriptId, selected)
+                        : undefined
+                    }
                   />
                 </div>
               );

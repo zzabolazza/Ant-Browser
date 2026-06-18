@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+const (
+	singBoxBridgeIdleTTL         = 45 * time.Second
+	singBoxBridgeCleanupInterval = 15 * time.Second
+)
+
 // SingBoxBridge sing-box 桥接进程
 type SingBoxBridge struct {
 	NodeKey      string
@@ -33,13 +38,20 @@ type SingBoxManager struct {
 	Bridges      map[string]*SingBoxBridge
 	OnBridgeDied func(key string, err error)
 	mu           sync.Mutex
+	launchLocks  map[string]*bridgeLaunchLock
+	stopCh       chan struct{}
+	stopOnce     sync.Once
 }
 
 // NewSingBoxManager 创建 sing-box 管理器
 func NewSingBoxManager(cfg *config.Config, appRoot string) *SingBoxManager {
-	return &SingBoxManager{
-		Config:  cfg,
-		AppRoot: appRoot,
-		Bridges: make(map[string]*SingBoxBridge),
+	manager := &SingBoxManager{
+		Config:      cfg,
+		AppRoot:     appRoot,
+		Bridges:     make(map[string]*SingBoxBridge),
+		launchLocks: make(map[string]*bridgeLaunchLock),
+		stopCh:      make(chan struct{}),
 	}
+	go manager.cleanupLoop()
+	return manager
 }

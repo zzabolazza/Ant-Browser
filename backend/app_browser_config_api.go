@@ -17,6 +17,7 @@ func (a *App) GetBrowserSettings() BrowserSettings {
 		RestoreLastSession:     a.config.Browser.RestoreLastSession,
 		StartReadyTimeoutMs:    browserStartReadyTimeoutMillis(a.config),
 		StartStableWindowMs:    browserStartStableWindowMillis(a.config),
+		DefaultConnectorType:   config.NormalizeBrowserConnectorType(a.config.Browser.DefaultConnectorType),
 	}
 }
 
@@ -33,6 +34,7 @@ func (a *App) SaveBrowserSettings(settings BrowserSettings) error {
 	lightStartEnabled := settings.LightStartEnabled
 	a.config.Browser.LightStartEnabled = &lightStartEnabled
 	a.config.Browser.RestoreLastSession = settings.RestoreLastSession
+	a.config.Browser.DefaultConnectorType = config.NormalizeBrowserConnectorType(settings.DefaultConnectorType)
 	if settings.StartReadyTimeoutMs > 0 {
 		a.config.Browser.StartReadyTimeoutMs = settings.StartReadyTimeoutMs
 	} else if a.config.Browser.StartReadyTimeoutMs <= 0 {

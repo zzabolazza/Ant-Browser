@@ -258,10 +258,14 @@ func buildOutboundSS(node string) (map[string]interface{}, error) {
 		"protocol": "shadowsocks",
 		"tag":      "proxy-out",
 		"settings": map[string]interface{}{
-			"address":  host,
-			"port":     port,
-			"method":   method,
-			"password": password,
+			"servers": []interface{}{
+				map[string]interface{}{
+					"address":  host,
+					"port":     port,
+					"method":   method,
+					"password": password,
+				},
+			},
 		},
 	}, nil
 }

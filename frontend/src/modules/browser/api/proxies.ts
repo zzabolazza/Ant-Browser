@@ -1,4 +1,4 @@
-﻿import type { BrowserProxy, ProxyBridgeWarmupResult, ProxyIPHealthResult, ProxyLocationResolveResult } from '../types'
+﻿import type { BrowserProxy, ProxyBridgeWarmupResult, ProxyCoreDownloadInfoResult, ProxyCoreStatusResult, ProxyIPHealthResult, ProxyLocationResolveResult } from '../types'
 import { getBindings, getGoApp, getMockProxies, nowISOString, setMockProxies } from './runtime'
 
 export interface ClashImportURLResult {
@@ -258,4 +258,42 @@ export async function browserProxyBatchCheckIPHealth(proxyIds: string[], concurr
     rawData: {},
     updatedAt: nowISOString(),
   }))
+}
+
+export async function browserProxyCoreDownload(core: string, goos: string, goarch: string, proxyConfig = ''): Promise<boolean> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyCoreDownload) {
+    await bindings.BrowserProxyCoreDownload({ core, goos, goarch, proxyConfig })
+    return true
+  }
+  return false
+}
+
+export async function browserProxyCoreStatus(core: string, goos: string, goarch: string): Promise<ProxyCoreStatusResult> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyCoreStatus) {
+    return (await bindings.BrowserProxyCoreStatus({ core, goos, goarch })) || {
+      core, goos, goarch, installed: false, configured: false, active: false, binaryPath: '', source: '', message: '状态查询失败',
+    }
+  }
+  return { core, goos, goarch, installed: false, configured: false, active: false, binaryPath: '', source: '', message: '未连接后端' }
+}
+
+export async function browserProxyCoreDownloadInfo(core: string, goos: string, goarch: string, proxyConfig = ''): Promise<ProxyCoreDownloadInfoResult> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyCoreDownloadInfo) {
+    return (await bindings.BrowserProxyCoreDownloadInfo({ core, goos, goarch, proxyConfig })) || {
+      core, goos, goarch, version: '', repo: '', releaseUrl: '', downloadUrl: '', assetName: '', installDir: '', binaryName: '', message: '下载信息查询失败',
+    }
+  }
+  return { core, goos, goarch, version: '', repo: '', releaseUrl: '', downloadUrl: '', assetName: '', installDir: '', binaryName: '', message: '未连接后端' }
+}
+
+export async function browserProxyCoreOpenLocal(core: string, goos: string, goarch: string): Promise<boolean> {
+  const bindings: any = await getBindings()
+  if (bindings?.BrowserProxyCoreOpenLocal) {
+    await bindings.BrowserProxyCoreOpenLocal({ core, goos, goarch })
+    return true
+  }
+  return false
 }

@@ -4,8 +4,9 @@ import { toast } from "../../../shared/components";
 import { AutomationScriptHistoryModal } from "../components/AutomationScriptHistoryModal";
 import { AutomationScriptPublicApiModal } from "../components/AutomationScriptPublicApiModal";
 import { AutomationScriptRunModal } from "../components/AutomationScriptRunModal";
-import { AutomationToolboxModal } from "../components/AutomationToolboxModal";
+
 import {
+  exportAutomationScriptsBatchZip,
   importAutomationScriptFromGit,
   importAutomationScriptFromLocalDirectory,
   importAutomationScriptFromLocalFile,
@@ -42,7 +43,6 @@ export function AutomationPage() {
   const { launchBaseUrl, apiAuth } = useLaunchContext();
   const { scripts, setScripts, profiles, loading, refreshing, handleRefresh } = useAutomationPageData();
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [toolboxOpen, setToolboxOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [runModalOpen, setRunModalOpen] = useState(false);
@@ -62,13 +62,49 @@ export function AutomationPage() {
   const [gitURL, setGitURL] = useState("");
   const [gitRef, setGitRef] = useState("");
   const [gitScriptPath, setGitScriptPath] = useState("");
-  const [busyAction, setBusyAction] = useState<"none" | "create" | "import">(
+  const [busyAction, setBusyAction] = useState<"none" | "create" | "import" | "export">(
     "none",
   );
+  const [selectedScriptIds, setSelectedScriptIds] = useState<string[]>([]);
 
 
   const openScript = (scriptId: string) => {
     navigate(`/browser/automation/${scriptId}`);
+  };
+
+  const handleToggleScriptSelection = (scriptId: string, selected: boolean) => {
+    setSelectedScriptIds((current) => {
+      if (selected) {
+        return current.includes(scriptId) ? current : [...current, scriptId];
+      }
+      return current.filter((item) => item !== scriptId);
+    });
+  };
+
+  const handleExportSelectedScripts = async () => {
+    const exportScriptIds = selectedScriptIds.filter((scriptId) =>
+      scripts.some((script) => script.id === scriptId),
+    );
+    if (exportScriptIds.length === 0) {
+      toast.warning("请先勾选要导出的脚本");
+      return;
+    }
+
+    setBusyAction("export");
+    try {
+      const result = await exportAutomationScriptsBatchZip(exportScriptIds);
+      if (!result.cancelled) {
+        toast.success(`已导出 ${exportScriptIds.length} 个脚本`);
+        setSelectedScriptIds([]);
+      } else {
+        toast.warning("已取消导出");
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "脚本导出失败";
+      toast.error(message);
+    } finally {
+      setBusyAction("none");
+    }
   };
 
   const handleOpenRunModal = (script: AutomationScriptRecord) => {
@@ -327,23 +363,30 @@ export function AutomationPage() {
         }),
         ...scriptCards,
       ];
+  const modalBusyAction =
+    busyAction === "export" ? "none" : busyAction;
+
   return (
     <div className="space-y-5 animate-fade-in">
       <AutomationPageHeader
         refreshing={refreshing}
+        exporting={busyAction === "export"}
+        selectedCount={selectedScriptIds.length}
         onRefresh={() => void handleRefresh()}
         onCreate={() => setCreateOpen(true)}
+        onExportSelected={() => void handleExportSelectedScripts()}
         onImport={() => setImportOpen(true)}
         onOpenHistory={() => setHistoryOpen(true)}
-        onOpenToolbox={() => setToolboxOpen(true)}
       />
 
       <AutomationCardsSection
         loading={loading}
         cards={cards}
         scripts={scripts}
+        selectedScriptIds={selectedScriptIds}
         onCreate={() => setCreateOpen(true)}
         onImport={() => setImportOpen(true)}
+        onToggleScriptSelection={handleToggleScriptSelection}
         onOpenScript={openScript}
         onRunAutomationScript={handleOpenRunModal}
         onOpenPublicApi={handleOpenPublicApiModal}
@@ -351,7 +394,7 @@ export function AutomationPage() {
 
       <CreateAutomationScriptModal
         open={createOpen}
-        busyAction={busyAction}
+        busyAction={modalBusyAction}
         createName={createName}
         createType={createType}
         onClose={closeCreateModal}
@@ -362,7 +405,7 @@ export function AutomationPage() {
 
       <ImportAutomationScriptModal
         open={importOpen}
-        busyAction={busyAction}
+        busyAction={modalBusyAction}
         importMode={importMode}
         importText={importText}
         remoteURL={remoteURL}
@@ -379,10 +422,6 @@ export function AutomationPage() {
         onGitScriptPathChange={setGitScriptPath}
       />
 
-      <AutomationToolboxModal
-        open={toolboxOpen}
-        onClose={() => setToolboxOpen(false)}
-      />
       <AutomationScriptRunModal
         open={runModalOpen}
         script={activeRunScript}

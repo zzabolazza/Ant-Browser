@@ -93,13 +93,13 @@ func (m *XrayManager) ensureBridge(proxyConfig string, proxies []config.BrowserP
 	key := computeNodeKey(src + "\x00" + dnsServers)
 
 	if socksURL, reused := m.tryReuseBridge(key, pin); reused {
-		log.Info("复用桥接进程", logger.F("key", key), logger.F("socks_url", socksURL))
+		log.Info("复用 xray 桥接进程", logger.F("engine", "xray"), logger.F("key", key), logger.F("socks_url", socksURL))
 		return socksURL, key, nil
 	}
 	unlockLaunch := m.lockLaunchForKey(key)
 	defer unlockLaunch()
 	if socksURL, reused := m.tryReuseBridge(key, pin); reused {
-		log.Info("复用桥接进程", logger.F("key", key), logger.F("socks_url", socksURL))
+		log.Info("复用 xray 桥接进程", logger.F("engine", "xray"), logger.F("key", key), logger.F("socks_url", socksURL))
 		return socksURL, key, nil
 	}
 
@@ -212,14 +212,14 @@ func (m *XrayManager) launchBridgeAttempt(log *logger.Logger, key string, binary
 		DNSServers: dnsServers,
 	}
 	bridge.startExitWatcher()
-	log.Info("xray 启动", logger.F("key", key), logger.F("pid", bridge.Pid), logger.F("port", bridge.Port), logger.F("attempt", attempt))
+	log.Info("xray 内核进程已启动", logger.F("engine", "xray"), logger.F("key", key), logger.F("pid", bridge.Pid), logger.F("port", bridge.Port), logger.F("attempt", attempt))
 
 	if err := m.waitBridgeReady(log, bridge, cfgPath, stderrPath, stderrFile, attempt); err != nil {
 		return "", nil, err
 	}
 
 	if socksURL, reused := m.registerBridge(key, bridge, pin); reused {
-		log.Info("复用已就绪桥接进程", logger.F("key", key), logger.F("socks_url", socksURL))
+		log.Info("复用已就绪 xray 桥接进程", logger.F("engine", "xray"), logger.F("key", key), logger.F("socks_url", socksURL))
 		bridge.Stopping = true
 		m.stopBridgeProcess(bridge)
 		return socksURL, nil, nil

@@ -81,6 +81,7 @@ func buildOutboundFromClashVless(node map[string]interface{}) (map[string]interf
 	if len(stream) > 0 {
 		out["streamSettings"] = stream
 	}
+	applyXrayBrowserOutboundTuning(node, out)
 	return out, "", nil
 }
 
@@ -139,5 +140,6 @@ func buildOutboundFromClashVmess(node map[string]interface{}) (map[string]interf
 	if len(stream) > 0 {
 		out["streamSettings"] = stream
 	}
+	applyXrayBrowserOutboundTuning(node, out)
 	return out, "", nil
 }

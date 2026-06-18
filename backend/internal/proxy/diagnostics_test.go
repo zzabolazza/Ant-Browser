@@ -39,6 +39,9 @@ func TestBuildProxyDiagnosticAuthenticatedSocks5UsesXrayBridge(t *testing.T) {
 	if diag.Runtime.WorkDir == "" || diag.Runtime.ConfigPath != filepath.Join(diag.Runtime.WorkDir, "xray-config.json") {
 		t.Fatalf("unexpected runtime paths: %+v", diag.Runtime)
 	}
+	if !diag.DnsSummary.HasConfig || diag.DnsSummary.XrayServerCount != 1 {
+		t.Fatalf("unexpected dns summary: %+v", diag.DnsSummary)
+	}
 }
 
 func TestBuildProxyDiagnosticSingBoxMasksSecrets(t *testing.T) {
@@ -79,6 +82,35 @@ func TestBuildProxyDiagnosticStandardProxyDoesNotBridge(t *testing.T) {
 	}
 	if len(diag.Outbounds) != 0 || diag.Runtime.WorkDir != "" {
 		t.Fatalf("standard proxy should not have bridge plan: %+v", diag)
+	}
+}
+
+func TestBuildProxyDiagnosticXrayShowsBrowserTuning(t *testing.T) {
+	src := `
+name: vmess-ws
+type: vmess
+server: edge.example.com
+port: 443
+uuid: 00000000-0000-0000-0000-000000000009
+cipher: auto
+network: ws
+browser-mux: true
+`
+	diag := BuildProxyDiagnostic(src, nil, "", BuildDiagnosticOptions{})
+	if !diag.Ok {
+		t.Fatalf("expected diagnostic ok, errors=%v", diag.Errors)
+	}
+	if diag.Inbound == nil {
+		t.Fatalf("expected xray inbound diagnostic")
+	}
+	sniffing := diag.Inbound["sniffing"].(map[string]interface{})
+	if sniffing["enabled"] != true {
+		t.Fatalf("sniffing.enabled = %v, want true", sniffing["enabled"])
+	}
+	outbound := diag.Outbounds[0].(map[string]interface{})
+	mux := outbound["mux"].(map[string]interface{})
+	if mux["enabled"] != true {
+		t.Fatalf("mux.enabled = %v, want true", mux["enabled"])
 	}
 }
 

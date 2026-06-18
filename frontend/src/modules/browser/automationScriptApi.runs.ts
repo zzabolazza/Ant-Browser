@@ -2,6 +2,20 @@
 import { startBrowserInstanceByCode } from "./api/instances";
 import { getBindings, normalizeAutomationScriptPublicApiInvokeResult, normalizeAutomationScriptRunInput, normalizeAutomationScriptRunRecord, type AutomationScriptPublicApiInvokeInput, type AutomationScriptPublicApiInvokeResult } from "./automationScriptApi.shared";
 
+const AUTOMATION_RUN_LIST_TIMEOUT_MS = 8000;
+
+function withAutomationRunListTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error("调用记录加载超时"));
+    }, AUTOMATION_RUN_LIST_TIMEOUT_MS);
+
+    promise
+      .then(resolve, reject)
+      .finally(() => window.clearTimeout(timer));
+  });
+}
+
 export async function runAutomationScript(
   input: string | AutomationScriptRunInput,
 ): Promise<AutomationScriptRunRecord> {
@@ -59,6 +73,7 @@ export async function runAutomationScript(
     summary: "当前环境未接入自动化脚本执行",
     error: "AutomationScriptRun binding is unavailable",
     resultText: "",
+    logText: "",
     startedAt: now,
     finishedAt: now,
     durationMs: 0,
@@ -70,7 +85,7 @@ export async function fetchAutomationScriptRuns(
 ): Promise<AutomationScriptRunRecord[]> {
   const bindings: any = await getBindings();
   if (bindings?.AutomationScriptRunList) {
-    const raw = (await bindings.AutomationScriptRunList(limit)) || [];
+    const raw = (await withAutomationRunListTimeout(bindings.AutomationScriptRunList(limit))) || [];
     return Array.isArray(raw)
       ? raw.map(normalizeAutomationScriptRunRecord)
       : [];
@@ -78,7 +93,7 @@ export async function fetchAutomationScriptRuns(
 
   const goApp = (window as any).go?.main?.App;
   if (typeof goApp?.AutomationScriptRunList === "function") {
-    const raw = (await goApp.AutomationScriptRunList(limit)) || [];
+    const raw = (await withAutomationRunListTimeout(goApp.AutomationScriptRunList(limit))) || [];
     return Array.isArray(raw)
       ? raw.map(normalizeAutomationScriptRunRecord)
       : [];

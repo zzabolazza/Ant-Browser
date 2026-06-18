@@ -30,6 +30,44 @@ dns:
 	}
 }
 
+func TestBuildDnsDiagnosticSummaryFromClashYAML(t *testing.T) {
+	t.Parallel()
+
+	raw := `
+dns:
+  enable: true
+  enhanced-mode: fake-ip
+  nameserver:
+    - 8.8.8.8
+    - tls://1.1.1.1
+  fallback:
+    - https://dns.google/dns-query
+`
+
+	got := buildDnsDiagnosticSummary(raw)
+	if !got.HasConfig || got.SourceFormat != "clash" || got.EnhancedMode != "fake-ip" {
+		t.Fatalf("unexpected summary identity: %+v", got)
+	}
+	if got.NameserverCount != 2 || got.FallbackCount != 1 || got.XrayServerCount != 2 {
+		t.Fatalf("unexpected summary counts: %+v", got)
+	}
+	if len(got.Unsupported) != 1 || got.Unsupported[0] != "tls://1.1.1.1" {
+		t.Fatalf("unsupported = %#v, want tls://1.1.1.1", got.Unsupported)
+	}
+}
+
+func TestBuildDnsDiagnosticSummaryFromCommaList(t *testing.T) {
+	t.Parallel()
+
+	got := buildDnsDiagnosticSummary("8.8.8.8, tls://1.1.1.1, https://dns.google/dns-query")
+	if !got.HasConfig || got.SourceFormat != "list" {
+		t.Fatalf("unexpected summary identity: %+v", got)
+	}
+	if got.NameserverCount != 3 || got.XrayServerCount != 2 || len(got.Unsupported) != 1 {
+		t.Fatalf("unexpected summary counts: %+v", got)
+	}
+}
+
 func TestParseDnsConfigFromCommaList(t *testing.T) {
 	t.Parallel()
 

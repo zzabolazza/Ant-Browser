@@ -21,6 +21,7 @@ type ScriptRunRecord struct {
 	Summary    string `json:"summary"`
 	Error      string `json:"error"`
 	ResultText string `json:"resultText"`
+	LogText    string `json:"logText"`
 	StartedAt  string `json:"startedAt"`
 	FinishedAt string `json:"finishedAt"`
 	DurationMs int64  `json:"durationMs"`
@@ -141,6 +142,7 @@ func normalizeScriptRunRecord(input ScriptRunRecord) ScriptRunRecord {
 		Summary:    strings.TrimSpace(input.Summary),
 		Error:      strings.TrimSpace(input.Error),
 		ResultText: strings.TrimSpace(input.ResultText),
+		LogText:    strings.TrimSpace(input.LogText),
 		StartedAt:  startedAt,
 		FinishedAt: finishedAt,
 		DurationMs: durationMs,

@@ -13,18 +13,44 @@ import (
 )
 
 // buildProxyHTTPClient 根据代理配置构建 HTTP 客户端，统一用于测速/健康检测场景。
+func BuildProxyHTTPClient(
+	src string,
+	proxyId string,
+	proxies []config.BrowserProxy,
+	xrayMgr *XrayManager,
+	singboxMgr *SingBoxManager,
+	clashMgr *ClashManager,
+	connectorType string,
+	timeout time.Duration,
+) (*http.Client, error) {
+	return buildProxyHTTPClient(src, proxyId, proxies, xrayMgr, singboxMgr, clashMgr, connectorType, timeout)
+}
+
 func buildProxyHTTPClient(
 	src string,
 	proxyId string,
 	proxies []config.BrowserProxy,
 	xrayMgr *XrayManager,
 	singboxMgr *SingBoxManager,
+	clashMgr *ClashManager,
+	connectorType string,
 	timeout time.Duration,
 ) (*http.Client, error) {
 	src = resolveProxyConfig(src, proxies, proxyId)
 	l := strings.ToLower(strings.TrimSpace(src))
 	if l == "" || l == "direct://" {
 		return &http.Client{Timeout: timeout}, nil
+	}
+
+	if config.NormalizeBrowserConnectorType(connectorType) == config.BrowserConnectorMihomo && (IsChainSocks5Proxy(src) || IsSingBoxProtocol(src) || RequiresBridge(src, proxies, proxyId) || RequiresLocalProxyBridgeForBrowser(src)) {
+		if clashMgr == nil {
+			return nil, fmt.Errorf("mihomo 管理器未初始化")
+		}
+		proxyAddr, err := clashMgr.EnsureNodeBridge(src, proxies, proxyId)
+		if err != nil {
+			return nil, fmt.Errorf("mihomo 桥接启动失败: %w", err)
+		}
+		return buildHTTPProxyClient(proxyAddr, timeout)
 	}
 
 	if IsChainSocks5Proxy(src) {
@@ -88,6 +114,15 @@ func buildProxyHTTPClient(
 	proxyURL, err := url.Parse(src)
 	if err != nil {
 		return nil, fmt.Errorf("代理地址解析失败: %w", err)
+	}
+	transport := &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	return &http.Client{Transport: transport, Timeout: timeout}, nil
+}
+
+func buildHTTPProxyClient(proxyAddr string, timeout time.Duration) (*http.Client, error) {
+	proxyURL, err := url.Parse(proxyAddr)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP 代理地址解析失败: %w", err)
 	}
 	transport := &http.Transport{Proxy: http.ProxyURL(proxyURL)}
 	return &http.Client{Transport: transport, Timeout: timeout}, nil

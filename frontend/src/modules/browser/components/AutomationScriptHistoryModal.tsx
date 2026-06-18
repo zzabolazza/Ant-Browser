@@ -4,7 +4,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, RefreshCw } from "lucide-react";
 import {
   Badge,
   Button,
@@ -117,6 +117,7 @@ export function AutomationScriptHistoryModal({
 }: AutomationScriptHistoryModalProps) {
   const [runs, setRuns] = useState<AutomationScriptRunRecord[]>([]);
   const [expandedRunId, setExpandedRunId] = useState("");
+  const [selectedLogRunId, setSelectedLogRunId] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -124,6 +125,7 @@ export function AutomationScriptHistoryModal({
     if (!open) {
       setRuns([]);
       setExpandedRunId("");
+      setSelectedLogRunId("");
       setLoading(false);
       return;
     }
@@ -197,6 +199,8 @@ export function AutomationScriptHistoryModal({
   };
 
   const latestRun = runs[0] || null;
+  const selectedLogRun =
+    runs.find((item) => item.id === selectedLogRunId) || null;
   const successCount = runs.filter((item) => item.status === "success").length;
   const failedCount = runs.filter((item) => item.status === "failed").length;
   const scriptCount = new Set(
@@ -204,6 +208,7 @@ export function AutomationScriptHistoryModal({
   ).size;
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -269,7 +274,7 @@ export function AutomationScriptHistoryModal({
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-sm)]">
             <div className="max-h-[58vh] overflow-auto">
-              <table className="w-full min-w-[960px]">
+              <table className="w-full min-w-[1040px]">
                 <thead className="sticky top-0 z-10 bg-[var(--color-bg-muted)]">
                   <tr>
                     <th className="w-14 px-3 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
@@ -292,6 +297,9 @@ export function AutomationScriptHistoryModal({
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       摘要
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      操作
                     </th>
                   </tr>
                 </thead>
@@ -358,10 +366,24 @@ export function AutomationScriptHistoryModal({
                               {run.summary || "未返回摘要"}
                             </div>
                           </td>
+                          <td className="px-4 py-4 align-top text-sm">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={!run.logText}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedLogRunId(run.id);
+                              }}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              查看日志
+                            </Button>
+                          </td>
                         </tr>
                         {expanded ? (
                           <tr className="bg-[var(--color-bg-muted)]/35">
-                            <td colSpan={7} className="px-4 pb-4 pt-1">
+                            <td colSpan={8} className="px-4 pb-4 pt-1">
                               <div className="rounded-2xl border border-[var(--color-border-muted)] bg-[var(--color-bg-surface)] p-4">
                                 <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                                   <HistoryDetailField
@@ -424,7 +446,7 @@ export function AutomationScriptHistoryModal({
                                   </div>
                                 ) : null}
 
-                                {!run.error && !run.resultText ? (
+                                {!run.error && !run.resultText && !run.logText ? (
                                   <div className="mt-3 rounded-xl border border-dashed border-[var(--color-border-muted)] bg-[var(--color-bg-muted)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
                                     这条记录没有更多详情。
                                   </div>
@@ -443,5 +465,31 @@ export function AutomationScriptHistoryModal({
         )}
       </div>
     </Modal>
+    <Modal
+      open={Boolean(selectedLogRun)}
+      onClose={() => setSelectedLogRunId("")}
+      title="执行日志"
+      width="760px"
+      footer={
+        <Button variant="secondary" onClick={() => setSelectedLogRunId("")}>
+          关闭
+        </Button>
+      }
+    >
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-border-muted)] bg-[var(--color-bg-muted)] px-4 py-3 text-sm">
+          <span className="font-medium text-[var(--color-text-primary)]">
+            {selectedLogRun?.scriptName || "未命名脚本"}
+          </span>
+          <span className="text-xs text-[var(--color-text-muted)]">
+            {formatDateTime(selectedLogRun?.startedAt)}
+          </span>
+        </div>
+        <pre className="max-h-[56vh] overflow-auto rounded-xl border border-[var(--color-border-muted)] bg-[var(--color-bg-muted)] px-4 py-3 font-mono text-xs leading-6 text-[var(--color-text-secondary)] whitespace-pre-wrap break-all">
+          {selectedLogRun?.logText || "暂无执行日志"}
+        </pre>
+      </div>
+    </Modal>
+    </>
   );
 }

@@ -89,6 +89,7 @@ export interface AutomationScriptRunRecord {
   summary: string;
   error: string;
   resultText: string;
+  logText: string;
   startedAt: string;
   finishedAt: string;
   durationMs: number;

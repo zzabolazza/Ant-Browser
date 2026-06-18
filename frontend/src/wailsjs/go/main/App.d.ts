@@ -28,6 +28,8 @@ export function AutomationScriptDelete(arg1:string):Promise<void>;
 
 export function AutomationScriptExport(arg1:string):Promise<Record<string, any>>;
 
+export function AutomationScriptExportBatchZip(arg1:Array<string>):Promise<Record<string, any>>;
+
 export function AutomationScriptExportDirectory(arg1:string):Promise<Record<string, any>>;
 
 export function AutomationScriptExportZip(arg1:string):Promise<Record<string, any>>;
@@ -98,6 +100,32 @@ export function BrowserCoreValidate(arg1:string):Promise<browser.CoreValidateRes
 
 export function BrowserExportCookies(arg1:string):Promise<string>;
 
+export function BrowserExtensionDelete(arg1:string):Promise<void>;
+
+export function BrowserExtensionInstall(arg1:string):Promise<browser.Extension>;
+
+export function BrowserExtensionInstallLocalDirectory():Promise<browser.Extension>;
+
+export function BrowserExtensionInstallLocalFile():Promise<browser.Extension>;
+
+export function BrowserExtensionInstallManualDownloadFile(arg1:string):Promise<browser.Extension>;
+
+export function BrowserExtensionInstallWithProxy(arg1:backend.BrowserExtensionWebStoreRequest):Promise<browser.Extension>;
+
+export function BrowserExtensionList():Promise<Array<browser.Extension>>;
+
+export function BrowserExtensionListManualDownloadFiles():Promise<Array<backend.BrowserExtensionManualDownloadFile>>;
+
+export function BrowserExtensionLookup(arg1:string):Promise<browser.ExtensionLookupResult>;
+
+export function BrowserExtensionLookupWithProxy(arg1:backend.BrowserExtensionWebStoreRequest):Promise<browser.ExtensionLookupResult>;
+
+export function BrowserExtensionManualInstallGuide(arg1:string):Promise<backend.BrowserExtensionManualInstallGuide>;
+
+export function BrowserExtensionOpenManualDownloadDir():Promise<void>;
+
+export function BrowserExtensionSetEnabled(arg1:string,arg2:boolean):Promise<browser.Extension>;
+
 export function BrowserGetAllTags():Promise<Array<string>>;
 
 export function BrowserGetCookies(arg1:string):Promise<Array<backend.CookieInfo>>;
@@ -134,6 +162,10 @@ export function BrowserProfileCreate(arg1:browser.ProfileInput):Promise<browser.
 
 export function BrowserProfileDelete(arg1:string):Promise<void>;
 
+export function BrowserProfileExtensionGet(arg1:string):Promise<browser.ProfileExtensionSettings>;
+
+export function BrowserProfileExtensionSave(arg1:string,arg2:Array<string>,arg3:boolean):Promise<browser.ProfileExtensionSettings>;
+
 export function BrowserProfileGetCode(arg1:string):Promise<string>;
 
 export function BrowserProfileList():Promise<Array<browser.Profile>>;
@@ -158,6 +190,14 @@ export function BrowserProxyBuildDiagnostic(arg1:string,arg2:string):Promise<pro
 
 export function BrowserProxyCheckIPHealth(arg1:string):Promise<backend.ProxyIPHealthResult>;
 
+export function BrowserProxyCoreDownload(arg1:backend.ProxyCoreDownloadRequest):Promise<void>;
+
+export function BrowserProxyCoreDownloadInfo(arg1:backend.ProxyCoreDownloadRequest):Promise<backend.ProxyCoreDownloadInfoResult>;
+
+export function BrowserProxyCoreOpenLocal(arg1:backend.ProxyCoreDownloadRequest):Promise<void>;
+
+export function BrowserProxyCoreStatus(arg1:backend.ProxyCoreDownloadRequest):Promise<backend.ProxyCoreStatusResult>;
+
 export function BrowserProxyFetchClashByURL(arg1:string):Promise<Record<string, any>>;
 
 export function BrowserProxyList():Promise<Array<config.BrowserProxy>>;
@@ -165,6 +205,8 @@ export function BrowserProxyList():Promise<Array<config.BrowserProxy>>;
 export function BrowserProxyListByGroup(arg1:string):Promise<Array<config.BrowserProxy>>;
 
 export function BrowserProxyListGroups():Promise<Array<string>>;
+
+export function BrowserProxyProbeBrowserPage(arg1:backend.ProxyBrowserProbeRequest):Promise<backend.ProxyBrowserProbeResult>;
 
 export function BrowserProxyResolveLocation(arg1:string):Promise<backend.ProxyLocationResolveResult>;
 

@@ -13,13 +13,15 @@ import { ALL_GROUP, BATCH_TEST_CONCURRENCY, DIRECT_PROXY_ID, INITIAL_CHAIN_EDIT_
 interface ProxyPickerModalProps {
   open: boolean
   currentProxyId: string
+  title?: string
   onSelect: (proxy: BrowserProxy) => void
   onClose: () => void
   onProxyListUpdated?: (proxies: BrowserProxy[]) => void
   onProxyDeleted?: (deletedProxyId: string, nextProxies: BrowserProxy[]) => void
+  onProxyTested?: (proxyId: string, result: SpeedResult) => void
 }
 
-export function ProxyPickerModal({ open, currentProxyId, onSelect, onClose, onProxyListUpdated, onProxyDeleted }: ProxyPickerModalProps) {
+export function ProxyPickerModal({ open, currentProxyId, title = '从代理池选择', onSelect, onClose, onProxyListUpdated, onProxyDeleted, onProxyTested }: ProxyPickerModalProps) {
   const [groups, setGroups] = useState<string[]>([])
   const [allProxies, setAllProxies] = useState<BrowserProxy[]>([])
   const [selectedGroup, setSelectedGroup] = useState<string>(ALL_GROUP)
@@ -141,10 +143,12 @@ export function ProxyPickerModal({ open, currentProxyId, onSelect, onClose, onPr
     try {
       const result = await browserProxyTestSpeed(proxyId)
       if (!abortRef.current) {
+        const nextResult = { ok: result.ok, latencyMs: result.latencyMs, error: result.error }
         setSpeedMap(prev => ({
           ...prev,
-          [proxyId]: { ok: result.ok, latencyMs: result.latencyMs, error: result.error },
+          [proxyId]: nextResult,
         }))
+        onProxyTested?.(proxyId, nextResult)
       }
     } finally {
       setTestingIds(prev => {
@@ -165,10 +169,12 @@ export function ProxyPickerModal({ open, currentProxyId, onSelect, onClose, onPr
 
     const off = EventsOn(SPEED_RESULT_EVENT, (data: { proxyId: string; ok: boolean; latencyMs: number; error: string }) => {
       if (abortRef.current || !idSet.has(data.proxyId)) return
+      const nextResult = { ok: data.ok, latencyMs: data.latencyMs, error: data.error }
       setSpeedMap(prev => ({
         ...prev,
-        [data.proxyId]: { ok: data.ok, latencyMs: data.latencyMs, error: data.error },
+        [data.proxyId]: nextResult,
       }))
+      onProxyTested?.(data.proxyId, nextResult)
       setTestingIds(prev => {
         const next = new Set(prev)
         next.delete(data.proxyId)
@@ -191,7 +197,9 @@ export function ProxyPickerModal({ open, currentProxyId, onSelect, onClose, onPr
               current.latencyMs !== result.latencyMs ||
               current.error !== result.error
             ) {
-              next[result.proxyId] = { ok: result.ok, latencyMs: result.latencyMs, error: result.error }
+              const nextResult = { ok: result.ok, latencyMs: result.latencyMs, error: result.error }
+              next[result.proxyId] = nextResult
+              onProxyTested?.(result.proxyId, nextResult)
               changed = true
             }
           })
@@ -331,7 +339,7 @@ export function ProxyPickerModal({ open, currentProxyId, onSelect, onClose, onPr
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
-          <span className="font-semibold text-[var(--color-text-primary)]">从代理池选择</span>
+          <span className="font-semibold text-[var(--color-text-primary)]">{title}</span>
           <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
             <X className="w-4 h-4" />
           </button>

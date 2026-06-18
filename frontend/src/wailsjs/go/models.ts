@@ -1,4 +1,4 @@
-﻿export namespace automation {
+export namespace automation {
 
 	export class ScriptPublicAPIVariable {
 	    name: string;
@@ -216,6 +216,7 @@
 	    summary: string;
 	    error: string;
 	    resultText: string;
+	    logText: string;
 	    startedAt: string;
 	    finishedAt: string;
 	    durationMs: number;
@@ -234,6 +235,7 @@
 	        this.summary = source["summary"];
 	        this.error = source["error"];
 	        this.resultText = source["resultText"];
+	        this.logText = source["logText"];
 	        this.startedAt = source["startedAt"];
 	        this.finishedAt = source["finishedAt"];
 	        this.durationMs = source["durationMs"];
@@ -385,6 +387,60 @@ export namespace backend {
 	        this.failedList = source["failedList"];
 	    }
 	}
+	export class BrowserExtensionManualDownloadFile {
+	    fileName: string;
+	    filePath: string;
+	    sizeBytes: number;
+	    updatedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new BrowserExtensionManualDownloadFile(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.fileName = source["fileName"];
+	        this.filePath = source["filePath"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class BrowserExtensionManualInstallGuide {
+	    extensionId: string;
+	    storeUrl: string;
+	    downloadUrl: string;
+	    downloadDir: string;
+	    fileName: string;
+
+	    static createFrom(source: any = {}) {
+	        return new BrowserExtensionManualInstallGuide(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.extensionId = source["extensionId"];
+	        this.storeUrl = source["storeUrl"];
+	        this.downloadUrl = source["downloadUrl"];
+	        this.downloadDir = source["downloadDir"];
+	        this.fileName = source["fileName"];
+	    }
+	}
+	export class BrowserExtensionWebStoreRequest {
+	    query: string;
+	    useProxy: boolean;
+	    proxyConfig: string;
+
+	    static createFrom(source: any = {}) {
+	        return new BrowserExtensionWebStoreRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.query = source["query"];
+	        this.useProxy = source["useProxy"];
+	        this.proxyConfig = source["proxyConfig"];
+	    }
+	}
 	export class CookieInfo {
 	    name: string;
 	    value: string;
@@ -447,6 +503,134 @@ export namespace backend {
 	        this.socksUrl = source["socksUrl"];
 	        this.latencyMs = source["latencyMs"];
 	        this.error = source["error"];
+	    }
+	}
+	export class ProxyBrowserProbeRequest {
+	    proxyId: string;
+	    urls: string[];
+	    concurrency: number;
+	    timeoutMs: number;
+
+	    static createFrom(source: any = {}) {
+	        return new ProxyBrowserProbeRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.proxyId = source["proxyId"];
+	        this.urls = source["urls"];
+	        this.concurrency = source["concurrency"];
+	        this.timeoutMs = source["timeoutMs"];
+	    }
+	}
+	export class ProxyBrowserProbeResult {
+	    proxyId: string;
+	    ok: boolean;
+	    totalMs: number;
+	    averageMs: number;
+	    p95Ms: number;
+	    bytes: number;
+	    completed: number;
+	    failed: number;
+	    concurrency: number;
+	    error: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProxyBrowserProbeResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.proxyId = source["proxyId"];
+	        this.ok = source["ok"];
+	        this.totalMs = source["totalMs"];
+	        this.averageMs = source["averageMs"];
+	        this.p95Ms = source["p95Ms"];
+	        this.bytes = source["bytes"];
+	        this.completed = source["completed"];
+	        this.failed = source["failed"];
+	        this.concurrency = source["concurrency"];
+	        this.error = source["error"];
+	    }
+	}
+	export class ProxyCoreDownloadInfoResult {
+	    core: string;
+	    goos: string;
+	    goarch: string;
+	    version: string;
+	    repo: string;
+	    releaseUrl: string;
+	    downloadUrl: string;
+	    assetName: string;
+	    installDir: string;
+	    binaryName: string;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProxyCoreDownloadInfoResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.core = source["core"];
+	        this.goos = source["goos"];
+	        this.goarch = source["goarch"];
+	        this.version = source["version"];
+	        this.repo = source["repo"];
+	        this.releaseUrl = source["releaseUrl"];
+	        this.downloadUrl = source["downloadUrl"];
+	        this.assetName = source["assetName"];
+	        this.installDir = source["installDir"];
+	        this.binaryName = source["binaryName"];
+	        this.message = source["message"];
+	    }
+	}
+	export class ProxyCoreDownloadRequest {
+	    core: string;
+	    goos: string;
+	    goarch: string;
+	    proxyConfig: string;
+	    version: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProxyCoreDownloadRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.core = source["core"];
+	        this.goos = source["goos"];
+	        this.goarch = source["goarch"];
+	        this.proxyConfig = source["proxyConfig"];
+	        this.version = source["version"];
+	    }
+	}
+	export class ProxyCoreStatusResult {
+	    core: string;
+	    goos: string;
+	    goarch: string;
+	    installed: boolean;
+	    configured: boolean;
+	    active: boolean;
+	    binaryPath: string;
+	    source: string;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProxyCoreStatusResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.core = source["core"];
+	        this.goos = source["goos"];
+	        this.goarch = source["goarch"];
+	        this.installed = source["installed"];
+	        this.configured = source["configured"];
+	        this.active = source["active"];
+	        this.binaryPath = source["binaryPath"];
+	        this.source = source["source"];
+	        this.message = source["message"];
 	    }
 	}
 	export class ProxyIPHealthResult {
@@ -809,6 +993,62 @@ export namespace browser {
 	        this.message = source["message"];
 	    }
 	}
+	export class Extension {
+	    extensionId: string;
+	    name: string;
+	    version: string;
+	    description: string;
+	    iconDataUrl: string;
+	    manifestJson: string;
+	    sourceUrl: string;
+	    installDir: string;
+	    enabled: boolean;
+	    installedAt: string;
+	    updatedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new Extension(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.extensionId = source["extensionId"];
+	        this.name = source["name"];
+	        this.version = source["version"];
+	        this.description = source["description"];
+	        this.iconDataUrl = source["iconDataUrl"];
+	        this.manifestJson = source["manifestJson"];
+	        this.sourceUrl = source["sourceUrl"];
+	        this.installDir = source["installDir"];
+	        this.enabled = source["enabled"];
+	        this.installedAt = source["installedAt"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class ExtensionLookupResult {
+	    extensionId: string;
+	    name: string;
+	    version: string;
+	    description: string;
+	    storeUrl: string;
+	    installable: boolean;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ExtensionLookupResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.extensionId = source["extensionId"];
+	        this.name = source["name"];
+	        this.version = source["version"];
+	        this.description = source["description"];
+	        this.storeUrl = source["storeUrl"];
+	        this.installable = source["installable"];
+	        this.message = source["message"];
+	    }
+	}
 	export class Group {
 	    groupId: string;
 	    groupName: string;
@@ -947,6 +1187,24 @@ export namespace browser {
 	        this.automationTargets = source["automationTargets"];
 	    }
 	}
+	export class ProfileExtensionSettings {
+	    profileId: string;
+	    configured: boolean;
+	    extensionIds: string[];
+	    updatedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProfileExtensionSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.profileId = source["profileId"];
+	        this.configured = source["configured"];
+	        this.extensionIds = source["extensionIds"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
 	export class ProfileInput {
 	    profileName: string;
 	    userDataDir: string;
@@ -986,6 +1244,7 @@ export namespace browser {
 	    restoreLastSession: boolean;
 	    startReadyTimeoutMs: number;
 	    startStableWindowMs: number;
+	    defaultConnectorType: string;
 
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -1001,6 +1260,7 @@ export namespace browser {
 	        this.restoreLastSession = source["restoreLastSession"];
 	        this.startReadyTimeoutMs = source["startReadyTimeoutMs"];
 	        this.startStableWindowMs = source["startStableWindowMs"];
+	        this.defaultConnectorType = source["defaultConnectorType"];
 	    }
 	}
 	export class Tab {
@@ -1229,6 +1489,30 @@ export namespace logger {
 
 export namespace proxy {
 
+	export class DnsDiagnosticSummary {
+	    hasConfig: boolean;
+	    sourceFormat: string;
+	    enhancedMode: string;
+	    nameserverCount: number;
+	    fallbackCount: number;
+	    xrayServerCount: number;
+	    unsupported: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new DnsDiagnosticSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.hasConfig = source["hasConfig"];
+	        this.sourceFormat = source["sourceFormat"];
+	        this.enhancedMode = source["enhancedMode"];
+	        this.nameserverCount = source["nameserverCount"];
+	        this.fallbackCount = source["fallbackCount"];
+	        this.xrayServerCount = source["xrayServerCount"];
+	        this.unsupported = source["unsupported"];
+	    }
+	}
 	export class ProxyRuntimeDiagnostic {
 	    workDir: string;
 	    configPath: string;
@@ -1266,9 +1550,11 @@ export namespace proxy {
 	    nodeKey: string;
 	    rawConfigMasked: string;
 	    dnsServers: string;
+	    dnsSummary: DnsDiagnosticSummary;
 	    standardProxy: string;
 	    outbounds: any[];
 	    routes: any[];
+	    inbound: Record<string, any>;
 	    outbound: Record<string, any>;
 	    runtime: ProxyRuntimeDiagnostic;
 	    errors: string[];
@@ -1287,9 +1573,11 @@ export namespace proxy {
 	        this.nodeKey = source["nodeKey"];
 	        this.rawConfigMasked = source["rawConfigMasked"];
 	        this.dnsServers = source["dnsServers"];
+	        this.dnsSummary = this.convertValues(source["dnsSummary"], DnsDiagnosticSummary);
 	        this.standardProxy = source["standardProxy"];
 	        this.outbounds = source["outbounds"];
 	        this.routes = source["routes"];
+	        this.inbound = source["inbound"];
 	        this.outbound = source["outbound"];
 	        this.runtime = this.convertValues(source["runtime"], ProxyRuntimeDiagnostic);
 	        this.errors = source["errors"];

@@ -15,7 +15,7 @@ import (
 // BrowserProxyTestSpeed 手动触发单个代理测速并持久化结果
 func (a *App) BrowserProxyTestSpeed(proxyId string) ProxyTestResult {
 	proxies := a.getLatestProxies()
-	result := proxy.TestRealConnectivityWithConfig(proxyId, proxies, a.xrayMgr, a.singboxMgr, a.proxySpeedTestConfig())
+	result := proxy.SpeedTest(proxyId, proxies, a.xrayMgr, a.singboxMgr, a.proxySpeedTestConfig())
 	if a.browserMgr.ProxyDAO != nil {
 		testedAt := time.Now().Format(time.RFC3339)
 		_ = a.browserMgr.ProxyDAO.UpdateSpeedResult(proxyId, result.Ok, result.LatencyMs, testedAt)
@@ -52,7 +52,7 @@ func (a *App) BrowserProxyBatchTestSpeed(proxyIds []string, concurrency int) []P
 		go func() {
 			defer wg.Done()
 			for job := range jobs {
-				result := proxy.TestRealConnectivityWithConfig(job.ProxyId, proxies, a.xrayMgr, a.singboxMgr, a.proxySpeedTestConfig())
+				result := proxy.SpeedTest(job.ProxyId, proxies, a.xrayMgr, a.singboxMgr, a.proxySpeedTestConfig())
 				if a.browserMgr.ProxyDAO != nil {
 					testedAt := time.Now().Format(time.RFC3339)
 					_ = a.browserMgr.ProxyDAO.UpdateSpeedResult(job.ProxyId, result.Ok, result.LatencyMs, testedAt)

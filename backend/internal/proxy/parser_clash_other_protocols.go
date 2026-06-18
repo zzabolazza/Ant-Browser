@@ -63,10 +63,14 @@ func buildOutboundFromClashSS(node map[string]interface{}) (map[string]interface
 		"protocol": "shadowsocks",
 		"tag":      "proxy-out",
 		"settings": map[string]interface{}{
-			"address":  host,
-			"port":     port,
-			"method":   cipher,
-			"password": password,
+			"servers": []interface{}{
+				map[string]interface{}{
+					"address":  host,
+					"port":     port,
+					"method":   cipher,
+					"password": password,
+				},
+			},
 		},
 	}
 	if plugin := getMapString(node, "plugin"); plugin != "" {

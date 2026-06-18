@@ -106,6 +106,41 @@ export async function exportAutomationScriptZip(
   throw new Error("当前环境不支持 ZIP 脚本包导出");
 }
 
+export async function exportAutomationScriptsBatchZip(
+  scriptIds: string[],
+): Promise<AutomationScriptExportResult> {
+  const normalizedScriptIds = Array.from(
+    new Set(
+      scriptIds
+        .map((scriptId) => String(scriptId || "").trim())
+        .filter(Boolean),
+    ),
+  );
+  if (normalizedScriptIds.length === 0) {
+    throw new Error("请先勾选要导出的脚本");
+  }
+
+  const bindings: any = await getBindings();
+  if (bindings?.AutomationScriptExportBatchZip) {
+    return normalizeAutomationScriptExportResult(
+      await bindings.AutomationScriptExportBatchZip(normalizedScriptIds),
+    );
+  }
+
+  const goApp = (window as any).go?.main?.App;
+  if (typeof goApp?.AutomationScriptExportBatchZip === "function") {
+    return normalizeAutomationScriptExportResult(
+      await goApp.AutomationScriptExportBatchZip(normalizedScriptIds),
+    );
+  }
+
+  if (normalizedScriptIds.length === 1) {
+    return exportAutomationScriptZip(normalizedScriptIds[0]);
+  }
+
+  throw new Error("当前环境不支持批量 ZIP 脚本包导出");
+}
+
 export async function exportAutomationScriptDirectory(
   scriptId: string,
 ): Promise<AutomationScriptExportResult> {

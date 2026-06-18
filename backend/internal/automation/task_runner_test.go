@@ -14,6 +14,23 @@ import (
 	"ant-chrome/backend/internal/config"
 )
 
+func TestFormatTaskRunnerLogs(t *testing.T) {
+	logText := formatTaskRunnerLogs([]taskRunnerLogEntry{
+		{Time: "2026-04-02T09:00:00Z", Values: []any{"打开页面", map[string]any{"url": "https://example.test"}}},
+		{Time: "2026-04-02T09:00:01Z", Values: []any{"点击按钮"}},
+	})
+
+	if !strings.Contains(logText, "2026-04-02T09:00:00Z 打开页面") {
+		t.Fatalf("expected first log line, got %q", logText)
+	}
+	if !strings.Contains(logText, `{"url":"https://example.test"}`) {
+		t.Fatalf("expected structured log value, got %q", logText)
+	}
+	if !strings.Contains(logText, "2026-04-02T09:00:01Z 点击按钮") {
+		t.Fatalf("expected second log line, got %q", logText)
+	}
+}
+
 func TestRunScriptTaskExecutesCustomRunner(t *testing.T) {
 	nodeExecPath := lookupNodeExecutable(t)
 

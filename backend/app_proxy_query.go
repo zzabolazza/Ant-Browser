@@ -2,6 +2,7 @@ package backend
 
 import (
 	"ant-chrome/backend/internal/browser"
+	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/proxy"
 	"strings"
 	"sync"
@@ -43,7 +44,7 @@ func (a *App) TestProxyConnectivity(proxyId string, proxyConfig string) ProxyTes
 // 参考 Clash URLTest 策略：多 URL fallback + 复用桥接 + TCP ping 降级
 func (a *App) TestProxyRealConnectivity(proxyId string) ProxyTestResult {
 	proxies := a.getLatestProxies()
-	result := proxy.TestRealConnectivityWithConfig(proxyId, proxies, a.xrayMgr, a.singboxMgr, nil)
+	result := proxy.TestRealConnectivityWithRuntimeConfig(proxyId, proxies, a.xrayMgr, a.singboxMgr, a.clashMgr, config.NormalizeBrowserConnectorType(a.config.Browser.DefaultConnectorType), nil)
 	return ProxyTestResult{ProxyId: result.ProxyId, Ok: result.Ok, LatencyMs: result.LatencyMs, Error: result.Error}
 }
 
@@ -120,7 +121,15 @@ func (a *App) warmupProxyBridge(proxyId string, proxyConfig string, proxies []Br
 
 	var socksURL string
 	var err error
-	if proxy.IsSingBoxProtocol(src) {
+	connectorType := config.NormalizeBrowserConnectorType(a.config.Browser.DefaultConnectorType)
+	if connectorType == config.BrowserConnectorMihomo {
+		result.Engine = "mihomo"
+		if a.clashMgr == nil {
+			result.Error = "mihomo 管理器不可用"
+			return result
+		}
+		socksURL, err = a.clashMgr.EnsureNodeBridge(src, proxies, proxyId)
+	} else if proxy.IsSingBoxProtocol(src) {
 		result.Engine = "sing-box"
 		if a.singboxMgr == nil {
 			result.Error = "sing-box 管理器不可用"

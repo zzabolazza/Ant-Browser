@@ -4,6 +4,7 @@ import type { BrowserProfile, BrowserProfileCopyOptions } from '../types'
 import { BrowserCoreEditorModal, BrowserListHeader, BrowserListSettingsModal } from '../components/BrowserListLayout'
 import { BatchToolbar } from '../components/BrowserListWidgets'
 import { BrowserProfilesPanel } from '../components/BrowserProfilesPanel'
+import { ProfileExtensionModal } from '../components/ProfileExtensionModal'
 import { createBrowserProfileCopyOptions, isBrowserProfileCopyOptionsValid } from '../copyOptions'
 import { buildBrowserProfileCopyName } from '../copyName'
 import { resolveActionFeedback } from '../utils/actionErrors'
@@ -44,6 +45,10 @@ export function BrowserListPage() {
 
   const openKwModal = (profile: BrowserProfile) => setKwModal({ open: true, profile })
   const closeKwModal = () => setKwModal({ open: false, profile: null })
+
+  const [extensionModal, setExtensionModal] = useState<{ open: boolean; profile: BrowserProfile | null }>({ open: false, profile: null })
+  const openExtensionModal = (profile: BrowserProfile) => setExtensionModal({ open: true, profile })
+  const closeExtensionModal = () => setExtensionModal({ open: false, profile: null })
 
   // 复制弹窗
   const [copyModal, setCopyModal] = useState<{ open: boolean; profile: BrowserProfile | null }>({ open: false, profile: null })
@@ -318,8 +323,15 @@ export function BrowserListPage() {
         onStop={(profileId) => { void handleStop(profileId) }}
         onRestart={(profileId) => { void handleRestart(profileId) }}
         onOpenKeywords={openKwModal}
+        onOpenExtensions={openExtensionModal}
         onOpenCopy={openCopyModal}
         onDelete={(profileId) => { void handleDelete(profileId) }}
+      />
+
+      <ProfileExtensionModal
+        open={extensionModal.open}
+        profile={extensionModal.profile}
+        onClose={closeExtensionModal}
       />
 
       <BrowserListSettingsModal

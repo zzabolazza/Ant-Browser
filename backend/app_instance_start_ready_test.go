@@ -196,6 +196,7 @@ func TestBuildBrowserLaunchArgsUsesNoProxyServerForDirectProxy(t *testing.T) {
 		"direct://",
 		nil,
 		nil,
+		nil,
 		[]string{"about:blank"},
 	)
 
@@ -211,4 +212,35 @@ func TestBuildBrowserLaunchArgsUsesNoProxyServerForDirectProxy(t *testing.T) {
 	if !hasNoProxyServer {
 		t.Fatalf("expected direct proxy to use --no-proxy-server, got=%v", got)
 	}
+}
+
+func TestBuildBrowserLaunchArgsLoadsEnabledExtensions(t *testing.T) {
+	t.Parallel()
+
+	profile := &BrowserProfile{ProfileId: "profile-extension"}
+	got := buildBrowserLaunchArgs(
+		profile,
+		`D:\profiles\extensions`,
+		9333,
+		"",
+		[]string{`D:\extensions\a`, `D:\extensions\b`},
+		nil,
+		nil,
+		[]string{"about:blank"},
+	)
+
+	wantLoad := `--load-extension=D:\extensions\a,D:\extensions\b`
+	wantExcept := `--disable-extensions-except=D:\extensions\a,D:\extensions\b`
+	if !containsString(got, wantLoad) || !containsString(got, wantExcept) {
+		t.Fatalf("expected extension launch args, got=%v", got)
+	}
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/logger"
 	"ant-chrome/backend/internal/proxy"
 	"fmt"
@@ -70,7 +71,25 @@ func (a *App) resolveBrowserStartProxy(input browserStartInput, profile *Browser
 		return "", "", false, startErr
 	}
 
+	connectorType := config.NormalizeBrowserConnectorType(a.config.Browser.DefaultConnectorType)
+	if connectorType == config.BrowserConnectorMihomo && (proxy.IsSingBoxProtocol(resolvedProxyConfig) || proxy.RequiresBridge(resolvedProxyConfig, proxies, resolvedProxyID) || proxy.RequiresLocalProxyBridgeForBrowser(resolvedProxyConfig)) {
+		log.Info("实际代理内核", logger.F("profile_id", profileID), logger.F("engine", "mihomo"), logger.F("connector", connectorType), logger.F("proxy_id", resolvedProxyID))
+		proxyURL, bridgeErr := a.clashMgr.EnsureNodeBridge(resolvedProxyConfig, proxies, resolvedProxyID)
+		if bridgeErr != nil {
+			startErr := fmt.Errorf("实例启动失败：代理桥接启动失败（mihomo）。原因：%v。请检查代理节点配置、mihomo 可执行文件是否存在，以及本地端口是否被占用。", bridgeErr)
+			log.Error("代理桥接失败(mihomo)",
+				logger.F("error", bridgeErr.Error()),
+				logger.F("reason", startErr.Error()),
+			)
+			profile.LastError = startErr.Error()
+			return "", "", false, startErr
+		}
+		log.Info("mihomo 桥接成功", logger.F("engine", "mihomo"), logger.F("proxy_url", proxyURL))
+		return proxyURL, "", false, nil
+	}
+
 	if proxy.IsSingBoxProtocol(resolvedProxyConfig) {
+		log.Info("实际代理内核", logger.F("profile_id", profileID), logger.F("engine", "sing-box"), logger.F("connector", connectorType), logger.F("proxy_id", resolvedProxyID))
 		socksURL, bridgeErr := a.singboxMgr.EnsureBridge(resolvedProxyConfig, proxies, resolvedProxyID)
 		if bridgeErr != nil {
 			startErr := fmt.Errorf("实例启动失败：代理桥接启动失败（sing-box）。原因：%v。请检查代理节点配置、sing-box 可执行文件是否存在，以及本地端口是否被占用。", bridgeErr)
@@ -81,11 +100,12 @@ func (a *App) resolveBrowserStartProxy(input browserStartInput, profile *Browser
 			profile.LastError = startErr.Error()
 			return "", "", false, startErr
 		}
-		log.Info("sing-box 桥接成功", logger.F("socks_url", socksURL))
+		log.Info("sing-box 桥接成功", logger.F("engine", "sing-box"), logger.F("socks_url", socksURL))
 		return socksURL, "", false, nil
 	}
 
 	if proxy.RequiresBridge(resolvedProxyConfig, proxies, resolvedProxyID) || proxy.RequiresLocalProxyBridgeForBrowser(resolvedProxyConfig) {
+		log.Info("实际代理内核", logger.F("profile_id", profileID), logger.F("engine", "xray"), logger.F("connector", connectorType), logger.F("proxy_id", resolvedProxyID))
 		socksURL, bridgeKey, bridgeErr := a.xrayMgr.AcquireBridge(resolvedProxyConfig, proxies, resolvedProxyID)
 		if bridgeErr != nil {
 			startErr := fmt.Errorf("实例启动失败：代理桥接启动失败（xray）。原因：%v。请检查代理节点配置、xray 可执行文件是否存在，以及本地端口是否被占用。", bridgeErr)
@@ -96,10 +116,11 @@ func (a *App) resolveBrowserStartProxy(input browserStartInput, profile *Browser
 			profile.LastError = startErr.Error()
 			return "", "", false, startErr
 		}
-		log.Info("xray 桥接成功", logger.F("socks_url", socksURL))
+		log.Info("xray 桥接成功", logger.F("engine", "xray"), logger.F("socks_url", socksURL))
 		return socksURL, bridgeKey, bridgeKey != "", nil
 	}
 
+	log.Info("实际代理内核", logger.F("profile_id", profileID), logger.F("engine", "native"), logger.F("connector", connectorType), logger.F("proxy_id", resolvedProxyID))
 	return resolvedProxyConfig, "", false, nil
 }
 

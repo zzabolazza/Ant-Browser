@@ -1,0 +1,320 @@
+package proxy
+
+import (
+	"ant-chrome/backend/internal/apppath"
+	"ant-chrome/backend/internal/config"
+	"ant-chrome/backend/internal/fsutil"
+	"ant-chrome/backend/internal/logger"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"gopkg.in/yaml.v3"
+)
+
+type MihomoNodeBridge struct {
+	NodeKey    string
+	Port       int
+	Cmd        *exec.Cmd
+	Pid        int
+	ConfigPath string
+	Running    bool
+	LastUsedAt time.Time
+	ExitDone   chan struct{}
+	ExitErr    error
+}
+
+func (m *ClashManager) EnsureNodeBridge(proxyConfig string, proxies []config.BrowserProxy, proxyId string) (string, error) {
+	log := logger.New("Mihomo")
+	src := strings.TrimSpace(resolveProxyConfig(proxyConfig, proxies, proxyId))
+	if src == "" {
+		return "", fmt.Errorf("未找到代理节点")
+	}
+	if strings.EqualFold(src, "direct://") {
+		return "direct://", nil
+	}
+
+	key := computeNodeKey(src + "\x00mihomo")
+	unlock := m.lockLaunchForKey(key)
+	defer unlock()
+
+	if proxyURL, reused := m.tryReuseMihomoNodeBridge(key); reused {
+		log.Info("复用 mihomo 桥接", logger.F("engine", "mihomo"), logger.F("key", key[:8]), logger.F("proxy_url", proxyURL))
+		return proxyURL, nil
+	}
+
+	binaryPath, err := m.resolveMihomoBinary()
+	if err != nil {
+		return "", err
+	}
+	node, err := buildMihomoNode(src)
+	if err != nil {
+		return "", err
+	}
+	port, err := nextAvailablePort()
+	if err != nil {
+		return "", err
+	}
+	cfgPath, err := m.buildMihomoNodeConfig(key, node, port)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(binaryPath, "-f", cfgPath, "-d", filepath.Dir(cfgPath))
+	hideWindow(cmd)
+	cmd.Dir = filepath.Dir(cfgPath)
+	stderrPath := filepath.Join(filepath.Dir(cfgPath), "mihomo-stderr.log")
+	stderrFile, _ := os.Create(stderrPath)
+	if stderrFile != nil {
+		cmd.Stderr = stderrFile
+	}
+	if err := cmd.Start(); err != nil {
+		if stderrFile != nil {
+			stderrFile.Close()
+		}
+		return "", fmt.Errorf("mihomo 启动失败: %w", err)
+	}
+	bridge := &MihomoNodeBridge{NodeKey: key, Port: port, Cmd: cmd, Pid: cmd.Process.Pid, ConfigPath: cfgPath, Running: true, LastUsedAt: time.Now(), ExitDone: make(chan struct{})}
+	m.watchMihomoNodeBridge(bridge)
+	if err := waitTCPPortReady("127.0.0.1", port, 10*time.Second); err != nil {
+		if stderrFile != nil {
+			stderrFile.Close()
+		}
+		_ = cmd.Process.Kill()
+		return "", fmt.Errorf("mihomo mixed-port 未就绪: %w", err)
+	}
+	if stderrFile != nil {
+		stderrFile.Close()
+	}
+	m.registerMihomoNodeBridge(key, bridge)
+	log.Info("mihomo 内核进程已启动", logger.F("engine", "mihomo"), logger.F("key", key[:8]), logger.F("pid", bridge.Pid), logger.F("port", port))
+	return fmt.Sprintf("http://127.0.0.1:%d", port), nil
+}
+
+func (m *ClashManager) tryReuseMihomoNodeBridge(key string) (string, bool) {
+	if m == nil {
+		return "", false
+	}
+	m.mu.Lock()
+	if m.NodeBridges == nil {
+		m.NodeBridges = map[string]*MihomoNodeBridge{}
+	}
+	bridge := m.NodeBridges[key]
+	if bridge == nil || !bridge.Running || bridge.Cmd == nil || bridge.Cmd.Process == nil || bridge.Cmd.ProcessState != nil {
+		delete(m.NodeBridges, key)
+		m.mu.Unlock()
+		return "", false
+	}
+	m.mu.Unlock()
+	if waitTCPPortReady("127.0.0.1", bridge.Port, 800*time.Millisecond) != nil {
+		_ = bridge.Cmd.Process.Kill()
+		m.mu.Lock()
+		if m.NodeBridges[key] == bridge {
+			bridge.Running = false
+			delete(m.NodeBridges, key)
+		}
+		m.mu.Unlock()
+		return "", false
+	}
+	m.mu.Lock()
+	if m.NodeBridges[key] != bridge || !bridge.Running {
+		m.mu.Unlock()
+		return "", false
+	}
+	bridge.LastUsedAt = time.Now()
+	m.mu.Unlock()
+	return fmt.Sprintf("http://127.0.0.1:%d", bridge.Port), true
+}
+
+func (m *ClashManager) registerMihomoNodeBridge(key string, bridge *MihomoNodeBridge) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.NodeBridges == nil {
+		m.NodeBridges = map[string]*MihomoNodeBridge{}
+	}
+	if old := m.NodeBridges[key]; old != nil && old.Cmd != nil && old.Cmd.Process != nil {
+		old.Running = false
+		_ = old.Cmd.Process.Kill()
+	}
+	m.NodeBridges[key] = bridge
+}
+
+func (m *ClashManager) watchMihomoNodeBridge(bridge *MihomoNodeBridge) {
+	if m == nil || bridge == nil || bridge.Cmd == nil {
+		return
+	}
+	go func() {
+		err := bridge.Cmd.Wait()
+		m.mu.Lock()
+		bridge.Running = false
+		bridge.ExitErr = err
+		if current := m.NodeBridges[bridge.NodeKey]; current == bridge {
+			delete(m.NodeBridges, bridge.NodeKey)
+		}
+		m.mu.Unlock()
+		close(bridge.ExitDone)
+	}()
+}
+
+func (m *ClashManager) lockLaunchForKey(key string) func() {
+	if m == nil {
+		return func() {}
+	}
+	m.mu.Lock()
+	if m.launchLocks == nil {
+		m.launchLocks = make(map[string]*bridgeLaunchLock)
+	}
+	lock := m.launchLocks[key]
+	if lock == nil {
+		lock = &bridgeLaunchLock{}
+		m.launchLocks[key] = lock
+	}
+	lock.refs++
+	m.mu.Unlock()
+
+	lock.mu.Lock()
+	return func() {
+		lock.mu.Unlock()
+		m.mu.Lock()
+		lock.refs--
+		if lock.refs <= 0 && m.launchLocks[key] == lock {
+			delete(m.launchLocks, key)
+		}
+		m.mu.Unlock()
+	}
+}
+
+func (m *ClashManager) buildMihomoNodeConfig(key string, node map[string]interface{}, port int) (string, error) {
+	baseDir := m.resolveMihomoWorkdir(key)
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		return "", err
+	}
+	name := strings.TrimSpace(getMapString(node, "name"))
+	if name == "" {
+		name = "node"
+		node["name"] = name
+	}
+	payload := map[string]interface{}{
+		"mixed-port":     port,
+		"allow-lan":      false,
+		"mode":           "rule",
+		"log-level":      "warning",
+		"ipv6":           true,
+		"unified-delay":  true,
+		"tcp-concurrent": false,
+		"proxies":        []interface{}{node},
+		"proxy-groups": []interface{}{
+			map[string]interface{}{
+				"name":    "proxy-out",
+				"type":    "select",
+				"proxies": []interface{}{name},
+			},
+		},
+		"rules": []interface{}{"MATCH,proxy-out"},
+	}
+	cfgPath := filepath.Join(baseDir, "mihomo-config.yaml")
+	data, err := yaml.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(cfgPath, data, 0o644); err != nil {
+		return "", err
+	}
+	return cfgPath, nil
+}
+
+func buildMihomoNode(src string) (map[string]interface{}, error) {
+	var payload interface{}
+	if err := yaml.Unmarshal([]byte(src), &payload); err == nil {
+		if node := pickClashNode(payload); node != nil {
+			return cloneStringInterfaceMap(node), nil
+		}
+	}
+	mapping, err := proxyConfigToMapping(src)
+	if err != nil {
+		return nil, fmt.Errorf("mihomo 节点解析失败: %w", err)
+	}
+	out := map[string]interface{}{}
+	for key, value := range mapping {
+		out[key] = value
+	}
+	return out, nil
+}
+
+func (m *ClashManager) resolveMihomoBinary() (string, error) {
+	if m == nil || m.Config == nil {
+		return "", fmt.Errorf("mihomo 管理器未初始化")
+	}
+	candidates := []string{}
+	if configured := strings.TrimSpace(m.Config.Browser.ClashBinaryPath); configured != "" {
+		candidates = append(candidates, resolveEnvPath(configured, m.AppRoot))
+	}
+	for _, name := range []string{"mihomo.exe", "mihomo", "clash-meta.exe", "clash-meta", "clash.exe", "clash"} {
+		if path, err := exec.LookPath(name); err == nil {
+			candidates = append(candidates, path)
+		}
+	}
+	if runtime.GOOS == "windows" {
+		if appData := strings.TrimSpace(os.Getenv("APPDATA")); appData != "" {
+			candidates = append(candidates,
+				filepath.Join(appData, "mihomo-party", "mihomo.exe"),
+				filepath.Join(appData, "mihomo-party", "core", "mihomo.exe"),
+				filepath.Join(appData, "mihomo-party", "core", "mihomo-windows-amd64.exe"),
+			)
+		}
+	}
+	if m.AppRoot != "" {
+		candidates = append(candidates, filepath.Join(m.AppRoot, "bin", "mihomo.exe"), filepath.Join(m.AppRoot, "bin", "mihomo"))
+	}
+	for _, candidate := range candidates {
+		candidate = fsutil.NormalizePathInput(candidate)
+		if candidate == "" {
+			continue
+		}
+		if !filepath.IsAbs(candidate) && m.AppRoot != "" {
+			candidate = apppath.Resolve(m.AppRoot, candidate)
+		}
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			if err := fsutil.EnsureExecutable(candidate); err != nil {
+				return "", fmt.Errorf("mihomo 文件不可执行: %s: %w", candidate, err)
+			}
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("mihomo/clash 可执行文件未找到，请配置 browser.clash_binary_path")
+}
+
+func (m *ClashManager) resolveMihomoWorkdir(key string) string {
+	root := "data"
+	if m != nil && m.Config != nil {
+		root = strings.TrimSpace(m.Config.Browser.UserDataRoot)
+		if root == "" {
+			root = "data"
+		}
+	}
+	if !filepath.IsAbs(root) && m != nil {
+		root = apppath.Resolve(m.AppRoot, root)
+	}
+	return filepath.Join(root, "_mihomo", key)
+}
+
+func waitTCPPortReady(host string, port int, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	address := fmt.Sprintf("%s:%d", host, port)
+	for {
+		conn, err := net.DialTimeout("tcp", address, 200*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}

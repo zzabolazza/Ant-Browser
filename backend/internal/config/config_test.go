@@ -141,6 +141,26 @@ func TestDefaultConfigUsesCurrentOSFingerprintPlatform(t *testing.T) {
 	}
 }
 
+func TestNormalizeBrowserConnectorTypeAliases(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]string{
+		"":           BrowserConnectorXray,
+		"xray":       BrowserConnectorXray,
+		"sing-box":   BrowserConnectorXray,
+		"singbox":    BrowserConnectorXray,
+		"sing_box":   BrowserConnectorXray,
+		"mihomo":     BrowserConnectorMihomo,
+		"clash":      BrowserConnectorMihomo,
+		"clash-meta": BrowserConnectorMihomo,
+	}
+	for input, want := range tests {
+		if got := NormalizeBrowserConnectorType(input); got != want {
+			t.Fatalf("NormalizeBrowserConnectorType(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
 func TestLoadClearsLegacyVerificationStartURLs(t *testing.T) {
 	t.Parallel()
 

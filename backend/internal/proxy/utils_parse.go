@@ -64,8 +64,12 @@ func proxyEndpoint(src string) (string, error) {
 		if !ok {
 			return "", fmt.Errorf("ss 节点缺少 settings")
 		}
-		server := getMapString(settings, "address")
-		port := getMapInt(settings, "port")
+		serverConfig, err := firstShadowsocksServer(settings)
+		if err != nil {
+			return "", err
+		}
+		server := getMapString(serverConfig, "address")
+		port := getMapInt(serverConfig, "port")
 		if server == "" || port == 0 {
 			return "", fmt.Errorf("ss 节点信息不完整")
 		}

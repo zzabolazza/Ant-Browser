@@ -28,13 +28,18 @@ export function AutomationScriptSummaryCard({
   onOpen,
   onRunScript,
   onRunAPI,
+  selected = false,
+  onSelectedChange,
 }: {
   card: AutomationCardPresentation;
   onOpen?: () => void;
   onRunScript?: () => void;
   onRunAPI?: () => void;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }) {
   const interactive = typeof onOpen === "function";
+  const selectable = typeof onSelectedChange === "function";
   const isInterfaceModeCard = card.scriptType === "launch-api";
   const actionButtonClassName =
     "!h-7 !w-full min-w-0 justify-center whitespace-nowrap !rounded-md !border !border-black !bg-black !px-2 !text-xs !font-medium !leading-none !text-white !shadow-none hover:!border-[#1f1f1f] hover:!bg-[#1f1f1f] focus-visible:!ring-black disabled:!border-[#6b7280] disabled:!bg-[#6b7280] disabled:!text-white";
@@ -49,35 +54,58 @@ export function AutomationScriptSummaryCard({
   const editButtonClassName =
     actionButtonClassName;
 
+  const cardClickable = selectable || interactive;
+
+  const handleCardClick = () => {
+    if (selectable) {
+      onSelectedChange?.(!selected);
+      return;
+    }
+    onOpen?.();
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!interactive || !onOpen) {
+    if (!cardClickable) {
       return;
     }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      onOpen();
+      handleCardClick();
     }
   };
 
   return (
     <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={interactive ? onOpen : undefined}
-      onKeyDown={interactive ? handleKeyDown : undefined}
+      role={selectable ? "checkbox" : interactive ? "button" : undefined}
+      aria-checked={selectable ? selected : undefined}
+      tabIndex={cardClickable ? 0 : undefined}
+      onClick={cardClickable ? handleCardClick : undefined}
+      onKeyDown={cardClickable ? handleKeyDown : undefined}
       className={`group relative flex h-full flex-col rounded-[22px] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] pb-3 pl-7 pr-3.5 pt-3 text-left shadow-[var(--shadow-xs)] transition-all duration-200 ${
-        interactive
+        cardClickable
           ? "cursor-pointer hover:border-[var(--color-border-strong)] hover:shadow-[var(--shadow-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2"
           : ""
-      }`}
+      } ${selected ? "border-[var(--color-border-strong)] ring-2 ring-[var(--color-border-strong)] ring-offset-1" : ""}`}
     >
       <div
         aria-hidden="true"
         className={`absolute bottom-3 left-3 top-3 w-1 rounded-full ${card.railClassName}`}
       />
 
-      <div className="min-w-0 text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
-        {card.title}
+      <div className="flex min-w-0 items-start gap-2">
+        {selectable ? (
+          <input
+            type="checkbox"
+            checked={selected}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => onSelectedChange?.(event.currentTarget.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-strong)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+            aria-label={`选择 ${card.title}`}
+          />
+        ) : null}
+        <div className="min-w-0 text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
+          {card.title}
+        </div>
       </div>
 
       <div

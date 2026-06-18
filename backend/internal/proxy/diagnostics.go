@@ -24,9 +24,11 @@ type ProxyBuildDiagnostic struct {
 	NodeKey         string                 `json:"nodeKey"`
 	RawConfigMasked string                 `json:"rawConfigMasked"`
 	DnsServers      string                 `json:"dnsServers"`
+	DnsSummary      DnsDiagnosticSummary   `json:"dnsSummary"`
 	StandardProxy   string                 `json:"standardProxy"`
 	Outbounds       []interface{}          `json:"outbounds"`
 	Routes          []interface{}          `json:"routes"`
+	Inbound         map[string]interface{} `json:"inbound"`
 	Outbound        map[string]interface{} `json:"outbound"`
 	Runtime         ProxyRuntimeDiagnostic `json:"runtime"`
 	Errors          []string               `json:"errors"`
@@ -59,6 +61,7 @@ func BuildProxyDiagnostic(proxyConfig string, proxies []config.BrowserProxy, pro
 		Found:           found || proxyId == "",
 		RawConfigMasked: maskProxyConfig(src),
 		DnsServers:      item.DnsServers,
+		DnsSummary:      buildDnsDiagnosticSummary(item.DnsServers),
 	}
 	if found {
 		result.ProxyName = item.ProxyName
@@ -146,12 +149,25 @@ func buildXrayDiagnostic(src string, proxies []config.BrowserProxy, proxyId stri
 	}
 
 	result.Ok = true
+	result.Inbound = buildXrayDiagnosticInbound()
 	preferredKeySource = src + "\x00" + dnsServersForDiagnostic(proxies, proxyId)
 	result.NodeKey = computeNodeKey(preferredKeySource)
 	if manager != nil {
 		workDir := manager.resolveWorkdir(result.NodeKey)
 		result.Runtime = buildRuntimeDiagnostic(workDir, "xray-config.json", "xray-stderr.log", "", "xray-error.log")
 		fillXrayBridgeState(manager, result.NodeKey, &result.Runtime)
+	}
+}
+
+func buildXrayDiagnosticInbound() map[string]interface{} {
+	return map[string]interface{}{
+		"tag":      "socks-in",
+		"listen":   "127.0.0.1",
+		"protocol": "socks",
+		"settings": map[string]interface{}{
+			"udp": true,
+		},
+		"sniffing": xrayBrowserSniffingConfig(),
 	}
 }
 

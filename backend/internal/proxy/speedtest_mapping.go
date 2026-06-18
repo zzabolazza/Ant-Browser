@@ -72,15 +72,31 @@ func parseSSURIToMapping(src string) (map[string]any, error) {
 	if !ok {
 		return nil, fmt.Errorf("ss 节点缺少 settings")
 	}
+	server, err := firstShadowsocksServer(settings)
+	if err != nil {
+		return nil, err
+	}
 	mapping := map[string]any{
 		"name":     "speedtest-proxy",
 		"type":     "ss",
-		"server":   settings["address"],
-		"port":     settings["port"],
-		"cipher":   settings["method"],
-		"password": settings["password"],
+		"server":   server["address"],
+		"port":     server["port"],
+		"cipher":   server["method"],
+		"password": server["password"],
 	}
 	return mapping, nil
+}
+
+func firstShadowsocksServer(settings map[string]interface{}) (map[string]interface{}, error) {
+	servers, ok := settings["servers"].([]interface{})
+	if !ok || len(servers) == 0 {
+		return nil, fmt.Errorf("ss 节点缺少 servers")
+	}
+	server, ok := servers[0].(map[string]interface{})
+	if !ok || server == nil {
+		return nil, fmt.Errorf("ss server 格式无效")
+	}
+	return server, nil
 }
 
 func parseClashYAMLToMapping(src string) (map[string]any, error) {

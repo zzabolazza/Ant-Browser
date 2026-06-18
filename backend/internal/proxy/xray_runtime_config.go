@@ -44,9 +44,7 @@ func (m *XrayManager) buildRuntimeConfigWithRoute(key string, outbounds []interf
 				"settings": map[string]interface{}{
 					"udp": true,
 				},
-				"sniffing": map[string]interface{}{
-					"enabled": false,
-				},
+				"sniffing": xrayBrowserSniffingConfig(),
 			},
 		},
 		"outbounds": append(outbounds,

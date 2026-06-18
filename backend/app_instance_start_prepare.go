@@ -26,6 +26,7 @@ type browserStartPlan struct {
 	chromeBinaryPath      string
 	userDataDir           string
 	args                  []string
+	extensionDirs         []string
 	deferredStartTargets  []string
 	effectiveProxy        string
 	acquiredXrayBridgeKey string
@@ -132,6 +133,7 @@ func (a *App) prepareBrowserStartPlan(input browserStartInput, profile *BrowserP
 	maxStartAttempts := browserStartAttemptCount()
 	totalReadyTimeout := time.Duration(maxStartAttempts) * startReadyTimeout
 	restoreLastSession := browserRestoreLastSession(a.config)
+	extensionDirs := a.browserMgr.EnabledExtensionDirsForProfile(input.ProfileID)
 	defaultStartURLs := mergeStartURLs(browserDefaultStartURLs(a.config), bookmarkStartURLs(bookmarks))
 	launchTargets, deferredStartTargets := buildBrowserLaunchTargets(
 		input.StartURLs,
@@ -157,7 +159,8 @@ func (a *App) prepareBrowserStartPlan(input browserStartInput, profile *BrowserP
 		profile:               profile,
 		chromeBinaryPath:      chromeBinaryPath,
 		userDataDir:           userDataDir,
-		args:                  buildBrowserLaunchArgs(profile, userDataDir, assignedDebugPort, effectiveProxy, sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, launchTargets),
+		extensionDirs:         extensionDirs,
+		args:                  buildBrowserLaunchArgs(profile, userDataDir, assignedDebugPort, effectiveProxy, extensionDirs, sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, launchTargets),
 		deferredStartTargets:  deferredStartTargets,
 		effectiveProxy:        effectiveProxy,
 		acquiredXrayBridgeKey: acquiredXrayBridgeKey,
@@ -265,7 +268,7 @@ func (a *App) prepareBrowserLaunchContext(input browserStartInput, profile *Brow
 	return sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, chromeBinaryPath, userDataDir, nil
 }
 
-func buildBrowserLaunchArgs(profile *BrowserProfile, userDataDir string, debugPort int, effectiveProxy string, sanitizedProfileLaunchArgs []string, sanitizedExtraLaunchArgs []string, launchTargets []string) []string {
+func buildBrowserLaunchArgs(profile *BrowserProfile, userDataDir string, debugPort int, effectiveProxy string, extensionDirs []string, sanitizedProfileLaunchArgs []string, sanitizedExtraLaunchArgs []string, launchTargets []string) []string {
 	args := []string{
 		fmt.Sprintf("--user-data-dir=%s", userDataDir),
 		fmt.Sprintf("--remote-debugging-port=%d", debugPort),
@@ -294,6 +297,11 @@ func buildBrowserLaunchArgs(profile *BrowserProfile, userDataDir string, debugPo
 		args = append(args, "--no-proxy-server")
 	} else if effectiveProxy != "" {
 		args = append(args, fmt.Sprintf("--proxy-server=%s", effectiveProxy))
+	}
+
+	if extensionArg := strings.Join(normalizeNonEmptyStrings(extensionDirs), ","); extensionArg != "" {
+		args = append(args, fmt.Sprintf("--disable-extensions-except=%s", extensionArg))
+		args = append(args, fmt.Sprintf("--load-extension=%s", extensionArg))
 	}
 
 	args = append(args, profile.FingerprintArgs...)

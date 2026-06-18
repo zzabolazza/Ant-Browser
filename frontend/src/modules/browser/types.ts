@@ -74,6 +74,7 @@ export interface BrowserSettings {
   restoreLastSession: boolean
   startReadyTimeoutMs: number
   startStableWindowMs: number
+  defaultConnectorType: 'xray' | 'mihomo' | string
 }
 
 export interface ProxyCheckTarget {
@@ -147,6 +148,42 @@ export interface ProxyIPHealthResult {
   updatedAt: string
 }
 
+
+export interface ProxyCoreDownloadProgress {
+  core: string
+  goos: string
+  goarch: string
+  phase: string
+  progress: number
+  message: string
+}
+
+export interface ProxyCoreStatusResult {
+  core: string
+  goos: string
+  goarch: string
+  installed: boolean
+  configured: boolean
+  active: boolean
+  binaryPath: string
+  source: string
+  message: string
+}
+
+export interface ProxyCoreDownloadInfoResult {
+  core: string
+  goos: string
+  goarch: string
+  version: string
+  repo: string
+  releaseUrl: string
+  downloadUrl: string
+  assetName: string
+  installDir: string
+  binaryName: string
+  message: string
+}
+
 export interface ProxyBridgeWarmupResult {
   proxyId: string
   ok: boolean
@@ -184,6 +221,37 @@ export interface BrowserCoreExtended {
   coreId: string
   chromeVersion: string
   instanceCount: number
+}
+
+export interface BrowserExtension {
+  extensionId: string
+  name: string
+  version: string
+  description: string
+  iconDataUrl: string
+  manifestJson: string
+  sourceUrl: string
+  installDir: string
+  enabled: boolean
+  installedAt: string
+  updatedAt: string
+}
+
+export interface BrowserExtensionLookupResult {
+  extensionId: string
+  name: string
+  version: string
+  description: string
+  storeUrl: string
+  installable: boolean
+  message: string
+}
+
+export interface BrowserProfileExtensionSettings {
+  profileId: string
+  configured: boolean
+  extensionIds: string[]
+  updatedAt: string
 }
 
 export interface CookieInfo {

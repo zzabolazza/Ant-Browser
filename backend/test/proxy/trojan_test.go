@@ -86,14 +86,16 @@ func TestSSClashYAML(t *testing.T) {
 		t.Errorf("protocol 期望 shadowsocks，得到 %v", outbound["protocol"])
 	}
 	settings := outbound["settings"].(map[string]interface{})
-	if settings["address"] != "1.2.3.4" {
-		t.Errorf("address 不匹配: %v", settings["address"])
+	servers := settings["servers"].([]interface{})
+	server := servers[0].(map[string]interface{})
+	if server["address"] != "1.2.3.4" {
+		t.Errorf("address 不匹配: %v", server["address"])
 	}
-	if settings["method"] != "aes-256-gcm" {
-		t.Errorf("method 不匹配: %v", settings["method"])
+	if server["method"] != "aes-256-gcm" {
+		t.Errorf("method 不匹配: %v", server["method"])
 	}
-	if settings["password"] != "testpassword" {
-		t.Errorf("password 不匹配: %v", settings["password"])
+	if server["password"] != "testpassword" {
+		t.Errorf("password 不匹配: %v", server["password"])
 	}
 }
 
@@ -109,14 +111,16 @@ func TestSSURI_SIP002(t *testing.T) {
 	t.Logf("SS SIP002 outbound:\n%s", string(data))
 
 	settings := outbound["settings"].(map[string]interface{})
-	if settings["method"] != "aes-256-gcm" {
-		t.Errorf("method 不匹配: %v", settings["method"])
+	servers := settings["servers"].([]interface{})
+	server := servers[0].(map[string]interface{})
+	if server["method"] != "aes-256-gcm" {
+		t.Errorf("method 不匹配: %v", server["method"])
 	}
-	if settings["password"] != "mypassword" {
-		t.Errorf("password 不匹配: %v", settings["password"])
+	if server["password"] != "mypassword" {
+		t.Errorf("password 不匹配: %v", server["password"])
 	}
-	if settings["address"] != "1.2.3.4" {
-		t.Errorf("address 不匹配: %v", settings["address"])
+	if server["address"] != "1.2.3.4" {
+		t.Errorf("address 不匹配: %v", server["address"])
 	}
 }
 
@@ -129,11 +133,13 @@ func TestSSURI_Legacy(t *testing.T) {
 		t.Fatalf("解析失败: %v", err)
 	}
 	settings := outbound["settings"].(map[string]interface{})
-	if settings["method"] != "chacha20-ietf-poly1305" {
-		t.Errorf("method 不匹配: %v", settings["method"])
+	servers := settings["servers"].([]interface{})
+	server := servers[0].(map[string]interface{})
+	if server["method"] != "chacha20-ietf-poly1305" {
+		t.Errorf("method 不匹配: %v", server["method"])
 	}
-	if settings["address"] != "2.3.4.5" {
-		t.Errorf("address 不匹配: %v", settings["address"])
+	if server["address"] != "2.3.4.5" {
+		t.Errorf("address 不匹配: %v", server["address"])
 	}
 	t.Logf("SS legacy outbound OK: %v", settings)
 }
