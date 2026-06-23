@@ -467,4 +467,3 @@ export function buildTemplateProfileOptions(profiles: BrowserProfile[]) {
       .join(" · "),
   }));
 }
-

@@ -1,4 +1,4 @@
-﻿import type { AutomationScriptType } from './definitions'
+import type { AutomationScriptType } from './definitions'
 import { normalizeAutomationScriptTargetSelector } from './targets'
 
 const DUAL_INSTANCE_DEFAULT_CODES = ["BUYER_001", "BUYER_002"] as const;
@@ -395,5 +395,3 @@ export function normalizeDualInstanceRuntimeParamsText(text: string): string {
     return fallback;
   }
 }
-
-

@@ -1,4 +1,4 @@
-﻿package launchcode
+package launchcode
 
 import (
 	"bytes"
@@ -483,4 +483,3 @@ func decodeJSONObjectBody(body []byte, fieldName string) (map[string]interface{}
 	}
 	return obj, true, nil
 }
-

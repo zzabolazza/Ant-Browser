@@ -1,4 +1,4 @@
-﻿import { Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { Button, Textarea } from "../../../shared/components";
 import { copyText } from "./AutomationScriptPublicApiModal.helpers";
 import type { AutomationScriptPublicAPIConfig } from "../automationScripts";
@@ -126,4 +126,3 @@ export function AutomationScriptPublicApiBodyExamples({
         </div>
   );
 }
-

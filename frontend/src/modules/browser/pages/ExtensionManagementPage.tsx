@@ -528,4 +528,3 @@ export function ExtensionManagementPage() {
 
   )
 }
-

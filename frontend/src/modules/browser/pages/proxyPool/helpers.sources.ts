@@ -1,4 +1,4 @@
-﻿import type { BrowserProxy } from '../../types'
+import type { BrowserProxy } from '../../types'
 import type { ClashProxy, URLImportSourceMeta } from './helpers.types'
 import { nextProxyID, proxyToYaml, resolveImportedProxyName } from './helpers.clash'
 
@@ -165,5 +165,3 @@ export function buildRefreshedSourceProxies(
     }
   })
 }
-
-

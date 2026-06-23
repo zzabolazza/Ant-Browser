@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Plus, Search, Wifi, X } from 'lucide-react'
 import { ConfirmModal, toast } from '../../../shared/components'
@@ -459,4 +459,3 @@ export function ProxyPickerModal({ open, currentProxyId, title = '从代理池�
     document.body
   )
 }
-

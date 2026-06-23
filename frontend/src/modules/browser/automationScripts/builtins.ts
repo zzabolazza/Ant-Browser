@@ -1,4 +1,4 @@
-﻿import {
+import {
   AUTOMATION_SCRIPT_MANIFEST_VERSION,
   AUTOMATION_SCRIPT_PACKAGE_FORMAT,
   DUAL_INSTANCE_RUNTIME_SCRIPT_ID,
@@ -178,4 +178,3 @@ export function buildDefaultAutomationScripts(): AutomationScriptRecord[] {
     createWebImageGenerateDownloadScriptDraft(),
   ];
 }
-

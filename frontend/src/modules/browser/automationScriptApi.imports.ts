@@ -1,4 +1,4 @@
-﻿import { importAutomationScript, type AutomationScriptRecord } from "./automationScripts";
+import { importAutomationScript, type AutomationScriptRecord } from "./automationScripts";
 import { getBindings, normalizeAutomationScriptRecord, type AutomationScriptBatchImportResult } from "./automationScriptApi.shared";
 
 export async function importAutomationScriptFromLocalFile(): Promise<AutomationScriptRecord> {
@@ -187,4 +187,3 @@ export async function refreshAutomationScript(
 
   throw new Error("当前环境不支持按来源重新导入");
 }
-

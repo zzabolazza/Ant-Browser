@@ -1,4 +1,4 @@
-﻿import type { ChainHopForm, ChainImportForm, ChainSocks5Config, ChainSocks5HopConfig, ImportCandidate } from './helpers.types'
+import type { ChainHopForm, ChainImportForm, ChainSocks5Config, ChainSocks5HopConfig, ImportCandidate } from './helpers.types'
 import { CHAIN_SOCKS5_PREFIX } from './helpers.types'
 
 export function parseChainSocks5Config(proxyConfig: string): ChainSocks5Config | null {
@@ -239,4 +239,3 @@ export function parseChainImportJSON(raw: string): { form: ChainImportForm; grou
     groupName,
   }
 }
-

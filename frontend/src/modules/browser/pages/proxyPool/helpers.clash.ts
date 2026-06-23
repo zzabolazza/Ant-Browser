@@ -1,4 +1,4 @@
-﻿import yaml from 'js-yaml'
+import yaml from 'js-yaml'
 import type { BrowserProxy } from '../../types'
 import type { ClashProxy, ImportCandidate, ProxyDisplayInfo } from './helpers.types'
 import { BUILTIN_PROXIES } from './helpers.types'
@@ -192,5 +192,3 @@ export function resolveImportedProxyName(proxy: ClashProxy, index: number, prefi
   const rawName = (proxy.name || '').trim() || `导入代理 ${index + 1}`
   return prefix ? `${prefix}-${rawName}` : rawName
 }
-
-

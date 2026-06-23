@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Keyboard, Play, Search, Tag } from 'lucide-react'
 import { Badge, Button, Modal, toast } from '../../../shared/components'
 import { startBrowserInstanceByCode } from '../api'
@@ -487,4 +487,3 @@ export function QuickLaunchModal({ open, onClose }: QuickLaunchModalProps) {
     </Modal>
   )
 }
-

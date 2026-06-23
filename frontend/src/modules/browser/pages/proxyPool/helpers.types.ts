@@ -1,4 +1,4 @@
-﻿import type { BrowserProxy } from '../../types'
+import type { BrowserProxy } from '../../types'
 
 export const BUILTIN_PROXY_IDS = new Set(['__direct__'])
 
@@ -161,4 +161,3 @@ export interface URLImportSourceMeta {
   sourceRefreshIntervalM: number
   sourceLastRefreshAt: string
 }
-

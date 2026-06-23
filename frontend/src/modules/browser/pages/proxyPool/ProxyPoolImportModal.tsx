@@ -1,4 +1,4 @@
-﻿import { Button, FormItem, Input, Modal, Select, Textarea } from '../../../../shared/components'
+import { Button, FormItem, Input, Modal, Select, Textarea } from '../../../../shared/components'
 import type { BrowserProxy } from '../../types'
 import {
   CHAIN_QUICK_IMPORT_TEMPLATE,
@@ -428,4 +428,3 @@ export function ProxyPoolImportModal({
     </Modal>
   )
 }
-

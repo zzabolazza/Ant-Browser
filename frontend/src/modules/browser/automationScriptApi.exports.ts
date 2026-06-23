@@ -1,4 +1,4 @@
-﻿import { exportAutomationScript, type AutomationScriptRecord } from "./automationScripts";
+import { exportAutomationScript, type AutomationScriptRecord } from "./automationScripts";
 import { getBindings, type AutomationScriptExportResult } from "./automationScriptApi.shared";
 
 function normalizeAutomationScriptExportResult(
@@ -165,4 +165,3 @@ export async function exportAutomationScriptDirectory(
 
   throw new Error("当前环境不支持目录脚本包导出");
 }
-

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "../../../shared/components";
 import {
   invokeAutomationScriptPublicApi,
@@ -370,4 +370,3 @@ export function AutomationScriptPublicApiModal({
     />
   );
 }
-

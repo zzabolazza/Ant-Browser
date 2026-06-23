@@ -1,4 +1,4 @@
-﻿import type { DirectImportForm, ImportCandidate } from './helpers.types'
+import type { DirectImportForm, ImportCandidate } from './helpers.types'
 
 function normalizeDirectProxyConfig(raw: string): string {
   const trimmed = raw.trim()
@@ -276,4 +276,3 @@ export function buildDirectImportCandidatesFromText(raw: string): { candidates: 
     defaultGroupName,
   }
 }
-

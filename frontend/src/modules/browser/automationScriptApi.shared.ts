@@ -1,4 +1,4 @@
-﻿import {
+import {
   normalizeAutomationScriptPublicAPIConfig,
   normalizeAutomationScriptRecordPayload,
   normalizeAutomationScriptTargetConfig,
@@ -171,5 +171,3 @@ export function normalizeAutomationScriptRunInput(
     startByCodeBeforeRun: input?.startByCodeBeforeRun === true,
   };
 }
-
-

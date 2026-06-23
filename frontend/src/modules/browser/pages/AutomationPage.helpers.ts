@@ -454,4 +454,3 @@ export function mergeImportedScripts(
   const deduped = new Map(imported.map((item) => [item.id, item]));
   return [...imported, ...current.filter((item) => !deduped.has(item.id))];
 }
-

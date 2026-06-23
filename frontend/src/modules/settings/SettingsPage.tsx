@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Save, RotateCcw } from 'lucide-react'
 import { Card, Button, ThemeSwitcher, toast } from '../../shared/components'
 import {
@@ -438,5 +438,3 @@ export function SettingsPage() {
     </div>
   )
 }
-
-

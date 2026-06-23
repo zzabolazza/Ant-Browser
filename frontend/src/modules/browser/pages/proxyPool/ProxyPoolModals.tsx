@@ -1,4 +1,4 @@
-﻿import { Button, FormItem, Input, Modal, Select, Table, Textarea } from '../../../../shared/components'
+import { Button, FormItem, Input, Modal, Select, Table, Textarea } from '../../../../shared/components'
 import type { TableColumn } from '../../../../shared/components/Table'
 import type { ProxyIPHealthResult } from '../../types'
 
@@ -336,6 +336,3 @@ export function ProxyPoolIPHealthDetailModal({
     </Modal>
   )
 }
-
-
-

@@ -1,4 +1,4 @@
-﻿import type { RefObject } from "react";
+import type { RefObject } from "react";
 import { Copy, FolderOpen, Play, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button, FormItem, Input, Modal, Select, Switch } from "../../../shared/components";
 import { AutomationInstanceSelector } from "./AutomationInstanceSelector";
@@ -470,5 +470,3 @@ export function AutomationScriptPublicApiModalView({
     </Modal>
   );
 }
-
-

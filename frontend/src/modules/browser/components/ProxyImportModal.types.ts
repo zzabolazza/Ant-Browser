@@ -109,4 +109,3 @@ export interface ChainSocks5Config {
   first: ChainSocks5HopConfig
   second: ChainSocks5HopConfig
 }
-

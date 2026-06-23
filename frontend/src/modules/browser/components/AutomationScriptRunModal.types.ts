@@ -31,4 +31,3 @@ export const DEFAULT_DEMO_CREATE_DRAFT: DemoCreateDraft = {
   profileName: "",
   templateProfileId: "",
 };
-

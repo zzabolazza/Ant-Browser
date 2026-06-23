@@ -1,4 +1,4 @@
-﻿import { loadAutomationScripts, saveAutomationScripts, type AutomationScriptRecord } from "./automationScripts";
+import { loadAutomationScripts, saveAutomationScripts, type AutomationScriptRecord } from "./automationScripts";
 import { getBindings, normalizeAutomationScriptRecord, sortScripts } from "./automationScriptApi.shared";
 
 export async function fetchAutomationScripts(): Promise<
@@ -65,4 +65,3 @@ export async function deleteAutomationScript(scriptId: string): Promise<void> {
     loadAutomationScripts().filter((item) => item.id !== scriptId),
   );
 }
-

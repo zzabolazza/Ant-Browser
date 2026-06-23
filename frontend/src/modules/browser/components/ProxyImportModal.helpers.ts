@@ -443,4 +443,3 @@ export function createExistingProxyIDPicker(oldSourceProxies: BrowserProxy[]) {
   const pickExisting = createExistingProxyPicker(oldSourceProxies)
   return (name: string, configText: string): string | null => pickExisting(name, configText)?.proxyId || null
 }
-

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "../../../shared/components";
 import { AutomationScriptHistoryModal } from "../components/AutomationScriptHistoryModal";
@@ -446,5 +446,3 @@ export function AutomationPage() {
     </div>
   );
 }
-
-
