@@ -221,7 +221,7 @@ func speedTestTargetURLs(cfg *SpeedTestConfig) []string {
 }
 
 func speedTestProbeEngine(src string, proxies []config.BrowserProxy, proxyId string, connectorType string) string {
-	resolution, err := ResolveProxyKernel(src, proxies, proxyId, "")
+	resolution, err := ResolveProxyKernelForConnector(src, proxies, proxyId, connectorType)
 	if err != nil {
 		if resolution.Kernel != "" {
 			return resolution.Kernel

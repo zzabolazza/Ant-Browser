@@ -1,4 +1,4 @@
-﻿export namespace automation {
+export namespace automation {
 
 	export class ScriptPublicAPIVariable {
 	    name: string;
@@ -491,6 +491,7 @@ export namespace backend {
 	    cancelled: boolean;
 	    importedCount: number;
 	    profileMappings: Record<string, string>;
+	    warnings: string[];
 	    message: string;
 
 	    static createFrom(source: any = {}) {
@@ -502,6 +503,7 @@ export namespace backend {
 	        this.cancelled = source["cancelled"];
 	        this.importedCount = source["importedCount"];
 	        this.profileMappings = source["profileMappings"];
+	        this.warnings = source["warnings"];
 	        this.message = source["message"];
 	    }
 	}

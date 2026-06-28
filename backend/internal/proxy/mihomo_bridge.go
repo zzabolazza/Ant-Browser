@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,49 +29,86 @@ type MihomoNodeBridge struct {
 	Pid            int
 	ConfigPath     string
 	Running        bool
+	RefCount       int
 	LastUsedAt     time.Time
 	ExitDone       chan struct{}
 	ExitErr        error
 }
 
 func (m *ClashManager) EnsureNodeBridge(proxyConfig string, proxies []config.BrowserProxy, proxyId string) (string, error) {
+	proxyURL, _, err := m.ensureNodeBridge(proxyConfig, proxies, proxyId, false)
+	return proxyURL, err
+}
+
+func (m *ClashManager) AcquireNodeBridge(proxyConfig string, proxies []config.BrowserProxy, proxyId string) (string, string, error) {
+	return m.ensureNodeBridge(proxyConfig, proxies, proxyId, true)
+}
+
+func (m *ClashManager) ReleaseNodeBridge(key string) {
+	key = strings.TrimSpace(key)
+	if key == "" || m == nil {
+		return
+	}
+
+	var bridgeToStop *MihomoNodeBridge
+	m.mu.Lock()
+	bridge := m.NodeBridges[key]
+	if bridge != nil {
+		if bridge.RefCount > 0 {
+			bridge.RefCount--
+		}
+		bridge.LastUsedAt = time.Now()
+		if bridge.RefCount <= 0 {
+			bridge.Running = false
+			delete(m.NodeBridges, key)
+			bridgeToStop = bridge
+		}
+	}
+	m.mu.Unlock()
+
+	if bridgeToStop != nil && bridgeToStop.Cmd != nil && bridgeToStop.Cmd.Process != nil {
+		_ = bridgeToStop.Cmd.Process.Kill()
+	}
+}
+
+func (m *ClashManager) ensureNodeBridge(proxyConfig string, proxies []config.BrowserProxy, proxyId string, pin bool) (string, string, error) {
 	log := logger.New("Mihomo")
 	src := strings.TrimSpace(resolveProxyConfig(proxyConfig, proxies, proxyId))
 	if src == "" {
-		return "", fmt.Errorf("未找到代理节点")
+		return "", "", fmt.Errorf("未找到代理节点")
 	}
 	if strings.EqualFold(src, "direct://") {
-		return "direct://", nil
+		return "direct://", "", nil
 	}
 
 	key := computeNodeKey(src + "\x00mihomo")
 	unlock := m.lockLaunchForKey(key)
 	defer unlock()
 
-	if proxyURL, reused := m.tryReuseMihomoNodeBridge(key); reused {
+	if proxyURL, reused := m.tryReuseMihomoNodeBridge(key, pin); reused {
 		log.Info("复用 mihomo 桥接", logger.F("engine", "mihomo"), logger.F("key", key[:8]), logger.F("proxy_url", proxyURL))
-		return proxyURL, nil
+		return proxyURL, key, nil
 	}
 
 	binaryPath, err := m.resolveMihomoBinary()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	node, err := buildMihomoNode(src)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	port, err := nextAvailablePort()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	controllerPort, err := nextAvailablePort()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	cfgPath, err := m.buildMihomoNodeConfig(key, node, port, controllerPort)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	cmd := exec.Command(binaryPath, "-f", cfgPath, "-d", filepath.Dir(cfgPath))
@@ -85,33 +123,36 @@ func (m *ClashManager) EnsureNodeBridge(proxyConfig string, proxies []config.Bro
 		if stderrFile != nil {
 			stderrFile.Close()
 		}
-		return "", fmt.Errorf("mihomo 启动失败: %w", err)
+		return "", "", fmt.Errorf("mihomo 启动失败: %w", err)
 	}
 	bridge := &MihomoNodeBridge{NodeKey: key, Port: port, ControllerPort: controllerPort, Cmd: cmd, Pid: cmd.Process.Pid, ConfigPath: cfgPath, Running: true, LastUsedAt: time.Now(), ExitDone: make(chan struct{})}
+	if pin {
+		bridge.RefCount = 1
+	}
 	m.watchMihomoNodeBridge(bridge)
 	if err := waitTCPPortReady("127.0.0.1", port, 10*time.Second); err != nil {
 		if stderrFile != nil {
 			stderrFile.Close()
 		}
 		_ = cmd.Process.Kill()
-		return "", fmt.Errorf("mihomo mixed-port 未就绪: %w", err)
+		return "", "", fmt.Errorf("mihomo mixed-port 未就绪: %w", err)
 	}
 	if err := waitTCPPortReady("127.0.0.1", controllerPort, 10*time.Second); err != nil {
 		if stderrFile != nil {
 			stderrFile.Close()
 		}
 		_ = cmd.Process.Kill()
-		return "", fmt.Errorf("mihomo 控制端口未就绪: %w", err)
+		return "", "", fmt.Errorf("mihomo 控制端口未就绪: %w", err)
 	}
 	if stderrFile != nil {
 		stderrFile.Close()
 	}
 	m.registerMihomoNodeBridge(key, bridge)
 	log.Info("mihomo 内核进程已启动", logger.F("engine", "mihomo"), logger.F("key", key[:8]), logger.F("pid", bridge.Pid), logger.F("port", port))
-	return fmt.Sprintf("http://127.0.0.1:%d", port), nil
+	return fmt.Sprintf("http://127.0.0.1:%d", port), key, nil
 }
 
-func (m *ClashManager) tryReuseMihomoNodeBridge(key string) (string, bool) {
+func (m *ClashManager) tryReuseMihomoNodeBridge(key string, pin bool) (string, bool) {
 	if m == nil {
 		return "", false
 	}
@@ -140,6 +181,9 @@ func (m *ClashManager) tryReuseMihomoNodeBridge(key string) (string, bool) {
 	if m.NodeBridges[key] != bridge || !bridge.Running {
 		m.mu.Unlock()
 		return "", false
+	}
+	if pin {
+		bridge.RefCount++
 	}
 	bridge.LastUsedAt = time.Now()
 	m.mu.Unlock()
@@ -394,7 +438,7 @@ func (m *ClashManager) resolveMihomoWorkdir(key string) string {
 
 func waitTCPPortReady(host string, port int, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
-	address := fmt.Sprintf("%s:%d", host, port)
+	address := net.JoinHostPort(host, strconv.Itoa(port))
 	for {
 		conn, err := net.DialTimeout("tcp", address, 200*time.Millisecond)
 		if err == nil {

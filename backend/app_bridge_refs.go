@@ -5,6 +5,7 @@ import "strings"
 const (
 	profileProxyBridgeEngineXray    = "xray"
 	profileProxyBridgeEngineSingBox = "sing-box"
+	profileProxyBridgeEngineMihomo  = "mihomo"
 )
 
 type profileProxyBridgeRef struct {
@@ -63,6 +64,10 @@ func (a *App) releaseProxyBridgeRef(ref profileProxyBridgeRef) {
 	case profileProxyBridgeEngineSingBox:
 		if a.singboxMgr != nil {
 			a.singboxMgr.ReleaseBridge(ref.Key)
+		}
+	case profileProxyBridgeEngineMihomo:
+		if a.clashMgr != nil {
+			a.clashMgr.ReleaseNodeBridge(ref.Key)
 		}
 	}
 }

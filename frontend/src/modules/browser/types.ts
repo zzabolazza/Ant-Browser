@@ -53,6 +53,7 @@ export interface BrowserProfilePackageImportResult {
   cancelled: boolean
   importedCount: number
   profileMappings: Record<string, string>
+  warnings?: string[]
   message: string
 }
 

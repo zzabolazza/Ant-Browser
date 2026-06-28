@@ -48,3 +48,39 @@ func TestResolveProxyKernelReadsPreferredKernelFromProxy(t *testing.T) {
 		t.Fatalf("unexpected resolution: %+v", got)
 	}
 }
+
+func TestResolveProxyKernelForConnectorPrefersMihomoStack(t *testing.T) {
+	got, err := ResolveProxyKernelForConnector("vless://00000000-0000-0000-0000-000000000000@example.com:443", nil, "", config.BrowserConnectorMihomo)
+	if err != nil {
+		t.Fatalf("ResolveProxyKernelForConnector returned error: %v", err)
+	}
+	if got.Kernel != ProxyKernelMihomo {
+		t.Fatalf("kernel = %q, want %q; resolution=%+v", got.Kernel, ProxyKernelMihomo, got)
+	}
+}
+
+func TestResolveProxyKernelForConnectorKeepsSingBoxOnlyProtocols(t *testing.T) {
+	got, err := ResolveProxyKernelForConnector("hysteria2://pass@example.com:443", nil, "", config.BrowserConnectorXray)
+	if err != nil {
+		t.Fatalf("ResolveProxyKernelForConnector returned error: %v", err)
+	}
+	if got.Kernel != ProxyKernelSingBox {
+		t.Fatalf("kernel = %q, want %q; resolution=%+v", got.Kernel, ProxyKernelSingBox, got)
+	}
+}
+
+func TestResolveProxyKernelForConnectorExplicitPreferenceWins(t *testing.T) {
+	proxyID := "p1"
+	proxies := []config.BrowserProxy{{
+		ProxyId:         proxyID,
+		ProxyConfig:     "vless://00000000-0000-0000-0000-000000000000@example.com:443",
+		PreferredKernel: ProxyKernelXray,
+	}}
+	got, err := ResolveProxyKernelForConnector("", proxies, proxyID, config.BrowserConnectorMihomo)
+	if err != nil {
+		t.Fatalf("ResolveProxyKernelForConnector returned error: %v", err)
+	}
+	if got.Kernel != ProxyKernelXray {
+		t.Fatalf("kernel = %q, want explicit %q; resolution=%+v", got.Kernel, ProxyKernelXray, got)
+	}
+}

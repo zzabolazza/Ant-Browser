@@ -39,7 +39,16 @@ type ProfilePackageImportResult struct {
 	Cancelled       bool              `json:"cancelled"`
 	ImportedCount   int               `json:"importedCount"`
 	ProfileMappings map[string]string `json:"profileMappings"`
+	Warnings        []string          `json:"warnings"`
 	Message         string            `json:"message"`
+}
+
+type preparedProfilePackageImport struct {
+	Profile      browser.Profile
+	OldProfileID string
+	FinalDir     string
+	StagingDir   string
+	HasUserData  bool
 }
 
 // BrowserProfilePackageExport 导出选中的实例配置和浏览器用户数据目录。
@@ -242,7 +251,29 @@ func (a *App) importProfilePackageFromPath(zipPath string) (ProfilePackageImport
 	a.browserMgr.InitData()
 	now := time.Now().Format(time.RFC3339)
 	mappings := make(map[string]string, len(profiles))
-	prepared := make([]browser.Profile, 0, len(profiles))
+	warnings := make([]string, 0)
+	prepared := make([]preparedProfilePackageImport, 0, len(profiles))
+	batchID := uuid.NewString()
+	stagingRoot := a.profilePackageImportStagingRoot(batchID)
+	committedDirs := make([]string, 0, len(profiles))
+	committedProfiles := make([]string, 0, len(profiles))
+	committed := false
+	defer func() {
+		_ = os.RemoveAll(stagingRoot)
+		if !committed {
+			for _, dir := range committedDirs {
+				_ = os.RemoveAll(dir)
+			}
+			if len(committedProfiles) > 0 {
+				a.browserMgr.Mutex.Lock()
+				for _, profileID := range committedProfiles {
+					delete(a.browserMgr.Profiles, profileID)
+				}
+				a.browserMgr.Mutex.Unlock()
+			}
+		}
+	}()
+
 	for _, source := range profiles {
 		oldID := strings.TrimSpace(source.ProfileId)
 		if oldID == "" {
@@ -262,20 +293,45 @@ func (a *App) importProfilePackageFromPath(zipPath string) (ProfilePackageImport
 		source.CreatedAt = now
 		source.UpdatedAt = now
 		source.DeletedAt = ""
-		a.applyImportedProfileProxyByName(&source)
-		prepared = append(prepared, source)
+		if warning := a.applyImportedProfileProxyByName(&source); warning != "" {
+			warnings = append(warnings, fmt.Sprintf("实例「%s」%s", source.ProfileName, warning))
+		}
+
+		profile := &browser.Profile{ProfileId: newID, UserDataDir: newID}
+		finalDir := a.browserMgr.ResolveUserDataDir(profile)
+		stagingDir := filepath.Join(stagingRoot, newID)
+		hasUserData, err := a.extractProfileUserDataToDir(reader.File, oldID, stagingDir)
+		if err != nil {
+			return ProfilePackageImportResult{}, err
+		}
+		if !hasUserData {
+			warnings = append(warnings, fmt.Sprintf("实例「%s」没有用户数据目录，仅导入配置", source.ProfileName))
+		}
+
+		prepared = append(prepared, preparedProfilePackageImport{
+			Profile:      source,
+			OldProfileID: oldID,
+			FinalDir:     finalDir,
+			StagingDir:   stagingDir,
+			HasUserData:  hasUserData,
+		})
 		mappings[oldID] = newID
 	}
 
-	for _, profile := range prepared {
-		if err := a.extractProfileUserData(reader.File, mappings, profile.ProfileId); err != nil {
+	for _, item := range prepared {
+		if !item.HasUserData {
+			continue
+		}
+		if err := replaceProfileUserDataDir(item.StagingDir, item.FinalDir); err != nil {
 			return ProfilePackageImportResult{}, err
 		}
+		committedDirs = append(committedDirs, item.FinalDir)
 	}
 	a.browserMgr.Mutex.Lock()
 	for i := range prepared {
-		profile := &prepared[i]
+		profile := &prepared[i].Profile
 		a.browserMgr.Profiles[profile.ProfileId] = profile
+		committedProfiles = append(committedProfiles, profile.ProfileId)
 		if a.launchCodeSvc != nil {
 			if code, err := a.launchCodeSvc.EnsureCode(profile.ProfileId); err == nil {
 				profile.LaunchCode = code
@@ -286,35 +342,20 @@ func (a *App) importProfilePackageFromPath(zipPath string) (ProfilePackageImport
 	if err := a.browserMgr.SaveProfiles(); err != nil {
 		return ProfilePackageImportResult{}, err
 	}
+	committed = true
 
 	return ProfilePackageImportResult{
 		Cancelled:       false,
 		ImportedCount:   len(prepared),
 		ProfileMappings: mappings,
+		Warnings:        warnings,
 		Message:         "导入完成",
 	}, nil
 }
 
-func (a *App) extractProfileUserData(files []*zip.File, mappings map[string]string, newProfileID string) error {
-	oldProfileID := ""
-	for oldID, mappedID := range mappings {
-		if mappedID == newProfileID {
-			oldProfileID = oldID
-			break
-		}
-	}
-	if oldProfileID == "" {
-		return fmt.Errorf("实例映射不存在: %s", newProfileID)
-	}
-	profile := &browser.Profile{ProfileId: newProfileID, UserDataDir: newProfileID}
-	destDir := a.browserMgr.ResolveUserDataDir(profile)
-	if err := os.RemoveAll(destDir); err != nil {
-		return fmt.Errorf("清理用户数据目录失败: %w", err)
-	}
-	if err := os.MkdirAll(destDir, 0o755); err != nil {
-		return fmt.Errorf("创建用户数据目录失败: %w", err)
-	}
+func (a *App) extractProfileUserDataToDir(files []*zip.File, oldProfileID string, destDir string) (bool, error) {
 	prefix := "user-data/" + oldProfileID + "/"
+	hasUserData := false
 	for _, file := range files {
 		name := filepath.ToSlash(file.Name)
 		if !strings.HasPrefix(name, prefix) {
@@ -324,11 +365,20 @@ func (a *App) extractProfileUserData(files []*zip.File, mappings map[string]stri
 		if rel == "" {
 			continue
 		}
+		if !hasUserData {
+			if err := os.RemoveAll(destDir); err != nil {
+				return false, fmt.Errorf("清理临时用户数据目录失败: %w", err)
+			}
+			if err := os.MkdirAll(destDir, 0o755); err != nil {
+				return false, fmt.Errorf("创建临时用户数据目录失败: %w", err)
+			}
+			hasUserData = true
+		}
 		if err := extractProfilePackageFile(file, destDir, rel); err != nil {
-			return err
+			return false, err
 		}
 	}
-	return nil
+	return hasUserData, nil
 }
 
 func writeProfilePackageJSON(zipWriter *zip.Writer, name string, value any) error {
@@ -434,6 +484,51 @@ func extractProfilePackageFile(file *zip.File, destDir string, rel string) error
 	return closeErr
 }
 
+func replaceProfileUserDataDir(stagingDir string, finalDir string) error {
+	if strings.TrimSpace(stagingDir) == "" || strings.TrimSpace(finalDir) == "" {
+		return fmt.Errorf("用户数据目录不能为空")
+	}
+	if err := os.MkdirAll(filepath.Dir(finalDir), 0o755); err != nil {
+		return fmt.Errorf("创建用户数据父目录失败: %w", err)
+	}
+	backupDir := finalDir + ".profile-package-backup-" + uuid.NewString()
+	finalExisted := false
+	if _, err := os.Stat(finalDir); err == nil {
+		finalExisted = true
+		if err := os.Rename(finalDir, backupDir); err != nil {
+			return fmt.Errorf("备份现有用户数据目录失败: %w", err)
+		}
+	} else if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("检查用户数据目录失败: %w", err)
+	}
+	if err := os.Rename(stagingDir, finalDir); err != nil {
+		if finalExisted {
+			_ = os.Rename(backupDir, finalDir)
+		}
+		return fmt.Errorf("提交用户数据目录失败: %w", err)
+	}
+	if finalExisted {
+		_ = os.RemoveAll(backupDir)
+	}
+	return nil
+}
+
+func (a *App) profilePackageImportStagingRoot(batchID string) string {
+	root := "data"
+	if a.browserMgr != nil && a.browserMgr.Config != nil {
+		root = strings.TrimSpace(a.browserMgr.Config.Browser.UserDataRoot)
+	}
+	if root == "" {
+		root = "data"
+	}
+	if a.browserMgr != nil {
+		root = a.browserMgr.ResolveRelativePath(root)
+	} else {
+		root = a.resolveAppPath(root)
+	}
+	return filepath.Join(root, ".imports", strings.TrimSpace(batchID))
+}
+
 func normalizeProfilePackageIDs(ids []string) []string {
 	seen := make(map[string]struct{}, len(ids))
 	result := make([]string, 0, len(ids))
@@ -485,9 +580,9 @@ func (a *App) prepareProfileProxyForPackage(profile *browser.Profile) {
 	profile.ProxyBindUpdatedAt = ""
 }
 
-func (a *App) applyImportedProfileProxyByName(profile *browser.Profile) {
+func (a *App) applyImportedProfileProxyByName(profile *browser.Profile) string {
 	if profile == nil {
-		return
+		return ""
 	}
 	proxyName := strings.TrimSpace(profile.ProxyBindName)
 	profile.ProxyId = ""
@@ -497,19 +592,29 @@ func (a *App) applyImportedProfileProxyByName(profile *browser.Profile) {
 	profile.ProxyBindUpdatedAt = ""
 	if proxyName == "" {
 		profile.ProxyBindName = ""
-		return
+		return ""
 	}
-	if proxy, ok := a.findUniqueProxyByName(proxyName); ok {
+	proxy, matchCount := a.findProxiesByName(proxyName)
+	if matchCount == 1 {
 		browser.BindProfileToProxy(profile, proxy, true)
-		return
+		return ""
 	}
 	profile.ProxyBindName = ""
+	if matchCount == 0 {
+		return fmt.Sprintf("绑定代理「%s」未找到，已清空绑定", proxyName)
+	}
+	return fmt.Sprintf("绑定代理「%s」存在多个同名匹配，已清空绑定", proxyName)
 }
 
 func (a *App) findUniqueProxyByName(proxyName string) (browser.Proxy, bool) {
+	proxy, count := a.findProxiesByName(proxyName)
+	return proxy, count == 1
+}
+
+func (a *App) findProxiesByName(proxyName string) (browser.Proxy, int) {
 	target := strings.ToLower(strings.TrimSpace(proxyName))
 	if target == "" {
-		return browser.Proxy{}, false
+		return browser.Proxy{}, 0
 	}
 	proxies := browser.ListProxiesWithFallback(a.browserMgr.ProxyDAO, a.config.Browser.Proxies)
 	var hit browser.Proxy
@@ -521,8 +626,8 @@ func (a *App) findUniqueProxyByName(proxyName string) (browser.Proxy, bool) {
 		hit = proxy
 		matched++
 		if matched > 1 {
-			return browser.Proxy{}, false
+			return browser.Proxy{}, matched
 		}
 	}
-	return hit, matched == 1
+	return hit, matched
 }

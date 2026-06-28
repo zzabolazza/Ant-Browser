@@ -2,7 +2,7 @@
     [string]$Target,
     [string]$Version,
     [ValidateSet("INSTALLER", "PORTABLE", "BOTH")]
-    [string]$WindowsFormat = "INSTALLER"
+    [string]$WindowsFormat
 )
 
 Set-StrictMode -Version Latest
@@ -194,16 +194,55 @@ function Resolve-PublishTarget {
 }
 
 function Resolve-WindowsFormat {
-    param([string]$InputFormat)
+    param(
+        [string]$InputFormat,
+        [string]$PublishTarget,
+        [bool]$Interactive
+    )
 
     $normalized = (Get-TrimmedText $InputFormat).ToUpperInvariant()
-    if ($normalized -eq "") {
+    if ($normalized -ne "") {
+        if ($normalized -notin @("INSTALLER", "PORTABLE", "BOTH")) {
+            throw "无效的 Windows 输出格式: $InputFormat`n  支持参数: INSTALLER/PORTABLE/BOTH"
+        }
+        return $normalized
+    }
+
+    if ($PublishTarget -notin @("WINDOWS", "BOTH") -or -not $Interactive) {
         return "INSTALLER"
     }
-    if ($normalized -notin @("INSTALLER", "PORTABLE", "BOTH")) {
-        throw "无效的 Windows 输出格式: $InputFormat`n  支持参数: INSTALLER/PORTABLE/BOTH"
+
+    $formatMapping = @{
+        "I"         = "INSTALLER"
+        "INSTALLER" = "INSTALLER"
+        "Z"         = "PORTABLE"
+        "ZIP"       = "PORTABLE"
+        "P"         = "PORTABLE"
+        "PORTABLE"  = "PORTABLE"
+        "B"         = "BOTH"
+        "BOTH"      = "BOTH"
     }
-    return $normalized
+
+    Write-Host "[2/3] 选择 Windows 输出格式..."
+    Write-Host ""
+    Write-Host "  [I] 安装包（默认）"
+    Write-Host "  [Z] 便携 ZIP"
+    Write-Host "  [B] 安装包 + 便携 ZIP"
+    Write-Host ""
+
+    while ($true) {
+        $choice = (Read-Host "请选择 Windows 输出格式 [I/Z/B]").Trim().ToUpperInvariant()
+        if ($choice -eq "") {
+            $choice = "I"
+        }
+        if ($formatMapping.ContainsKey($choice)) {
+            $resolvedFormat = $formatMapping[$choice]
+            Write-Host "✓ 已选择: $resolvedFormat"
+            Write-Host ""
+            return $resolvedFormat
+        }
+        Write-Host "✗ 未选择有效输出格式" -ForegroundColor Yellow
+    }
 }
 
 function Resolve-NsisPath {
@@ -697,8 +736,9 @@ try {
     Write-Host ""
 
     Resolve-Version -ExplicitVersion $Version
+    $targetWasProvided = (Get-TrimmedText $Target) -ne ""
     $publishTarget = Resolve-PublishTarget -InputTarget $Target
-    $resolvedWindowsFormat = Resolve-WindowsFormat -InputFormat $WindowsFormat
+    $resolvedWindowsFormat = Resolve-WindowsFormat -InputFormat $WindowsFormat -PublishTarget $publishTarget -Interactive (-not $targetWasProvided)
 
     Invoke-WithTemporaryWailsVersion {
         switch ($publishTarget) {

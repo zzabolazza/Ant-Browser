@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/logger"
 	"ant-chrome/backend/internal/proxy"
 	"fmt"
@@ -70,7 +71,11 @@ func (a *App) resolveBrowserStartProxy(input browserStartInput, profile *Browser
 		return "", profileProxyBridgeRef{}, false, startErr
 	}
 
-	resolution, err := proxy.ResolveProxyKernel(resolvedProxyConfig, proxies, resolvedProxyID, "")
+	connectorType := config.BrowserConnectorXray
+	if a.config != nil {
+		connectorType = config.NormalizeBrowserConnectorType(a.config.Browser.DefaultConnectorType)
+	}
+	resolution, err := proxy.ResolveProxyKernelForConnector(resolvedProxyConfig, proxies, resolvedProxyID, connectorType)
 	if err != nil {
 		startErr := fmt.Errorf("实例启动失败：%s", err.Error())
 		profile.LastError = startErr.Error()
@@ -91,14 +96,14 @@ func (a *App) resolveBrowserStartProxy(input browserStartInput, profile *Browser
 			profile.LastError = startErr.Error()
 			return "", profileProxyBridgeRef{}, false, startErr
 		}
-		proxyURL, bridgeErr := a.clashMgr.EnsureNodeBridge(resolvedProxyConfig, proxies, resolvedProxyID)
+		proxyURL, bridgeKey, bridgeErr := a.clashMgr.AcquireNodeBridge(resolvedProxyConfig, proxies, resolvedProxyID)
 		if bridgeErr != nil {
 			startErr := fmt.Errorf("实例启动失败：mihomo 代理桥接失败：%v", bridgeErr)
 			log.Error("代理桥接失败(mihomo)", logger.F("error", bridgeErr.Error()), logger.F("reason", startErr.Error()))
 			profile.LastError = startErr.Error()
 			return "", profileProxyBridgeRef{}, false, startErr
 		}
-		return proxyURL, profileProxyBridgeRef{}, false, nil
+		return proxyURL, newProfileProxyBridgeRef(profileProxyBridgeEngineMihomo, bridgeKey), bridgeKey != "", nil
 	case proxy.ProxyKernelSingBox:
 		if a.singboxMgr == nil {
 			startErr := fmt.Errorf("实例启动失败：sing-box 管理器未初始化，无法启动该协议代理。请检查 sing-box 内核配置。")

@@ -309,7 +309,12 @@ export function BrowserListPage() {
     try {
       const result = await importBrowserProfilePackage()
       if (result.cancelled) return
-      toast.success(`已导入 ${result.importedCount} 个实例`)
+      const warnings = result.warnings || []
+      if (warnings.length > 0) {
+        toast.warning(`已导入 ${result.importedCount} 个实例，${warnings.length} 条提示：${warnings[0]}`)
+      } else {
+        toast.success(`已导入 ${result.importedCount} 个实例`)
+      }
       setSelectedIds(new Set())
       await loadProfiles()
     } catch (error: any) {

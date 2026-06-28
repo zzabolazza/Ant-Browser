@@ -91,13 +91,17 @@ func signalExistingSingleInstance(lockPath string) bool {
 	for attempt := 0; attempt < 5; attempt++ {
 		info, err := readSingleInstanceLock(lockPath)
 		if err == nil && strings.TrimSpace(info.Addr) != "" {
+			grantExistingSingleInstanceForeground(info.PID)
 			conn, dialErr := net.DialTimeout("tcp", info.Addr, 350*time.Millisecond)
 			if dialErr == nil {
+				_ = conn.SetDeadline(time.Now().Add(1200 * time.Millisecond))
 				_, _ = conn.Write([]byte("activate\n"))
+				_, _ = bufio.NewReader(conn).ReadString('\n')
 				_ = conn.Close()
 				activateExistingSingleInstanceWindow(info.PID)
 				return true
 			}
+			activateExistingSingleInstanceWindow(info.PID)
 		}
 		time.Sleep(120 * time.Millisecond)
 	}
@@ -137,6 +141,7 @@ func (g *singleInstanceGuard) handleConn(conn net.Conn) {
 	case g.activation <- struct{}{}:
 	default:
 	}
+	_, _ = conn.Write([]byte("ok\n"))
 }
 
 func (g *singleInstanceGuard) Close() {

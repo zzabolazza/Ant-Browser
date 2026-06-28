@@ -39,7 +39,7 @@ func buildProxyHTTPClient(
 ) (*http.Client, error) {
 	src = strings.TrimSpace(resolveProxyConfig(src, proxies, proxyId))
 	log := logger.New("ProxyHTTPClient")
-	resolution, err := ResolveProxyKernel(src, proxies, proxyId, "")
+	resolution, err := ResolveProxyKernelForConnector(src, proxies, proxyId, connectorType)
 	if err != nil {
 		log.Warn("代理内核解析失败",
 			logger.F("proxy_id", proxyId),

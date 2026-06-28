@@ -230,12 +230,14 @@ data/automation/scripts/<script-id>/
 Windows 发布脚本默认保持原有 NSIS 安装包行为，也可以生成便携 ZIP，或一次生成两种产物：
 
 ```powershell
+bat\publish.bat zip
+bat\publish.bat both
 bat\publish.bat -Target WINDOWS -WindowsFormat INSTALLER
 bat\publish.bat -Target WINDOWS -WindowsFormat PORTABLE
 bat\publish.bat -Target WINDOWS -WindowsFormat BOTH
 ```
 
-省略 `-WindowsFormat` 时等同于 `INSTALLER`。安装包和便携 ZIP 输出到 `publish\output\`。
+省略 `-WindowsFormat` 时等同于 `INSTALLER`。`zip` 快捷命令只生成便携 ZIP，`both` 快捷命令同时生成安装包和便携 ZIP。安装包和便携 ZIP 输出到 `publish\output\`。
 
 ### Linux 发布打包（源码）
 

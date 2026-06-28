@@ -83,6 +83,12 @@ func ResolveProxyKernel(proxyConfig string, proxies []config.BrowserProxy, proxy
 	return resolution, nil
 }
 
+func ResolveProxyKernelForConnector(proxyConfig string, proxies []config.BrowserProxy, proxyId string, connectorType string) (ProxyKernelResolution, error) {
+	src := strings.TrimSpace(resolveProxyConfig(proxyConfig, proxies, proxyId))
+	preferredKernel := preferredKernelForConnector(src, proxies, proxyId, connectorType)
+	return ResolveProxyKernel(src, proxies, proxyId, preferredKernel)
+}
+
 func DetectProxyProtocol(proxyConfig string) string {
 	src := strings.TrimSpace(proxyConfig)
 	l := strings.ToLower(src)
@@ -148,6 +154,34 @@ func containsKernel(kernels []string, kernel string) bool {
 	for _, item := range kernels {
 		if item == kernel {
 			return true
+		}
+	}
+	return false
+}
+
+func preferredKernelForConnector(src string, proxies []config.BrowserProxy, proxyId string, connectorType string) string {
+	if config.NormalizeBrowserConnectorType(connectorType) != config.BrowserConnectorMihomo {
+		return ""
+	}
+	if proxyHasExplicitPreferredKernel(proxies, proxyId) {
+		return ""
+	}
+	src = strings.TrimSpace(resolveProxyConfig(src, proxies, proxyId))
+	protocol := DetectProxyProtocol(src)
+	if containsKernel(SupportedKernelsForProtocol(protocol, src, proxies, proxyId), ProxyKernelMihomo) {
+		return ProxyKernelMihomo
+	}
+	return ""
+}
+
+func proxyHasExplicitPreferredKernel(proxies []config.BrowserProxy, proxyId string) bool {
+	proxyId = strings.TrimSpace(proxyId)
+	if proxyId == "" {
+		return false
+	}
+	for _, item := range proxies {
+		if strings.EqualFold(strings.TrimSpace(item.ProxyId), proxyId) {
+			return NormalizePreferredKernel(item.PreferredKernel) != ""
 		}
 	}
 	return false
