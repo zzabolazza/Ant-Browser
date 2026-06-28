@@ -148,13 +148,22 @@ func (a *App) importLocalBrowserCoreArchive(archivePath string) (*BrowserCore, e
 		}
 	}()
 
-	if err := browser.ExtractCoreArchiveAndStripRootForImport(archivePath, tempExtractDir); err != nil {
+	a.emitBrowserCoreImportProgress("extracting", 0, "开始解压本地内核包...")
+	if err := browser.ExtractCoreArchiveAndStripRootForImport(archivePath, tempExtractDir, func(progress int, message string) {
+		a.emitBrowserCoreImportProgress("extracting", progress, message)
+	}); err != nil {
+		a.emitBrowserCoreImportProgress("error", 0, "解压失败: "+err.Error())
 		return nil, fmt.Errorf("解压失败: %w", err)
 	}
+	a.emitBrowserCoreImportProgress("validating", 90, "正在校验内核可执行文件...")
 	if _, _, ok := browser.FindCoreExecutable(tempExtractDir); !ok {
-		return nil, fmt.Errorf("所选归档不是当前平台可用的内核包：当前平台 %s，未找到浏览器可执行文件（候选：%s）", browser.CoreExecutablePlatform(), strings.Join(browser.CoreExecutableCandidates(), ", "))
+		err := fmt.Errorf("所选归档不是当前平台可用的内核包：当前平台 %s，未找到浏览器可执行文件（候选：%s）", browser.CoreExecutablePlatform(), strings.Join(browser.CoreExecutableCandidates(), ", "))
+		a.emitBrowserCoreImportProgress("error", 0, err.Error())
+		return nil, err
 	}
+	a.emitBrowserCoreImportProgress("saving", 95, "正在保存内核配置...")
 	if err := os.Rename(tempExtractDir, targetDir); err != nil {
+		a.emitBrowserCoreImportProgress("error", 0, "保存内核目录失败: "+err.Error())
 		return nil, err
 	}
 	cleanupTempExtract = false
@@ -165,14 +174,29 @@ func (a *App) importLocalBrowserCoreArchive(archivePath string) (*BrowserCore, e
 		IsDefault: len(a.browserMgr.ListCores()) == 0,
 	}
 	if err := a.browserMgr.SaveCore(input); err != nil {
+		a.emitBrowserCoreImportProgress("error", 0, "保存配置失败: "+err.Error())
 		return nil, err
 	}
 	for _, saved := range a.browserMgr.ListCores() {
 		if normalizeCorePathForCompare(saved.CorePath) == normalizeCorePathForCompare(targetCorePath) {
+			a.emitBrowserCoreImportProgress("done", 100, "导入完成")
 			return &saved, nil
 		}
 	}
-	return nil, fmt.Errorf("本地内核已保存但未能读取结果")
+	err = fmt.Errorf("本地内核已保存但未能读取结果")
+	a.emitBrowserCoreImportProgress("error", 0, err.Error())
+	return nil, err
+}
+
+func (a *App) emitBrowserCoreImportProgress(phase string, progress int, message string) {
+	if a == nil || a.ctx == nil {
+		return
+	}
+	wailsruntime.EventsEmit(a.ctx, "core-import:progress", map[string]interface{}{
+		"phase":    phase,
+		"progress": progress,
+		"message":  message,
+	})
 }
 
 func coreNameFromArchiveName(name string) string {

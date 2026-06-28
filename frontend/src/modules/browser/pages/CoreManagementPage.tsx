@@ -59,6 +59,7 @@ export function CoreManagementPage() {
   const [downloadModalOpen, setDownloadModalOpen] = useState(false)
   const [downloadForm, setDownloadForm] = useState<CoreDownloadForm>({ name: '', url: '', proxyMode: 'system', proxyId: '', mode: 'download' })
   const [downloadProgress, setDownloadProgress] = useState<CoreDownloadProgress | null>(null)
+  const [importProgress, setImportProgress] = useState<CoreDownloadProgress | null>(null)
   const [proxies, setProxies] = useState<BrowserProxy[]>([])
 
   useEffect(() => {
@@ -81,8 +82,17 @@ export function CoreManagementPage() {
     }
     EventsOn('download:progress', onDownloadProgress)
 
+    const onImportProgress = (data: { phase: string; progress: number; message: string }) => {
+      setImportProgress(data)
+      if (data.phase === 'done' || data.phase === 'error') {
+        setTimeout(() => setImportProgress(null), 1200)
+      }
+    }
+    EventsOn('core-import:progress', onImportProgress)
+
     return () => {
       EventsOff('download:progress')
+      EventsOff('core-import:progress')
     }
   }, [])
 
@@ -237,9 +247,11 @@ export function CoreManagementPage() {
 
   const handleImportLocal = async () => {
     setImporting(true)
+    setImportProgress({ phase: 'selecting', progress: 0, message: '请选择本地内核包...' })
     try {
       const imported = await importLocalBrowserCore()
       if (!imported) {
+        setImportProgress(null)
         return
       }
       await loadData()
@@ -438,6 +450,13 @@ export function CoreManagementPage() {
           <Button size="sm" onClick={handleAdd}>新增内核</Button>
         </div>
       </div>
+
+      {importProgress && (
+        <div className="flex items-center justify-between rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] px-3 py-2 text-sm">
+          <span className="text-[var(--color-text-secondary)]">{importProgress.message}</span>
+          <span className="text-[var(--color-text-muted)]">{Math.max(0, Math.min(100, importProgress.progress))}%</span>
+        </div>
+      )}
 
       <CoreSettingsCard settings={settings} onEdit={handleEditSettings} />
 
