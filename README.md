@@ -225,6 +225,18 @@ data/automation/scripts/<script-id>/
 
 这里的 `config` 是应用内部持久化格式；对外复制、导入、脚本库管理一律使用 `automation.script.json` 包结构。
 
+### Windows 发布打包（源码）
+
+Windows 发布脚本默认保持原有 NSIS 安装包行为，也可以生成便携 ZIP，或一次生成两种产物：
+
+```powershell
+bat\publish.bat -Target WINDOWS -WindowsFormat INSTALLER
+bat\publish.bat -Target WINDOWS -WindowsFormat PORTABLE
+bat\publish.bat -Target WINDOWS -WindowsFormat BOTH
+```
+
+省略 `-WindowsFormat` 时等同于 `INSTALLER`。安装包和便携 ZIP 输出到 `publish\output\`。
+
 ### Linux 发布打包（源码）
 
 Linux 发布脚本位于 `publish/linux/`。
