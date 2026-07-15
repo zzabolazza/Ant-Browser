@@ -48,7 +48,8 @@ func (a *App) BackupExportPackage() (map[string]interface{}, error) {
 	savePath = backupEnsureZipSuffix(savePath)
 	a.backupEmitExportProgress("preparing", 8, "正在收集导出范围...")
 
-	scope, err := backup.BuildScope(backup.BuildOptions{AppRoot: a.appRoot, Config: a.config})
+	// 必须与 BackupGetScopeDefinition 一致：detached 模式下使用 StateRoot，不能用安装根 a.appRoot。
+	scope, err := a.BackupGetScopeDefinition()
 	if err != nil {
 		a.backupEmitExportProgress("error", 100, fmt.Sprintf("导出失败: %v", err))
 		return nil, err
