@@ -202,7 +202,7 @@ function resolveDirectProxyName(rawName: string, scheme: string, server: string,
   const name = rawName.trim()
   const fallbackName = server
     ? `${scheme.toUpperCase()}-${server}${port > 0 ? `:${port}` : ''}`
-    : `导入代理 ${index + 1}`
+    : `新建代理 ${index + 1}`
   const finalName = name || fallbackName
   return prefix ? `${prefix}-${finalName}` : finalName
 }
@@ -333,7 +333,7 @@ export function buildChainImportCandidate(form: ChainImportForm): ImportCandidat
 }
 
 function resolveImportedProxyName(proxy: ClashProxy, index: number, prefix: string): string {
-  const rawName = (proxy.name || '').trim() || `导入代理 ${index + 1}`
+  const rawName = (proxy.name || '').trim() || `新建代理 ${index + 1}`
   return prefix ? `${prefix}-${rawName}` : rawName
 }
 

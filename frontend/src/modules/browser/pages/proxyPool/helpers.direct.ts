@@ -23,7 +23,7 @@ function resolveDirectProxyName(
   const name = rawName.trim()
   const fallbackName = server
     ? `${scheme.toUpperCase()}-${server}${port > 0 ? `:${port}` : ''}`
-    : `导入代理 ${index + 1}`
+    : `新建代理 ${index + 1}`
   const finalName = name || fallbackName
   return prefix ? `${prefix}-${finalName}` : finalName
 }

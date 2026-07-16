@@ -94,7 +94,7 @@ export function ProxyPoolImportModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="导入代理配置"
+      title="新建代理"
       width="600px"
       footer={
         <>

@@ -77,7 +77,7 @@ export function ProxyPoolHeader({
             测试全部
           </Button>
         </div>
-        <Button size="sm" onClick={onOpenImport}>导入代理</Button>
+        <Button size="sm" onClick={onOpenImport}>新建代理</Button>
       </div>
     </div>
   )

@@ -377,7 +377,7 @@ export function ProxyPickerModal({ open, currentProxyId, title = '从代理池�
                 className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                导入代理
+                新建代理
               </button>
               <button
                 onClick={testAll}
