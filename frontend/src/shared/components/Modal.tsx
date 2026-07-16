@@ -10,6 +10,7 @@ interface ModalProps {
   footer?: ReactNode
   width?: string
   closable?: boolean
+  padding?: boolean
 }
 
 export function Modal({
@@ -20,6 +21,7 @@ export function Modal({
   footer,
   width = '500px',
   closable = true,
+  padding = true,
 }: ModalProps) {
   useEffect(() => {
     if (open) {
@@ -68,7 +70,7 @@ export function Modal({
         )}
 
         {/* 内容区 */}
-        <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">
+        <div className={`flex-1 min-h-0 ${padding ? 'overflow-y-auto px-6 py-4' : 'overflow-hidden'}`}>
           {children}
         </div>
 

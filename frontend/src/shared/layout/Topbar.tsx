@@ -1,8 +1,8 @@
 ﻿import { useState, useRef, useEffect } from 'react'
 import { Bell, BookOpen, Check, Trash2, Info, AlertCircle, CheckCircle } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { useNotificationStore, type Notification } from '../../store/notificationStore'
+import { DocsCenterModal } from './DocsCenterModal'
 
 function NotificationDropdown({
   notifications,
@@ -118,6 +118,7 @@ function NotificationDropdown({
 
 export function Topbar() {
   const [showNotifications, setShowNotifications] = useState(false)
+  const [docsOpen, setDocsOpen] = useState(false)
   const { notifications, markAsRead, markAllAsRead, clearNotifications } = useNotificationStore()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -173,14 +174,17 @@ export function Topbar() {
           )}
         </div>
 
-        <Link
-          to="/system/docs"
+        <button
+          type="button"
+          onClick={() => setDocsOpen(true)}
           className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] rounded-md transition-colors duration-150"
           title="文档中心"
         >
           <BookOpen className="w-4 h-4" />
-        </Link>
+        </button>
       </div>
+
+      <DocsCenterModal open={docsOpen} onClose={() => setDocsOpen(false)} />
     </header>
   )
 }

@@ -5,6 +5,7 @@ interface LaunchDocsLayoutProps {
   header: ReactNode
   content: ReactNode
   contextRail?: ReactNode
+  embedded?: boolean
 }
 
 export function LaunchDocsLayout({
@@ -12,8 +13,29 @@ export function LaunchDocsLayout({
   header,
   content,
   contextRail,
+  embedded = false,
 }: LaunchDocsLayoutProps) {
   const hasContextRail = Boolean(contextRail)
+
+  if (embedded) {
+    return (
+      <div className="flex h-full min-h-0 bg-[var(--color-bg-subtle)]">
+        <aside className="w-[260px] shrink-0 overflow-y-auto border-r border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
+          <div className="px-3 py-4">
+            {sidebar}
+          </div>
+        </aside>
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="px-5 py-5 md:px-6">
+            <div className="space-y-5">
+              {header}
+              {content}
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="-m-5 min-h-full bg-[var(--color-bg-subtle)]">
