@@ -6,12 +6,10 @@ import {
   DOC_EXTENSION_INTRO,
   DOC_OPERATION_FLOW,
   DOC_PROXY_INTRO,
-  DOC_SKILL_USAGE,
   DOC_TUTORIAL,
 } from './contentIntro'
 import { DOC_CHANGELOG } from './contentChangelog'
 import {
-  DOC_API_AUTOMATION,
   DOC_API_PROFILES_LAUNCH,
   DOC_API_RUNTIME,
 } from './contentApi'
@@ -47,14 +45,8 @@ export const DOC_GROUPS: LaunchDocGroup[] = [
       {
         id: 'tutorial-basic',
         label: '基础使用',
-        summary: '应用上手流程、菜单入口和最小接口链路。',
+        summary: '应用上手流程、菜单入口和实例迁移。',
         content: DOC_TUTORIAL,
-      },
-      {
-        id: 'tutorial-skill',
-        label: 'SKILL 使用',
-        summary: 'OpenClaw 接入 ant-chrome-openclaw 的安装、提问模板和稳定使用规则。',
-        content: DOC_SKILL_USAGE,
       },
       {
         id: 'tutorial-flow',
@@ -130,15 +122,9 @@ export const DOC_GROUPS: LaunchDocGroup[] = [
       },
       {
         id: 'api-runtime',
-        label: '运行态与接管',
-        summary: 'runtime session、活动实例和统一 CDP 入口。',
+        label: '运行态与 CDP',
+        summary: 'runtime session / status / stop，以及每实例直连 cdpUrl。',
         content: DOC_API_RUNTIME,
-      },
-      {
-        id: 'api-automation',
-        label: '脚本自动化',
-        summary: '自动化接口总览、字段规则和调用顺序。',
-        content: DOC_API_AUTOMATION,
       },
       {
         id: 'api-support',

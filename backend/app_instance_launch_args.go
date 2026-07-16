@@ -125,9 +125,6 @@ func (a *App) markProfileStoppedLocked(profileId string, profile *BrowserProfile
 	delete(a.browserMgr.BrowserProcesses, profileId)
 	a.clearDeferredStartTargets(profileId)
 	a.releaseProfileProxyBridge(profileId)
-	if a.launchServer != nil {
-		a.launchServer.ClearActiveProfile(profileId)
-	}
 }
 
 func (a *App) openBrowserWindowForRunningProfile(profile *BrowserProfile, extraLaunchArgs []string, startURLs []string) error {

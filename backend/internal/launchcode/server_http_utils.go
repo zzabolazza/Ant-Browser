@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strings"
+
+	"ant-chrome/backend/internal/browser"
 )
 
 // localhostMiddleware 只允许 127.0.0.1 访问
@@ -23,32 +23,6 @@ func (s *LaunchServer) localhostMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-// handleCDPProxy 将统一端口上的非 /api 请求转发到当前活动实例的 CDP 端口。
-func (s *LaunchServer) handleCDPProxy(w http.ResponseWriter, r *http.Request) {
-	debugPort, profileID, profileName := s.activeTarget()
-	if debugPort <= 0 {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]interface{}{
-			"ok":          false,
-			"error":       "no active browser debug target",
-			"profileId":   profileID,
-			"profileName": profileName,
-		})
-		return
-	}
-
-	target, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", debugPort))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid cdp target: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, proxyErr error) {
-		http.Error(w, fmt.Sprintf("cdp proxy error: %v", proxyErr), http.StatusBadGateway)
-	}
-	proxy.ServeHTTP(w, r)
 }
 
 // writeJSON 写入 JSON 响应
@@ -89,4 +63,11 @@ func remoteIP(remoteAddr string) string {
 		return remoteAddr
 	}
 	return host
+}
+
+func profileDirectCDP(profile *browser.Profile) (int, string) {
+	if profile == nil || !profile.DebugReady || profile.DebugPort <= 0 {
+		return 0, ""
+	}
+	return profile.DebugPort, fmt.Sprintf("http://127.0.0.1:%d", profile.DebugPort)
 }

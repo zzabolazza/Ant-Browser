@@ -31,51 +31,6 @@
 - 导出包包含实例配置和完整浏览器用户数据目录
 - 导入时会生成新实例，不覆盖当前已有实例
 - 代理只按名称适配本地同名代理，未匹配时自动清空代理
-
-## 最小 HTTP 对接
-
-\`\`\`bash
-curl http://127.0.0.1:19876/api/health
-
-curl -X POST http://127.0.0.1:19876/api/launch \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "code": "BUYER_001",
-    "skipDefaultStartUrls": true
-  }'
-\`\`\`
-
-## 返回里主要看这几个字段
-
-\`\`\`json
-{
-  "ok": true,
-  "profileId": "550e8400-e29b-41d4-a716-446655440000",
-  "launchCode": "BUYER_001",
-  "debugReady": true,
-  "cdpUrl": "http://127.0.0.1:19876"
-}
-\`\`\`
-
-## Playwright 接管
-
-\`\`\`javascript
-import { chromium } from "playwright";
-
-const res = await fetch("http://127.0.0.1:19876/api/launch", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    code: "BUYER_001",
-    skipDefaultStartUrls: true
-  })
-});
-
-const data = await res.json();
-const browser = await chromium.connectOverCDP(data.cdpUrl);
-\`\`\`
-
-需要稳定接管时，不要自己轮询，直接用 \`POST /api/runtime/session\`。
 `
 
 export const DOC_OPERATION_FLOW = `# 操作流程
@@ -87,7 +42,7 @@ export const DOC_OPERATION_FLOW = `# 操作流程
 2. 代理池配置：导入或录入代理
 3. 插件包管理：安装插件，按需限制实例
 4. 实例列表：创建实例并选择内核、代理、分组
-5. 启动实例：确认 debugReady 后再接管
+5. 启动实例
 6. 迁移实例：停止实例后导出 ZIP，新环境中导入为新实例
 \`\`\`
 
@@ -113,119 +68,10 @@ export const DOC_OPERATION_FLOW = `# 操作流程
 1. 实例有可用内核
 2. 代理可连通，或确认不需要代理
 3. 必要插件已安装，并且该实例在插件限制范围内
-4. 启动后 debugReady=true
+4. 启动后状态显示为已就绪
 \`\`\`
 `
 
-export const DOC_SKILL_USAGE = `# SKILL 使用说明
-
-## 先准备好 3 个前提
-
-1. Ant Browser 和 OpenClaw 在同一台机器上
-2. Ant Browser 的 LaunchServer 可访问，默认是 \`http://127.0.0.1:19876\`
-3. OpenClaw 已安装 \`ant-chrome-openclaw\` skill，并且已有指向 Ant Browser 的远程 CDP 浏览器配置
-
-## 安装 Skill
-
-如果你不知道项目根目录在哪，先点上面的 \`打开根目录\`。
-
-### Windows
-
-直接安装：
-
-\`\`\`powershell
-pwsh -File skills/ant-chrome-openclaw/scripts/install_ant_chrome_openclaw.ps1 -SetDefaultProfile
-\`\`\`
-
-如果没探测到 OpenClaw 路径，再用：
-
-\`\`\`powershell
-pwsh -File skills/ant-chrome-openclaw/scripts/install_ant_chrome_openclaw.ps1 -TargetSkillsDir "C:\\path\\to\\openclaw\\skills" -ConfigFile "C:\\path\\to\\openclaw\\openclaw.json" -SetDefaultProfile
-\`\`\`
-
-### Linux
-
-直接安装：
-
-\`\`\`bash
-bash skills/ant-chrome-openclaw/scripts/install_ant_chrome_openclaw.sh \
-  --set-default-profile
-\`\`\`
-
-如果没探测到 OpenClaw 路径，再用：
-
-\`\`\`bash
-bash skills/ant-chrome-openclaw/scripts/install_ant_chrome_openclaw.sh \\
-  --target-skills-dir /path/to/openclaw/skills \\
-  --config-file /path/to/openclaw/openclaw.json \\
-  --set-default-profile
-\`\`\`
-
-如果 Ant Browser 开了 API Key，安装时补上对应参数即可。
-
-## 在对话里怎么触发
-
-每次提问开头都明确写：
-
-\`\`\`text
-使用 ant-chrome-openclaw skill。
-\`\`\`
-
-然后直接写你的目标，不要只说“帮我打开浏览器”。
-
-## 推荐提问模板
-
-### 启动并接管
-
-\`\`\`text
-使用 ant-chrome-openclaw skill。
-先检查 LaunchServer。
-如果实例 BUYER_001 没有运行，就启动它。
-确认 debugReady=true 后接管浏览器，并打开 https://example.com
-\`\`\`
-
-### 只接管当前活动实例
-
-\`\`\`text
-使用 ant-chrome-openclaw skill。
-先检查当前 active 实例。
-如果当前活动实例已经是 BUYER_001，就直接接管，不要切换到别的实例。
-\`\`\`
-
-### 按条件匹配实例
-
-\`\`\`text
-使用 ant-chrome-openclaw skill。
-按 keyword=buyer-001 查实例状态。
-如果唯一命中，就接管。
-如果多命中，不要自动切换，先告诉我。
-\`\`\`
-
-### 停止实例
-
-\`\`\`text
-使用 ant-chrome-openclaw skill。
-停止 launchCode=BUYER_001 对应的实例。
-\`\`\`
-
-## 稳定使用规则
-
-- 先在 Ant Browser 前端里把实例、代理、标签和内核配置好
-- 优先提供精确标识，推荐顺序是 \`launchCode\`、\`profileId\`、\`profileName\`
-- 只有在 \`debugReady=true\` 且 \`cdpUrl\` 非空时才接管
-- 如果 selector 命中多个实例，不要自动选，先返回结果给用户确认
-- \`browser stop\` 只是断开 OpenClaw 接管，不等于关闭 Ant Browser 实例
-- 当前统一 CDP 入口一次只指向一个活动实例，切换前先看 \`GET /api/runtime/active\`
-
-## 最小排查顺序
-
-\`\`\`text
-1. GET /api/health
-2. GET /api/runtime/active
-3. 按 code 或 selector 调 launch / runtime/session
-4. 如果失败，再看 GET /api/launch/logs?limit=20
-\`\`\`
-`
 
 export const DOC_CORE_INTRO = `# 内核介绍
 
@@ -416,18 +262,10 @@ curl -H "X-Ant-Api-Key: <your-api-key>" http://127.0.0.1:19876/api/health
 | 实例管理 | \`POST\` | \`/api/profiles/{profileId}/stop\` |
 | 启动 | \`GET\` | \`/api/launch/{code}\` |
 | 启动 | \`POST\` | \`/api/launch\` |
-| 运行态 | \`GET\` | \`/api/runtime/active\` |
 | 运行态 | \`POST\` | \`/api/runtime/session\` |
 | 运行态 | \`POST\` | \`/api/runtime/status\` |
 | 运行态 | \`POST\` | \`/api/runtime/stop\` |
-| 自动化脚本 | \`GET\` | \`/api/automation/scripts\` |
-| 自动化脚本 | \`GET\` | \`/api/automation/scripts/{scriptId}\` |
-| 自动化脚本 | \`POST\` | \`/api/automation/scripts/run\` |
-| 自动化脚本 | \`GET\` | \`/api/automation/scripts/runs\` |
 | 调用日志 | \`GET\` | \`/api/launch/logs\` |
-| CDP 统一入口 | \`GET\` | \`/json/version\` |
-| CDP 统一入口 | \`GET\` | \`/json/list\` |
-| CDP 统一入口 | \`WS\` | \`/devtools/...\` |
 
 ## selector 最小写法
 

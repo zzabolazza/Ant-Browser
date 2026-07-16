@@ -16,6 +16,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -264,6 +265,13 @@ func main() {
 			}
 			wailsCtx = ctx
 			runtime.WindowCenter(wailsCtx)
+			// macOS：绿色按钮用 zoom 最大化（红绿灯常显），最大化时隐藏 Dock。
+			preferWindowZoomOverFullscreen()
+			go func() {
+				// 窗口成为 key/main 可能略晚于 OnStartup，再补一次确保生效。
+				time.Sleep(300 * time.Millisecond)
+				preferWindowZoomOverFullscreen()
+			}()
 			// 启动系统托盘（非阻塞）
 			go backend.RunTray(backend.TrayCallbacks{
 				OnShow: func() {
@@ -301,6 +309,11 @@ func main() {
 			// Expose a real window icon to Linux desktop environments.
 			Icon:             linuxAppIcon,
 			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
+		},
+		Mac: &mac.Options{
+			// Wails 在 Mac==nil 时 zoomable 默认为 false，会把左上角绿色按钮置灰。
+			DisableZoom: false,
+			// 配合 preferWindowZoomOverFullscreen：允许缩放，但不走 Space 全屏。
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,

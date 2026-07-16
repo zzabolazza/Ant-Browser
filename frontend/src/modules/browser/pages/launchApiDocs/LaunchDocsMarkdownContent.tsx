@@ -1,35 +1,11 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { FolderOpen } from 'lucide-react'
 import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime'
-import { Button, toast } from '../../../../shared/components'
-import { openProjectRoot } from '../../api/filesystem'
 import { LaunchDocsCodeBlock } from './LaunchDocsCodeBlock'
 
-export function LaunchDocsMarkdownContent({ content, docId }: { content: string; docId?: string }) {
-  const showProjectRootAction = docId === 'tutorial-skill'
-
+export function LaunchDocsMarkdownContent({ content }: { content: string; docId?: string }) {
   return (
     <div className="space-y-4">
-      {showProjectRootAction ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] px-4 py-3 shadow-[var(--shadow-sm)]">
-          <span className="text-sm text-[var(--color-text-secondary)]">
-            安装命令默认相对项目根目录执行。
-          </span>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              void openProjectRoot().catch((error: any) => {
-                toast.error(error?.message || '打开根目录失败')
-              })
-            }}
-          >
-            <FolderOpen className="h-4 w-4" />
-            打开根目录
-          </Button>
-        </div>
-      ) : null}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

@@ -3,16 +3,6 @@ package config
 const (
 	DefaultLaunchServerPort         = 19876
 	DefaultLaunchServerAPIKeyHeader = "X-Ant-Api-Key"
-	DefaultAutomationInstallPolicy  = "on_demand"
-	DefaultAutomationNodeSource     = "auto"
-	DefaultAutomationNodeVersion    = "22.15.1"
-	DefaultAutomationPWVersion      = "1.59.0"
-)
-
-const (
-	AutomationNodeSourceAuto    = "auto"
-	AutomationNodeSourceSystem  = "system"
-	AutomationNodeSourceBundled = "bundled"
 )
 
 // LaunchServerConfig Launch HTTP 服务配置
@@ -27,20 +17,6 @@ type LaunchServerAuthConfig struct {
 	Header  string `yaml:"header"`
 }
 
-type AutomationConfig struct {
-	Enabled               bool   `yaml:"enabled"`
-	InstallPolicy         string `yaml:"install_policy,omitempty"`
-	RuntimeVersion        string `yaml:"runtime_version,omitempty"`
-	HeadlessDefault       bool   `yaml:"headless_default,omitempty"`
-	KeepRuntimeOnDisable  bool   `yaml:"keep_runtime_on_disable,omitempty"`
-	AllowTypeScriptBuild  bool   `yaml:"allow_typescript_build,omitempty"`
-	ArtifactsDir          string `yaml:"artifacts_dir,omitempty"`
-	NodeSource            string `yaml:"node_source,omitempty"`
-	SystemNodePath        string `yaml:"system_node_path,omitempty"`
-	NodeVersion           string `yaml:"node_version,omitempty"`
-	PlaywrightCoreVersion string `yaml:"playwright_core_version,omitempty"`
-}
-
 // Config 应用配置
 type Config struct {
 	Database     DatabaseConfig     `yaml:"database"`
@@ -50,7 +26,6 @@ type Config struct {
 	Browser      BrowserConfig      `yaml:"browser"`
 	ProxyCheck   ProxyCheckConfig   `yaml:"proxy_check"`
 	LaunchServer LaunchServerConfig `yaml:"launch_server"`
-	Automation   AutomationConfig   `yaml:"automation"`
 }
 
 type ProxyCheckConfig struct {

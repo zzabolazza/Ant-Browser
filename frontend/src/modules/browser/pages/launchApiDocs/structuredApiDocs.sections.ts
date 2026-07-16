@@ -13,22 +13,12 @@ export const STRUCTURED_API_SECTION_DOCS: StructuredApiSectionDoc[] = [
   },
   {
     id: 'api-runtime',
-    title: '运行态与接管',
-    intro: '这页只列运行态控制和统一 CDP 入口。外部编排侧先确认 active / session，再决定是否 attach 或 stop。',
+    title: '运行态与 CDP',
+    intro: '这页只列运行态控制。启动后用返回的实例 cdpUrl 直连浏览器调试端口，Launch Server 不再转发 CDP。',
     highlights: [
-      'runtime/session 用于接管前准备。',
+      'runtime/session 用于等待 debugReady。',
       'runtime/status / runtime/stop 都按 selector 工作。',
-      'CDP 详情只从表格进入。',
-    ],
-  },
-  {
-    id: 'api-automation',
-    title: '脚本自动化',
-    intro: '这页只列自动化脚本相关公共入口。先查脚本列表，再按需查详情、执行脚本、回看运行记录。',
-    highlights: [
-      '先查列表，再按需查详情。',
-      '执行接口只接受 object 形态的 selector / params。',
-      '详情只从表格进入。',
+      'attach 时使用响应里的直连 cdpUrl。',
     ],
   },
 ]

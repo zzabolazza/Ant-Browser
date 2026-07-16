@@ -6,11 +6,9 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"ant-chrome/backend/internal/automation"
 	"ant-chrome/backend/internal/browser"
 	"ant-chrome/backend/internal/logger"
 )
@@ -65,26 +63,6 @@ type BrowserDebugWaiter interface {
 	WaitInstanceDebugReady(profileId string, debugPort int, timeout time.Duration) (*browser.Profile, bool, error)
 }
 
-// AutomationScriptLister 可选接口：提供自动化脚本列表。
-type AutomationScriptLister interface {
-	AutomationScriptList() ([]automation.ScriptRecord, error)
-}
-
-// AutomationScriptGetter 可选接口：提供单个自动化脚本详情。
-type AutomationScriptGetter interface {
-	AutomationScriptGet(scriptID string) (*automation.ScriptRecord, error)
-}
-
-// AutomationScriptRunner 可选接口：执行自动化脚本。
-type AutomationScriptRunner interface {
-	AutomationScriptRunWithOptions(input automation.ScriptRunRequest) (*automation.ScriptRunRecord, error)
-}
-
-// AutomationScriptRunLister 可选接口：提供自动化脚本运行记录。
-type AutomationScriptRunLister interface {
-	AutomationScriptRunList(limit int) ([]automation.ScriptRunRecord, error)
-}
-
 // LaunchCallRecord 接口调用记录
 type LaunchCallRecord struct {
 	Timestamp   string              `json:"timestamp"`
@@ -110,14 +88,10 @@ type LaunchServer struct {
 	port       int
 	server     *http.Server
 	mu         sync.Mutex
-	authMu     sync.RWMutex
-	logMu      sync.Mutex
-	callLogs   []LaunchCallRecord
-	activeMu   sync.RWMutex
-	activePort int
-	activeID   string
-	activeName string
-	apiAuth    APIAuthConfig
+	authMu   sync.RWMutex
+	logMu    sync.Mutex
+	callLogs []LaunchCallRecord
+	apiAuth  APIAuthConfig
 }
 
 // NewLaunchServer 创建 LaunchServer
@@ -234,61 +208,4 @@ func (s *LaunchServer) Port() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.port
-}
-
-// CDPURL 返回对外暴露的固定 CDP 入口地址。
-func (s *LaunchServer) CDPURL() string {
-	port := s.Port()
-	if port <= 0 {
-		return ""
-	}
-	return fmt.Sprintf("http://127.0.0.1:%d", port)
-}
-
-// ActiveDebugPort 返回当前活动实例的内部调试端口。
-func (s *LaunchServer) ActiveDebugPort() int {
-	s.activeMu.RLock()
-	defer s.activeMu.RUnlock()
-	return s.activePort
-}
-
-// SetActiveProfile 将统一入口切换到指定实例的调试端口。
-func (s *LaunchServer) SetActiveProfile(profile *browser.Profile) {
-	if profile == nil || profile.DebugPort <= 0 || !profile.DebugReady {
-		return
-	}
-
-	s.activeMu.Lock()
-	s.activePort = profile.DebugPort
-	s.activeID = profile.ProfileId
-	s.activeName = profile.ProfileName
-	s.activeMu.Unlock()
-}
-
-// ClearActiveProfile 在当前活动实例停止后清空统一入口。
-func (s *LaunchServer) ClearActiveProfile(profileID string) {
-	profileID = strings.TrimSpace(profileID)
-	if profileID == "" {
-		return
-	}
-
-	s.activeMu.Lock()
-	if s.activeID == profileID {
-		s.activePort = 0
-		s.activeID = ""
-		s.activeName = ""
-	}
-	s.activeMu.Unlock()
-}
-
-func (s *LaunchServer) activeTarget() (int, string, string) {
-	s.activeMu.RLock()
-	defer s.activeMu.RUnlock()
-	return s.activePort, s.activeID, s.activeName
-}
-
-// ActiveProfile 返回当前统一 CDP 入口对应的实例信息。
-func (s *LaunchServer) ActiveProfile() (string, string, int) {
-	port, profileID, profileName := s.activeTarget()
-	return profileID, profileName, port
 }

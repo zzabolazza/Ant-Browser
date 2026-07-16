@@ -137,19 +137,8 @@ func (a *App) GetLaunchServerInfo() map[string]interface{} {
 	}
 	if actualPort > 0 {
 		info["baseUrl"] = fmt.Sprintf("http://127.0.0.1:%d", actualPort)
-		info["cdpUrl"] = fmt.Sprintf("http://127.0.0.1:%d", actualPort)
-		if a.launchServer != nil {
-			info["activeDebugPort"] = a.launchServer.ActiveDebugPort()
-			activeProfileID, activeProfileName, _ := a.launchServer.ActiveProfile()
-			info["activeProfileId"] = activeProfileID
-			info["activeProfileName"] = activeProfileName
-		}
 	} else {
 		info["baseUrl"] = ""
-		info["cdpUrl"] = ""
-		info["activeDebugPort"] = 0
-		info["activeProfileId"] = ""
-		info["activeProfileName"] = ""
 	}
 	return info
 }
@@ -160,7 +149,3 @@ var _ launchcode.BrowserStarterWithParams = (*App)(nil)
 var _ launchcode.BrowserStatusProvider = (*App)(nil)
 var _ launchcode.BrowserStopper = (*App)(nil)
 var _ launchcode.BrowserDebugWaiter = (*App)(nil)
-var _ launchcode.AutomationScriptLister = (*App)(nil)
-var _ launchcode.AutomationScriptGetter = (*App)(nil)
-var _ launchcode.AutomationScriptRunner = (*App)(nil)
-var _ launchcode.AutomationScriptRunLister = (*App)(nil)

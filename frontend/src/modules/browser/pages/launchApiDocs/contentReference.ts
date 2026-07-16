@@ -6,7 +6,6 @@ export const DOC_API_SUPPORT = `# 排障与日志
 |------|------|
 | \`GET /api/health\` | 先确认服务是否在线 |
 | \`GET /api/launch/logs?limit=20\` | 查看最近接口调用和错误 |
-| \`GET /api/runtime/active\` | 看统一 CDP 当前指向哪个实例 |
 | \`GET /api/profiles/{profileId}/status\` | 精确确认某个实例是否在运行、是否 ready |
 
 ## 日志接口
@@ -39,7 +38,7 @@ durationMs
 | \`405\` | 方法不对 | 检查 GET / POST |
 | \`409\` | 多命中 / launchCode 冲突 | 收窄 selector 或换 launchCode |
 | \`500\` | 启动或脚本执行失败 | 看 \`/api/launch/logs\` 和应用日志 |
-| \`503\` | 当前没有活动实例或能力没就绪 | 先查 \`/api/runtime/active\` |
+| \`503\` | 能力没就绪 | 先查实例 status / session |
 
 ## 看到这些错误时
 
@@ -48,8 +47,6 @@ durationMs
 | \`selector is required\` | 请求体里有没有 \`selector / code / profileId\` |
 | \`launch code not found\` | Code 是否真实存在 |
 | \`selector matched multiple profiles\` | 是否要补 \`tags / groupId\` 或改 \`matchMode=first\` |
-| \`no active browser debug target\` | 先查 \`/api/runtime/active\` |
-| \`automation script api is unavailable\` | 当前环境是否已启用脚本能力 |
 
 ## 排查顺序
 
@@ -57,7 +54,7 @@ durationMs
 1. health
 2. 目标接口响应
 3. launch/logs
-4. runtime/active 或 profile status
+4. runtime/status、runtime/session 或 profile status
 5. 应用内日志 / 内核 / 代理
 \`\`\`
 `

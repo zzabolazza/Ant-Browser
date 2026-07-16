@@ -2,7 +2,6 @@ package backend
 
 import (
 	"ant-chrome/backend/internal/apppath"
-	"ant-chrome/backend/internal/automation"
 	"ant-chrome/backend/internal/browser"
 	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/database"
@@ -53,7 +52,6 @@ func (a *App) startup(ctx context.Context) {
 	a.startupInitManagers(cfg, db)
 	a.startupInitLaunchCode(log)
 	a.startupInitLaunchServer(log)
-	a.startupInitAutomation()
 	a.startupInitBridgeHooks()
 	a.startupInitSpeedScheduler()
 
@@ -170,15 +168,6 @@ func (a *App) startupInitLaunchServer(log *logger.Logger) {
 		logger.F("url", fmt.Sprintf("http://127.0.0.1:%d", a.launchServer.Port())),
 		logger.F("preferred_port", port),
 	)
-}
-
-func (a *App) startupInitAutomation() {
-	a.automationMgr = automation.NewManager(a.appRoot, a.config, func(event string, payload any) {
-		if a.ctx == nil {
-			return
-		}
-		runtime.EventsEmit(a.ctx, event, payload)
-	}, automation.Options{})
 }
 
 func (a *App) startupInitBridgeHooks() {

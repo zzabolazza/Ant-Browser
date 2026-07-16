@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/automation"
 	"ant-chrome/backend/internal/browser"
 	"ant-chrome/backend/internal/config"
 	"ant-chrome/backend/internal/database"
@@ -32,7 +31,6 @@ type App struct {
 	singboxMgr     *proxy.SingBoxManager
 	launchCodeSvc  *launchcode.LaunchCodeService
 	launchServer   *launchcode.LaunchServer
-	automationMgr  *automation.Manager
 	speedScheduler *browser.ProxySpeedScheduler
 	appRoot        string
 	version        string
@@ -44,8 +42,6 @@ type App struct {
 	profileBridgeRefs      map[string]profileProxyBridgeRef
 	deferredStartTargetsMu sync.Mutex
 	deferredStartTargets   map[string][]string
-	automationTargetMu     sync.Mutex
-	automationTargetCursor map[string]string
 	stopServicesOnce       sync.Once
 	finalizeOnce           sync.Once
 }
@@ -57,11 +53,10 @@ func NewApp(appRoot string, appVersion ...string) *App {
 		version = strings.TrimSpace(appVersion[0])
 	}
 	return &App{
-		appRoot:                strings.TrimSpace(appRoot),
-		version:                version,
-		profileBridgeRefs:      make(map[string]profileProxyBridgeRef),
-		deferredStartTargets:   make(map[string][]string),
-		automationTargetCursor: make(map[string]string),
+		appRoot:              strings.TrimSpace(appRoot),
+		version:              version,
+		profileBridgeRefs:    make(map[string]profileProxyBridgeRef),
+		deferredStartTargets: make(map[string][]string),
 	}
 }
 

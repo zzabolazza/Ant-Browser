@@ -59,12 +59,3 @@ launch_server:
         enabled: false
         api_key: ""
         header: X-Ant-Api-Key
-automation:
-    enabled: true
-    install_policy: on_demand
-    runtime_version: node-22.15.1-playwright-core-1.59.0
-    keep_runtime_on_disable: true
-    artifacts_dir: data/automation/artifacts
-    node_source: auto
-    node_version: 22.15.1
-    playwright_core_version: 1.59.0

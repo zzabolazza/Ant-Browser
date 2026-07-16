@@ -10,5 +10,4 @@ export {
   CoreManagementPage,
   BookmarkSettingsPage,
   LaunchApiDocsPage,
-  AutomationPage,
 } from './pages'

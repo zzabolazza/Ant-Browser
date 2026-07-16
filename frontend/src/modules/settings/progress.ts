@@ -15,10 +15,3 @@ export interface BackupExportLogItem {
   time: string
   text: string
 }
-
-export interface AutomationRuntimeProgress {
-  phase: string
-  progress: number
-  message: string
-  component?: string
-}

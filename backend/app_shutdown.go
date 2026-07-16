@@ -80,9 +80,6 @@ func ShouldBlockClose(a *App, ctx context.Context) bool {
 
 func (a *App) stopRuntimeServices() {
 	a.stopServicesOnce.Do(func() {
-		if a.automationMgr != nil {
-			a.automationMgr.StopAllTasks()
-		}
 		if a.speedScheduler != nil {
 			a.speedScheduler.Stop()
 			a.speedScheduler = nil

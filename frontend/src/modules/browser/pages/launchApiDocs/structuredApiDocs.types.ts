@@ -3,7 +3,6 @@
 export type StructuredApiSectionId =
   | 'api-profiles-launch'
   | 'api-runtime'
-  | 'api-automation'
 
 export type StructuredApiDocId =
   | StructuredApiSectionId
@@ -16,17 +15,9 @@ export type StructuredApiDocId =
   | 'api-profiles-stop-detail'
   | 'api-launch-code-detail'
   | 'api-launch-body-detail'
-  | 'api-runtime-active-detail'
   | 'api-runtime-session-detail'
   | 'api-runtime-status-detail'
   | 'api-runtime-stop-detail'
-  | 'api-cdp-version-detail'
-  | 'api-cdp-list-detail'
-  | 'api-cdp-ws-detail'
-  | 'api-automation-list-detail'
-  | 'api-automation-script-detail'
-  | 'api-automation-run-detail'
-  | 'api-automation-runs-detail'
 
 export interface StructuredApiExampleContext {
   launchBaseUrl: string

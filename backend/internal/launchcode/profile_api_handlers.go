@@ -55,7 +55,6 @@ func (s *LaunchServer) handleCreateProfile(w http.ResponseWriter, r *http.Reques
 	}
 	if launched {
 		mergeProfileRuntime(profile, launchedProfile)
-		s.SetActiveProfile(profile)
 	}
 
 	writeJSON(w, http.StatusCreated, s.profileWriteSuccessPayload(profile, launchCode, true, false, launched))
@@ -160,7 +159,6 @@ func (s *LaunchServer) handleUpdateProfile(w http.ResponseWriter, r *http.Reques
 	}
 	if launched {
 		mergeProfileRuntime(profile, launchedProfile)
-		s.SetActiveProfile(profile)
 	}
 
 	writeJSON(w, http.StatusOK, s.profileWriteSuccessPayload(profile, launchCode, false, true, launched))
@@ -200,7 +198,6 @@ func (s *LaunchServer) handleDeleteProfile(w http.ResponseWriter, _ *http.Reques
 	if s.service != nil {
 		_ = s.service.Remove(profileID)
 	}
-	s.ClearActiveProfile(profileID)
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"ok":          true,

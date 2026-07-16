@@ -9,10 +9,6 @@ const SettingsPage = lazyNamed(
   () => import("../modules/settings/SettingsPage"),
   "SettingsPage",
 );
-const ProfilePage = lazyNamed(
-  () => import("../modules/profile/ProfilePage"),
-  "ProfilePage",
-);
 const ChartsPage = lazyNamed(
   () => import("../modules/charts/ChartsPage"),
   "ChartsPage",
@@ -61,14 +57,6 @@ const TagManagementPage = lazyNamed(
   () => import("../modules/browser/pages/TagManagementPage"),
   "TagManagementPage",
 );
-const AutomationPage = lazyNamed(
-  () => import("../modules/browser/pages/AutomationPage"),
-  "AutomationPage",
-);
-const AutomationScriptDetailPage = lazyNamed(
-  () => import("../modules/browser/pages/AutomationScriptDetailPage"),
-  "AutomationScriptDetailPage",
-);
 
 export function AppRoutes() {
   return (
@@ -76,7 +64,6 @@ export function AppRoutes() {
       <Route path="/" element={<DashboardPage />} />
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
       <Route path="/browser/list" element={<BrowserListPage />} />
       <Route path="/browser/detail/:id" element={<BrowserDetailPage />} />
       <Route path="/browser/edit/:id" element={<BrowserEditPage />} />
@@ -90,11 +77,6 @@ export function AppRoutes() {
       <Route path="/browser/cores" element={<CoreManagementPage />} />
       <Route path="/browser/extensions" element={<ExtensionManagementPage />} />
       <Route path="/browser/bookmarks" element={<BookmarkSettingsPage />} />
-      <Route path="/browser/automation" element={<AutomationPage />} />
-      <Route
-        path="/browser/automation/:scriptId"
-        element={<AutomationScriptDetailPage />}
-      />
       <Route path="/system/docs" element={<LaunchApiDocsPage />} />
       <Route
         path="/browser/launch-api"

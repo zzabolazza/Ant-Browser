@@ -9,12 +9,7 @@ import (
 )
 
 func (s *LaunchServer) launchSuccessPayload(profile *browser.Profile, launchCode string) map[string]interface{} {
-	cdpURL := s.CDPURL()
-	cdpPort := s.Port()
-	if cdpURL == "" && profile != nil && profile.DebugReady && profile.DebugPort > 0 {
-		cdpPort = profile.DebugPort
-		cdpURL = fmt.Sprintf("http://127.0.0.1:%d", profile.DebugPort)
-	}
+	cdpPort, cdpURL := profileDirectCDP(profile)
 
 	return map[string]interface{}{
 		"ok":             true,
@@ -179,10 +174,11 @@ func (s *LaunchServer) withCodeKeywordFallback(selector LaunchSelector, allow bo
 
 func (s *LaunchServer) launchBatchSuccessPayload(profiles []*browser.Profile) map[string]interface{} {
 	items := make([]map[string]interface{}, 0, len(profiles))
-	for i, profile := range profiles {
+	for _, profile := range profiles {
 		if profile == nil {
 			continue
 		}
+		cdpPort, cdpURL := profileDirectCDP(profile)
 		item := map[string]interface{}{
 			"profileId":      profile.ProfileId,
 			"profileName":    profile.ProfileName,
@@ -191,17 +187,10 @@ func (s *LaunchServer) launchBatchSuccessPayload(profiles []*browser.Profile) ma
 			"debugPort":      profile.DebugPort,
 			"debugReady":     profile.DebugReady,
 			"runtimeWarning": profile.RuntimeWarning,
-			"isActive":       i == len(profiles)-1,
+			"cdpPort":        cdpPort,
+			"cdpUrl":         cdpURL,
 		}
 		items = append(items, item)
-	}
-
-	activeProfile, _, _ := summarizeLaunchedProfiles(profiles)
-	cdpURL := s.CDPURL()
-	cdpPort := s.Port()
-	if cdpURL == "" && activeProfile != nil && activeProfile.DebugReady && activeProfile.DebugPort > 0 {
-		cdpPort = activeProfile.DebugPort
-		cdpURL = fmt.Sprintf("http://127.0.0.1:%d", activeProfile.DebugPort)
 	}
 
 	payload := map[string]interface{}{
@@ -209,12 +198,6 @@ func (s *LaunchServer) launchBatchSuccessPayload(profiles []*browser.Profile) ma
 		"matchMode": launchMatchModeAll,
 		"count":     len(items),
 		"items":     items,
-		"cdpPort":   cdpPort,
-		"cdpUrl":    cdpURL,
-	}
-	if activeProfile != nil {
-		payload["activeProfileId"] = activeProfile.ProfileId
-		payload["activeProfileName"] = activeProfile.ProfileName
 	}
 	return payload
 }

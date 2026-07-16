@@ -1,7 +1,6 @@
 package launchcode
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -89,9 +88,6 @@ func (s *LaunchServer) stopProfile(profileID string) (*browser.Profile, int, str
 	if snapshot == nil {
 		return nil, http.StatusInternalServerError, "profile stop returned nil profile"
 	}
-	if !snapshot.Running {
-		s.ClearActiveProfile(snapshot.ProfileId)
-	}
 	return snapshot, http.StatusOK, ""
 }
 
@@ -114,24 +110,7 @@ func (s *LaunchServer) profileRuntimePayload(profile *browser.Profile) map[strin
 		}
 	}
 
-	activePort, activeID, _ := s.activeTarget()
-	active := strings.TrimSpace(normalized.ProfileId) != "" && normalized.ProfileId == activeID && activePort > 0
-
-	directDebugURL := ""
-	if normalized.DebugReady && normalized.DebugPort > 0 {
-		directDebugURL = fmt.Sprintf("http://127.0.0.1:%d", normalized.DebugPort)
-	}
-
-	cdpPort := 0
-	cdpURL := ""
-	if active {
-		cdpPort = s.Port()
-		cdpURL = s.CDPURL()
-		if cdpURL == "" && directDebugURL != "" {
-			cdpPort = normalized.DebugPort
-			cdpURL = directDebugURL
-		}
-	}
+	cdpPort, cdpURL := profileDirectCDP(normalized)
 
 	return map[string]interface{}{
 		"ok":             true,
@@ -146,10 +125,8 @@ func (s *LaunchServer) profileRuntimePayload(profile *browser.Profile) map[strin
 		"lastError":      normalized.LastError,
 		"lastStartAt":    normalized.LastStartAt,
 		"lastStopAt":     normalized.LastStopAt,
-		"active":         active,
 		"cdpPort":        cdpPort,
 		"cdpUrl":         cdpURL,
-		"directDebugUrl": directDebugURL,
 		"profile":        normalized,
 	}
 }

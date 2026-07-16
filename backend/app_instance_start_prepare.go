@@ -94,9 +94,6 @@ func (a *App) resolveBrowserStartProfile(input browserStartInput) (*BrowserProfi
 	}
 
 	if len(normalizeNonEmptyStrings(input.StartURLs)) == 0 && len(normalizeNonEmptyStrings(input.ExtraLaunchArgs)) == 0 {
-		if a.launchServer != nil && profile.DebugReady {
-			a.launchServer.SetActiveProfile(profile)
-		}
 		a.emitBrowserInstanceStarted(profile, true)
 		return profile, true, nil
 	}
@@ -113,9 +110,6 @@ func (a *App) resolveBrowserStartProfile(input browserStartInput) (*BrowserProfi
 		return profile, true, startErr
 	}
 
-	if a.launchServer != nil && profile.DebugReady {
-		a.launchServer.SetActiveProfile(profile)
-	}
 	a.emitBrowserInstanceStarted(profile, true)
 	return profile, true, nil
 }

@@ -70,55 +70,6 @@ func (s *LaunchServer) handleRuntimeStatus(w http.ResponseWriter, r *http.Reques
 	s.handleRuntimeControl(w, r, "status")
 }
 
-func (s *LaunchServer) handleRuntimeActive(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeJSON(w, http.StatusMethodNotAllowed, map[string]interface{}{
-			"ok":    false,
-			"error": "method not allowed",
-		})
-		return
-	}
-
-	activePort, activeProfileID, activeProfileName := s.activeTarget()
-	if activePort <= 0 || strings.TrimSpace(activeProfileID) == "" {
-		writeJSON(w, http.StatusOK, map[string]interface{}{
-			"ok":             true,
-			"active":         false,
-			"profileId":      "",
-			"profileName":    "",
-			"launchCode":     "",
-			"running":        false,
-			"pid":            0,
-			"debugPort":      0,
-			"debugReady":     false,
-			"runtimeWarning": "",
-			"lastError":      "",
-			"lastStartAt":    "",
-			"lastStopAt":     "",
-			"cdpPort":        0,
-			"cdpUrl":         "",
-			"directDebugUrl": "",
-			"profile":        nil,
-		})
-		return
-	}
-
-	profile, status, errMsg := s.statusProfile(activeProfileID)
-	if errMsg != "" {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]interface{}{
-			"ok":                false,
-			"error":             errMsg,
-			"activeProfileId":   activeProfileID,
-			"activeProfileName": activeProfileName,
-			"activeDebugPort":   activePort,
-			"statusCode":        status,
-		})
-		return
-	}
-
-	writeJSON(w, http.StatusOK, s.profileRuntimePayload(profile))
-}
-
 func (s *LaunchServer) handleRuntimeStop(w http.ResponseWriter, r *http.Request) {
 	s.handleRuntimeControl(w, r, "stop")
 }

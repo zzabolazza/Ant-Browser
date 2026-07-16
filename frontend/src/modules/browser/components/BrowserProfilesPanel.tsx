@@ -9,7 +9,7 @@ import type { TableColumn } from '../../../shared/components/Table'
 import type { BrowserCore, BrowserProfile, BrowserProxy, ProxySpeedTestResult } from '../types'
 import { browserProxyTestSpeed, testProxyConnectivity } from '../api'
 import type { BrowserViewMode } from './BrowserListLayout'
-import { KeywordInlineRow, LaunchCodeCell } from './BrowserListWidgets'
+import { CdpUrlCell, KeywordInlineRow, LaunchCodeCell } from './BrowserListWidgets'
 
 type ProfileStatusVariant = 'default' | 'success' | 'error' | 'warning' | 'info'
 
@@ -375,6 +375,10 @@ function BrowserProfileCard({
           <div className="mt-0.5"><LaunchCodeCell profileId={profile.profileId} code={profile.launchCode || ''} onRefresh={onRefreshProfiles} /></div>
         </div>
         <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-[var(--color-text-muted)] font-medium">CDP</span>
+          <div className="mt-0.5"><CdpUrlCell debugReady={profile.debugReady} debugPort={profile.debugPort} /></div>
+        </div>
+        <div className="flex flex-col gap-0.5">
           <span className="text-xs text-[var(--color-text-muted)] font-medium">上次更新时间</span>
           <span className="text-xs text-[var(--color-text-primary)]">{formatTime(profile.updatedAt)}</span>
         </div>
@@ -496,6 +500,12 @@ export function BrowserProfilesPanel({
       key: 'launchCode',
       title: '快捷打开码',
       render: (value, record) => <LaunchCodeCell profileId={record.profileId} code={value || ''} onRefresh={onRefreshProfiles} />,
+    },
+    {
+      key: 'cdpUrl',
+      title: 'CDP',
+      width: 240,
+      render: (_, record) => <CdpUrlCell debugReady={record.debugReady} debugPort={record.debugPort} />,
     },
     {
       key: 'keywords',

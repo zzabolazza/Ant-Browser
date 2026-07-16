@@ -53,7 +53,6 @@ Ant Browser 适合以下场景：
 
 ### 1.3.0 · 2026-06-23
 
-- 自动化增强：完善自动化脚本导入、运行、目标实例选择和执行记录管理，提升多实例自动化编排能力
 - 插件管理：新增插件包管理能力，支持插件安装、导入、启停、删除、实例限制和单实例插件配置
 - VPN 优化：优化代理/VPN 连接链路，完善 Xray、sing-box、Mihomo 等连接栈的启动、测速、检测和预热能力
 - 实例迁移：支持实例导入导出，可将实例配置和完整浏览器用户数据目录打包迁移到新环境
@@ -62,8 +61,7 @@ Ant Browser 适合以下场景：
 
 ### 1.2.0 · 2026-05-09
 
-- 重点升级接口调用：Launch API 补齐实例增删改查、按 code / selector 启动、runtime session / status / stop 和统一 CDP 入口，方便外部系统直接调用浏览器能力
-- 完善自动化接口链路：脚本执行支持 selector / params 覆盖和 `timeoutMs` 超时控制，双实例 runtime 流程支持超时取消与错误返回
+- 重点升级接口调用：Launch API 补齐实例增删改查、按 code / selector 启动、runtime session / status / stop ，方便外部系统直接调用浏览器能力；实例 CDP 使用直连调试端口
 - 增强代理池：新增链式代理导入、编辑和预览能力，支持 HTTP / SOCKS5 两层链路，并优化直连代理批量导入
 - 优化代理检测：新增测速目标、IP 健康检测目标和桥接启动超时配置，链式代理也可以参与测速与健康检测
 - 改进实例启动：代理异常时支持本次直连启动，不修改实例原有代理配置；默认代理池只保留直连节点
@@ -74,7 +72,7 @@ Ant Browser 适合以下场景：
 - 完善 Linux 支持：补齐 Linux 环境下的开发、打包、安装、启动与运行链路，并持续修复安装版启动与退出稳定性问题
 - 补齐 macOS unsigned 内测构建链路：支持在原生 macOS 主机上打包 `.app` / `.zip`，并将用户状态目录放到 `~/Library/Application Support/ant-browser`
 - 新增 SOCKS 代理测试支持：SOCKS 代理能力已进入测试阶段，后续会继续验证稳定性与兼容性
-- 实验性支持接口触发浏览器：支持通过接口启动浏览器实例，便于后续接入自动化流程
+- 实验性支持接口触发浏览器：支持通过接口启动浏览器实例，便于外部系统接入
 
 完整历史版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -92,7 +90,6 @@ Ant Browser 适合以下场景：
 - 内核管理：支持维护多个 Chrome 内核版本，并设置默认内核
 - 快捷启动：支持通过实例 Code 和 `Ctrl + K` 快速打开目标实例
 - 标签与检索：支持按标签、关键字、状态、代理、内核、分组进行筛选
-- 自动化脚本：支持脚本导入、运行、目标实例选择、执行记录和外部接口调用
 - 插件管理：支持插件安装、导入、启停、删除、实例限制和单实例插件配置
 - 实例迁移：支持将实例配置和浏览器用户数据目录导出为 ZIP，并导入为新实例
 - VPN / 代理检测：支持连接栈预热、测速、IP 健康检测和代理异常处理
@@ -186,44 +183,6 @@ Ant Browser 适合以下场景：
 - `bat\dev.bat limited`：在 `live` 基础上为 watcher 与其子进程附加 Windows Job Object 内存限制
 - 如需为依赖下载配置代理，可在启动前设置 `DEV_PROXY_URL`、`DEV_NO_PROXY`、`DEV_GOPROXY`
 
-### 自动化脚本包
-
-自动化脚本现在分成两层：
-
-- 仓库里的可提交 demo 脚本库：`backend/internal/automation/demo-library/`
-- 本地运行时 / 用户自定义脚本：`data/automation/scripts/`
-
-规则是：
-
-- 只有 demo 脚本库里的脚本会提交到 git
-- `data/automation/scripts/` 下的运行时脚本统一忽略，不提交 git
-- 默认只同步三个 demo：`dual-instance-runtime-switch`、`news-query-txt`、`web-image-generate-download`
-
-脚本包采用“一脚本一目录”的可搬运结构：
-
-```text
-<script-id>/
-├── automation.script.json
-├── index.cjs
-└── 其他辅助文件
-```
-
-其中：
-
-- `automation.script.json`：脚本元数据和默认参数
-- `index.cjs`：入口脚本，`entryFile` 也可以改成相对路径，例如 `scripts/index.cjs`
-- 其他辅助文件：脚本依赖的本地模块、模板、静态资源
-
-运行时落盘结构和分发结构不同。应用内部会把脚本写到：
-
-```text
-data/automation/scripts/<script-id>/
-├── config
-├── index.cjs
-└── 其他辅助文件
-```
-
-这里的 `config` 是应用内部持久化格式；对外复制、导入、脚本库管理一律使用 `automation.script.json` 包结构。
 
 ### Windows 发布打包（源码）
 
@@ -320,7 +279,6 @@ chrome/
 
 ## Roadmap
 
-- 完善自动化模块能力
 - 持续补充使用文档和接口说明
 - 增强实例模板、批量管理和检索体验
 

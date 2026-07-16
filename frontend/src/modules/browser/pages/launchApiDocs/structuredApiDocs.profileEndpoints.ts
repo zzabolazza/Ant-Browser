@@ -228,7 +228,7 @@ export const PROFILE_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
     method: 'GET',
     path: '/api/profiles/{profileId}/status',
     purpose: '查询单个实例的实时运行态。',
-    description: '返回运行中、debugReady、cdpUrl 等运行态字段，适合精确观察单个实例当前状态。',
+    description: '返回运行中、debugReady、直连 cdpUrl 等运行态字段，适合精确观察单个实例当前状态。',
     fields: [
       { name: 'profileId', type: 'string', required: true, location: 'Path', description: '实例 ID。' },
     ],
@@ -248,8 +248,7 @@ export const PROFILE_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "debugPort": 9333,
   "debugReady": true,
   "active": true,
-  "cdpUrl": "http://127.0.0.1:19876",
-  "directDebugUrl": "http://127.0.0.1:9333"
+  "cdpUrl": "http://127.0.0.1:9333"
 }`,
     },
     responseCodes: [
@@ -318,8 +317,8 @@ export const PROFILE_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "pid": 10240,
   "debugPort": 9333,
   "debugReady": true,
-  "cdpPort": 19876,
-  "cdpUrl": "http://127.0.0.1:19876"
+  "cdpPort": 9333,
+  "cdpUrl": "http://127.0.0.1:9333"
 }`,
     },
     responseCodes: [
@@ -371,7 +370,7 @@ export const PROFILE_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "profileName": "buyer-001",
   "launchCode": "BUYER_001",
   "debugReady": true,
-  "cdpUrl": "http://127.0.0.1:19876"
+  "cdpUrl": "http://127.0.0.1:9333"
 }`,
     },
     responseCodes: [

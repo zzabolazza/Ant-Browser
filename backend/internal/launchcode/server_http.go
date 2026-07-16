@@ -5,21 +5,14 @@ import "net/http"
 func (s *LaunchServer) buildMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", s.handleHealth)
-	mux.HandleFunc("/api/automation/scripts", s.handleAutomationScripts)
-	mux.HandleFunc("/api/automation/scripts/", s.handleAutomationScriptByID)
-	mux.HandleFunc("/api/automation/scripts/run", s.handleAutomationScriptRun)
-	mux.HandleFunc("/api/automation/scripts/runs", s.handleAutomationScriptRuns)
-	mux.HandleFunc("/api/automation/hooks/", s.handleAutomationPublicHook)
 	mux.HandleFunc("/api/profiles", s.handleProfiles)
 	mux.HandleFunc("/api/profiles/", s.handleProfileByID)
-	mux.HandleFunc("/api/runtime/active", s.handleRuntimeActive)
 	mux.HandleFunc("/api/runtime/session", s.handleRuntimeSession)
 	mux.HandleFunc("/api/runtime/status", s.handleRuntimeStatus)
 	mux.HandleFunc("/api/runtime/stop", s.handleRuntimeStop)
 	mux.HandleFunc("/api/launch", s.handleLaunchWithBody)
 	mux.HandleFunc("/api/launch/logs", s.handleLaunchLogs)
 	mux.HandleFunc("/api/launch/", s.handleLaunch)
-	mux.HandleFunc("/", s.handleCDPProxy)
 	return mux
 }
 

@@ -178,7 +178,7 @@ function StructuredApiDetailPage({
   authHeader,
   onOpenDoc,
 }: {
-  docId: Exclude<StructuredApiDocId, 'api-profiles-launch' | 'api-runtime' | 'api-automation'>
+  docId: Exclude<StructuredApiDocId, 'api-profiles-launch' | 'api-runtime'>
   launchBaseUrl: string
   authHeader: string
   onOpenDoc: (id: StructuredApiDocId) => void

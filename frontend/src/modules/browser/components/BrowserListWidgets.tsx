@@ -134,6 +134,48 @@ export function LaunchCodeCell({ profileId, code, onRefresh }: LaunchCodeCellPro
   )
 }
 
+export function formatProfileCdpUrl(debugReady: boolean, debugPort: number): string {
+  if (!debugReady || debugPort <= 0) {
+    return ''
+  }
+  return `http://127.0.0.1:${debugPort}`
+}
+
+interface CdpUrlCellProps {
+  debugReady: boolean
+  debugPort: number
+}
+
+export function CdpUrlCell({ debugReady, debugPort }: CdpUrlCellProps) {
+  const cdpUrl = formatProfileCdpUrl(debugReady, debugPort)
+  if (!cdpUrl) {
+    return <span className="text-[var(--color-text-muted)] text-xs">-</span>
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(cdpUrl).then(() => toast.success('已复制 CDP 地址'))
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <code
+        className="max-w-[220px] truncate text-xs font-mono bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded text-[var(--color-accent)]"
+        title={cdpUrl}
+      >
+        {cdpUrl}
+      </code>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="p-0.5 hover:text-[var(--color-accent)] text-[var(--color-text-muted)] transition-colors shrink-0"
+        title="复制 CDP 地址"
+      >
+        <Copy className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
+
 interface KeywordInlineRowProps {
   keywords: string[]
 }

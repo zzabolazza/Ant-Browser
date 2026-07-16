@@ -6,7 +6,6 @@ import type {
 import type { LaunchDocDemoConfig } from './catalog'
 import { LaunchDemoPanel } from './panels/LaunchDemoPanel'
 import { LaunchResponsePanel } from './panels/LaunchResponsePanel'
-import { LaunchRuntimePanel } from './panels/LaunchRuntimePanel'
 import { LaunchStatusPanel } from './panels/LaunchStatusPanel'
 
 interface LaunchDocsContextRailProps {
@@ -53,8 +52,6 @@ export function LaunchDocsContextRail({
         launchServerReady={launchServerReady}
         apiAuth={apiAuth}
       />
-
-      <LaunchRuntimePanel />
 
       {docDemoConfig && (
         <LaunchDemoPanel

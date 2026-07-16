@@ -41,9 +41,6 @@ func (a *App) ReloadConfig() error {
 			Header:  cfg.LaunchServer.Auth.Header,
 		})
 	}
-	if a.automationMgr != nil {
-		a.automationMgr.SetConfig(cfg)
-	}
 
 	log.Info("前端触发配置重载成功")
 	return nil

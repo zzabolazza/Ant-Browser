@@ -153,17 +153,17 @@ export async function automationDemoCreateProfile(options: AutomationDemoCreateO
   }
 
   const launchCode = normalizedOptions.launchCode || nextMockDemoCode()
-  const profileName = normalizedOptions.profileName || `自动化 Demo ${launchCode}`
+  const profileName = normalizedOptions.profileName || `Launch Demo ${launchCode}`
   const profile = await createBrowserProfile({
     profileName,
-    userDataDir: `automation-demo-${launchCode.toLowerCase()}`,
+    userDataDir: `launch-demo-${launchCode.toLowerCase()}`,
     coreId: '',
     fingerprintArgs: [],
     proxyId: '',
     proxyConfig: '',
     launchArgs: normalizedOptions.launchArgs || [],
-    tags: ['自动化', 'Demo'],
-    keywords: ['automation-demo', 'launch-api-demo'],
+    tags: ['Demo'],
+    keywords: ['launch-api-demo'],
     groupId: '',
   })
   if (!profile) {

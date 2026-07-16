@@ -93,9 +93,6 @@ func (a *App) markProfileRunningLocked(profileId string, profile *BrowserProfile
 	if cmd != nil {
 		a.browserMgr.BrowserProcesses[profileId] = cmd
 	}
-	if debugReady && a.launchServer != nil {
-		a.launchServer.SetActiveProfile(profile)
-	}
 }
 
 func (a *App) markProfileDebugReadyLocked(profile *BrowserProfile, debugPort int) {
@@ -127,9 +124,6 @@ func (a *App) setProfileDebugReady(profileId string, debugPort int) (*BrowserPro
 	snapshot := copyBrowserProfileSnapshot(profile)
 	a.browserMgr.Mutex.Unlock()
 
-	if snapshot != nil && snapshot.DebugReady && a.launchServer != nil {
-		a.launchServer.SetActiveProfile(snapshot)
-	}
 	return snapshot, changed
 }
 

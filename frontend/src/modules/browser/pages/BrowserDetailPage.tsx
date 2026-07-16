@@ -262,6 +262,24 @@ export function BrowserDetailPage() {
                   <span>调试端口</span>
                   <span>{profile.debugPort || '-'}</span>
                 </div>
+                <div className="flex justify-between gap-3">
+                  <span className="shrink-0">CDP</span>
+                  {profile.debugReady && profile.debugPort > 0 ? (
+                    <button
+                      type="button"
+                      className="min-w-0 text-right font-mono text-xs text-[var(--color-accent)] hover:underline break-all"
+                      title="点击复制 CDP 地址"
+                      onClick={() => {
+                        const cdpUrl = `http://127.0.0.1:${profile.debugPort}`
+                        navigator.clipboard.writeText(cdpUrl).then(() => toast.success('已复制 CDP 地址'))
+                      }}
+                    >
+                      {`http://127.0.0.1:${profile.debugPort}`}
+                    </button>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
                 <div className="flex justify-between">
                   <span>调试状态</span>
                   <span>{profile.debugReady ? '已就绪' : (profile.running ? '等待就绪' : '-')}</span>

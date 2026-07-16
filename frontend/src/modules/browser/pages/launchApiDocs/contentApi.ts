@@ -105,7 +105,7 @@ curl -X POST http://127.0.0.1:19876/api/launch \\
   "profileId": "550e8400-e29b-41d4-a716-446655440000",
   "launchCode": "BUYER_001",
   "debugReady": true,
-  "cdpUrl": "http://127.0.0.1:19876"
+  "cdpUrl": "http://127.0.0.1:9333"
 }
 \`\`\`
 
@@ -135,18 +135,13 @@ export const DOC_API_RUNTIME = `# 运行态与接管
 
 | 方法 | 路径 | 用途 |
 |------|------|------|
-| \`GET\` | \`/api/runtime/active\` | 查当前活动实例 |
 | \`POST\` | \`/api/runtime/session\` | 准备可接管会话 |
 | \`POST\` | \`/api/runtime/status\` | 按 selector 查运行态 |
 | \`POST\` | \`/api/runtime/stop\` | 按 selector 停止实例 |
-| \`GET\` | \`/json/version\` | 统一 CDP 入口 |
-| \`GET\` | \`/json/list\` | 统一 CDP 入口 |
-| \`WS\` | \`/devtools/...\` | CDP WebSocket 接管 |
 
 ## 查询当前活动实例
 
 \`\`\`bash
-curl http://127.0.0.1:19876/api/runtime/active
 \`\`\`
 
 \`\`\`json
@@ -156,7 +151,7 @@ curl http://127.0.0.1:19876/api/runtime/active
   "profileId": "550e8400-e29b-41d4-a716-446655440000",
   "launchCode": "BUYER_001",
   "debugReady": true,
-  "cdpUrl": "http://127.0.0.1:19876"
+  "cdpUrl": "http://127.0.0.1:9333"
 }
 \`\`\`
 
@@ -224,87 +219,8 @@ const browser = await chromium.connectOverCDP(data.cdpUrl);
 
 \`\`\`text
 runtime/status 和 runtime/stop 不支持 matchMode=all
-attach 前先看 active / debugReady / cdpUrl
+attach 前确认 debugReady=true 且 cdpUrl 非空
 统一入口只指向一个活动实例
 \`\`\`
 `
 
-export const DOC_API_AUTOMATION = `# 脚本自动化
-
-## 接口
-
-| 方法 | 路径 | 用途 |
-|------|------|------|
-| \`GET\` | \`/api/automation/scripts\` | 查脚本列表 |
-| \`GET\` | \`/api/automation/scripts/{scriptId}\` | 查单个脚本详情 |
-| \`POST\` | \`/api/automation/scripts/run\` | 执行脚本 |
-| \`GET\` | \`/api/automation/scripts/runs\` | 查运行记录 |
-
-## 列脚本
-
-\`\`\`bash
-curl http://127.0.0.1:19876/api/automation/scripts
-\`\`\`
-
-\`\`\`json
-{
-  "ok": true,
-  "items": [
-    {
-      "id": "news-query-txt",
-      "name": "查询新闻并写 TXT",
-      "type": "playwright-cdp",
-      "status": "ready"
-    }
-  ]
-}
-\`\`\`
-
-## 执行脚本
-
-\`\`\`bash
-curl -X POST http://127.0.0.1:19876/api/automation/scripts/run \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "scriptId": "news-query-txt",
-    "selector": { "code": "BUYER_001" },
-    "params": { "keyword": "OpenAI", "limit": 10 }
-  }'
-\`\`\`
-
-\`\`\`json
-{
-  "ok": true,
-  "run": {
-    "id": "run-1",
-    "status": "success",
-    "summary": "已抓取 10 条新闻并写入 TXT"
-  }
-}
-\`\`\`
-
-如果脚本已经在界面里配置成 \`使用已有实例\` 或 \`按模板新建实例\`，也可以只传：
-
-\`\`\`bash
-curl -X POST http://127.0.0.1:19876/api/automation/scripts/run \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "scriptId": "news-query-txt"
-  }'
-\`\`\`
-
-## 查运行记录
-
-\`\`\`bash
-curl http://127.0.0.1:19876/api/automation/scripts/runs?limit=20
-\`\`\`
-
-## 记住这几个规则
-
-\`\`\`text
-scriptId 必填
-推荐优先使用 selector.code，而不是 profileId
-selector / params 必须是 JSON object
-不传 selector / params 时，默认沿用脚本内配置
-\`\`\`
-`

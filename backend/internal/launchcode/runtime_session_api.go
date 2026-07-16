@@ -134,7 +134,6 @@ func (s *LaunchServer) prepareRuntimeSession(profile *browser.Profile, timeout t
 		return nil, false, nil
 	}
 	if normalized.DebugReady {
-		s.SetActiveProfile(normalized)
 		return normalized, true, nil
 	}
 	if timeout <= 0 {
@@ -150,7 +149,6 @@ func (s *LaunchServer) prepareRuntimeSession(profile *browser.Profile, timeout t
 			normalized = s.normalizeRuntimeProfile(waited)
 		}
 		if normalized != nil && ready && normalized.DebugReady {
-			s.SetActiveProfile(normalized)
 			return normalized, true, nil
 		}
 		return normalized, normalized != nil && normalized.DebugReady, nil
@@ -166,7 +164,6 @@ func (s *LaunchServer) prepareRuntimeSession(profile *browser.Profile, timeout t
 			normalized = snapshot
 		}
 		if normalized != nil && normalized.DebugReady {
-			s.SetActiveProfile(normalized)
 			return normalized, true, nil
 		}
 		if time.Now().After(deadline) {

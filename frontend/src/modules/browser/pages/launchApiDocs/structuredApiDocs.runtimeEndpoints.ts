@@ -2,48 +2,13 @@
 
 export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   {
-    id: 'api-runtime-active-detail',
-    parentId: 'api-runtime',
-    label: '当前活动实例',
-    method: 'GET',
-    path: '/api/runtime/active',
-    purpose: '查看当前统一 CDP 入口挂着哪个实例。',
-    description: '当外部系统只知道 LaunchServer 端口、不知道当前 active target 时，先查这个接口最直接。',
-    fields: [],
-    requestExample: {
-      language: 'bash',
-      code: ({ launchBaseUrl, authHeader }) => `curl ${launchBaseUrl}/api/runtime/active \\
-  -H "${authHeader}: <your-api-key>"`,
-    },
-    responseExample: {
-      language: 'json',
-      code: () => `{
-  "ok": true,
-  "active": true,
-  "profileId": "550e8400-e29b-41d4-a716-446655440000",
-  "profileName": "buyer-001",
-  "launchCode": "BUYER_001",
-  "running": true,
-  "debugReady": true,
-  "cdpUrl": "http://127.0.0.1:19876",
-  "directDebugUrl": "http://127.0.0.1:9333"
-}`,
-    },
-    responseCodes: [
-      { code: '200', description: '返回当前 active target 状态。' },
-    ],
-    notes: [
-      'active=false 表示当前没有活动实例。',
-    ],
-  },
-  {
     id: 'api-runtime-session-detail',
     parentId: 'api-runtime',
     label: '准备可接管会话',
     method: 'POST',
     path: '/api/runtime/session',
     purpose: '准备一个可 attach 的运行时会话。',
-    description: '按 selector 命中实例，必要时自动启动，并在给定超时时间内等待 debugReady=true。',
+    description: '按 selector 命中实例，必要时自动启动，并在给定超时时间内等待 debugReady=true。就绪后用返回的 cdpUrl 直连该实例调试端口。',
     fields: [
       { name: 'selector', type: 'object', required: false, location: 'Body', description: '目标实例选择条件；新接入推荐使用。' },
       { name: 'code', type: 'string', required: false, location: 'Body', description: '兼容写法：等价于 selector.code。' },
@@ -80,9 +45,8 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "launchCode": "BUYER_001",
   "running": true,
   "debugReady": true,
-  "active": true,
-  "cdpUrl": "http://127.0.0.1:19876",
-  "directDebugUrl": "http://127.0.0.1:9333",
+  "cdpPort": 9333,
+  "cdpUrl": "http://127.0.0.1:9333",
   "timeoutMs": 45000
 }`,
     },
@@ -94,7 +58,7 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
     ],
     notes: [
       'selector 为空且没有任何兼容顶层选择字段时返回 400。',
-      '200 表示 ready，可直接接管。',
+      '200 表示 ready，用 cdpUrl 直连即可。',
       '202 表示未 ready，需要重试。',
     ],
   },
@@ -129,9 +93,9 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "profileId": "550e8400-e29b-41d4-a716-446655440000",
   "launchCode": "BUYER_001",
   "running": true,
-  "debugReady": false,
-  "active": false,
-  "cdpUrl": ""
+  "debugReady": true,
+  "cdpPort": 9333,
+  "cdpUrl": "http://127.0.0.1:9333"
 }`,
     },
     responseCodes: [
@@ -142,6 +106,7 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
     notes: [
       '不会启动实例。',
       'selector 为空且没有任何兼容顶层选择字段时返回 400。',
+      'debugReady=true 时 cdpUrl 为该实例直连地址。',
     ],
   },
   {
@@ -177,7 +142,8 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
   "launchCode": "BUYER_001",
   "running": false,
   "debugReady": false,
-  "active": false
+  "cdpPort": 0,
+  "cdpUrl": ""
 }`,
     },
     responseCodes: [
@@ -188,100 +154,6 @@ export const RUNTIME_API_ENDPOINT_DOCS: StructuredApiEndpointDoc[] = [
     notes: [
       'selector 为空且没有任何兼容顶层选择字段时返回 400。',
       '不支持 matchMode=all。',
-    ],
-  },
-  {
-    id: 'api-cdp-version-detail',
-    parentId: 'api-runtime',
-    label: 'CDP 版本信息',
-    method: 'GET',
-    path: '/json/version',
-    purpose: '读取统一 CDP 入口的版本信息。',
-    description: '这个接口透传当前 active target 的 CDP 版本信息，适合 attach 前探测调试入口是否可用。',
-    fields: [],
-    requestExample: {
-      language: 'bash',
-      code: ({ launchBaseUrl, authHeader }) => `curl ${launchBaseUrl}/json/version \\
-  -H "${authHeader}: <your-api-key>"`,
-    },
-    responseExample: {
-      language: 'json',
-      code: () => `{
-  "Browser": "Chrome/<version>",
-  "Protocol-Version": "1.3",
-  "User-Agent": "Mozilla/5.0",
-  "webSocketDebuggerUrl": "ws://127.0.0.1:19876/devtools/browser/active"
-}`,
-    },
-    responseCodes: [
-      { code: '200', description: '返回当前 active target 的版本信息。' },
-      { code: '503', description: '当前没有可透传的 active target。' },
-    ],
-    notes: [
-      '无 active target 时返回 503。',
-    ],
-  },
-  {
-    id: 'api-cdp-list-detail',
-    parentId: 'api-runtime',
-    label: 'CDP Target 列表',
-    method: 'GET',
-    path: '/json/list',
-    purpose: '读取统一 CDP 入口当前暴露的 target 列表。',
-    description: '给 Playwright、Puppeteer 或诊断工具查看当前活动 target 时使用。',
-    fields: [],
-    requestExample: {
-      language: 'bash',
-      code: ({ launchBaseUrl, authHeader }) => `curl ${launchBaseUrl}/json/list \\
-  -H "${authHeader}: <your-api-key>"`,
-    },
-    responseExample: {
-      language: 'json',
-      code: () => `[
-  {
-    "id": "page-1",
-    "type": "page",
-    "title": "Checkout",
-    "url": "https://example.com/checkout",
-    "webSocketDebuggerUrl": "ws://127.0.0.1:19876/devtools/page/page-1"
-  }
-]`,
-    },
-    responseCodes: [
-      { code: '200', description: '返回当前活动实例的 target 列表。' },
-      { code: '503', description: '当前没有可透传的 active target。' },
-    ],
-    notes: [
-      '无 active target 时返回 503。',
-    ],
-  },
-  {
-    id: 'api-cdp-ws-detail',
-    parentId: 'api-runtime',
-    label: 'CDP WebSocket',
-    method: 'WS',
-    path: '/devtools/...',
-    purpose: '通过统一 WebSocket 入口接管当前活动实例。',
-    description: '实际 attach 时使用的就是这个 WebSocket 入口。外部工具通常先拿 /json/version 或 /json/list，再连对应 websocketDebuggerUrl。',
-    fields: [],
-    requestExample: {
-      language: 'javascript',
-      code: ({ launchBaseUrl }) => {
-        const wsBase = launchBaseUrl.replace(/^http/i, 'ws')
-        return `const browser = await chromium.connectOverCDP("${wsBase}");
-// 或按 /json/list 返回的 webSocketDebuggerUrl 连接具体 page target`
-      },
-    },
-    responseExample: {
-      language: 'text',
-      code: () => `WebSocket 握手成功后进入标准 Chrome DevTools Protocol 消息流。`,
-    },
-    responseCodes: [
-      { code: '101', description: 'WebSocket 升级成功。' },
-      { code: '503', description: '当前没有可透传的 active target。' },
-    ],
-    notes: [
-      '先调 runtime/session，再连 WS。',
     ],
   },
 ]

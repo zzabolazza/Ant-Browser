@@ -2,7 +2,6 @@ export const DOC_CHANGELOG = `# 更新日志
 
 ## 1.3.0 - 2026-06-23
 
-- 自动化增强：完善自动化脚本导入、运行、目标实例选择和执行记录管理。
 - 插件管理：支持插件安装、导入、启停、删除、实例限制和单实例插件配置。
 - VPN 优化：优化 Xray、sing-box、Mihomo 等连接栈的启动、测速、检测和预热能力。
 - 实例迁移：支持实例导入导出，可将实例配置和完整浏览器用户数据目录打包迁移到新环境。
@@ -11,8 +10,7 @@ export const DOC_CHANGELOG = `# 更新日志
 
 ## 1.2.0 - 2026-05-09
 
-- 接口调用：Launch API 补齐实例增删改查、按 code / selector 启动、runtime session / status / stop 和统一 CDP 入口。
-- 自动化接口：脚本执行支持 selector / params 覆盖和 timeoutMs 超时控制，双实例 runtime 流程支持超时取消与错误返回。
+- 接口调用：Launch API 补齐实例增删改查、按 code / selector 启动、runtime session / status / stop 与实例直连 CDP。
 - 代理池增强：新增链式代理导入、编辑和预览能力，支持 HTTP / SOCKS5 两层链路，并优化直连代理批量导入。
 - 代理检测：新增测速目标、IP 健康检测目标和桥接启动超时配置，链式代理也可以参与测速与健康检测。
 - 实例启动：代理异常时支持本次直连启动，不修改实例原有代理配置；默认代理池只保留直连节点。
@@ -23,7 +21,6 @@ export const DOC_CHANGELOG = `# 更新日志
 - Linux 支持：补齐 Linux 环境下的开发、打包、安装、启动与运行链路，并修复安装版启动与退出稳定性问题。
 - macOS unsigned 内测：支持原生 macOS 主机打包 app / zip，用户状态目录迁移到 Application Support。
 - SOCKS 代理测试：SOCKS 代理能力进入测试阶段，继续验证稳定性与兼容性。
-- 接口触发浏览器：实验性支持通过接口启动浏览器实例，为自动化流程接入做准备。
 
 ## 1.0.0
 

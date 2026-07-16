@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
@@ -169,43 +168,6 @@ func normalizeConfig(config *Config) {
 	if strings.TrimSpace(config.LaunchServer.Auth.Header) == "" {
 		config.LaunchServer.Auth.Header = defaultConfig.LaunchServer.Auth.Header
 	}
-
-	automationUnset := !config.Automation.Enabled &&
-		!config.Automation.HeadlessDefault &&
-		!config.Automation.KeepRuntimeOnDisable &&
-		strings.TrimSpace(config.Automation.InstallPolicy) == "" &&
-		strings.TrimSpace(config.Automation.RuntimeVersion) == "" &&
-		strings.TrimSpace(config.Automation.ArtifactsDir) == "" &&
-		strings.TrimSpace(config.Automation.NodeSource) == "" &&
-		strings.TrimSpace(config.Automation.SystemNodePath) == "" &&
-		strings.TrimSpace(config.Automation.NodeVersion) == "" &&
-		strings.TrimSpace(config.Automation.PlaywrightCoreVersion) == ""
-	if automationUnset {
-		config.Automation = defaultConfig.Automation
-	} else {
-		if strings.TrimSpace(config.Automation.InstallPolicy) == "" {
-			config.Automation.InstallPolicy = defaultConfig.Automation.InstallPolicy
-		}
-		if strings.TrimSpace(config.Automation.NodeVersion) == "" {
-			config.Automation.NodeVersion = defaultConfig.Automation.NodeVersion
-		}
-		if strings.TrimSpace(config.Automation.PlaywrightCoreVersion) == "" {
-			config.Automation.PlaywrightCoreVersion = defaultConfig.Automation.PlaywrightCoreVersion
-		}
-		if strings.TrimSpace(config.Automation.ArtifactsDir) == "" {
-			config.Automation.ArtifactsDir = defaultConfig.Automation.ArtifactsDir
-		} else {
-			config.Automation.ArtifactsDir = strings.TrimSpace(config.Automation.ArtifactsDir)
-		}
-		config.Automation.NodeSource = normalizeAutomationNodeSource(config.Automation.NodeSource)
-		config.Automation.SystemNodePath = strings.TrimSpace(config.Automation.SystemNodePath)
-		if strings.TrimSpace(config.Automation.RuntimeVersion) == "" {
-			config.Automation.RuntimeVersion = DefaultAutomationRuntimeVersion(
-				config.Automation.NodeVersion,
-				config.Automation.PlaywrightCoreVersion,
-			)
-		}
-	}
 }
 
 func cloneInterceptorConfig(src InterceptorConfig) InterceptorConfig {
@@ -300,19 +262,6 @@ func DefaultConfig() *Config {
 				Header:  DefaultLaunchServerAPIKeyHeader,
 			},
 		},
-		Automation: AutomationConfig{
-			Enabled:               false,
-			InstallPolicy:         DefaultAutomationInstallPolicy,
-			RuntimeVersion:        DefaultAutomationRuntimeVersion(DefaultAutomationNodeVersion, DefaultAutomationPWVersion),
-			HeadlessDefault:       false,
-			KeepRuntimeOnDisable:  true,
-			AllowTypeScriptBuild:  false,
-			ArtifactsDir:          "data/automation/artifacts",
-			NodeSource:            DefaultAutomationNodeSource,
-			SystemNodePath:        "",
-			NodeVersion:           DefaultAutomationNodeVersion,
-			PlaywrightCoreVersion: DefaultAutomationPWVersion,
-		},
 	}
 }
 
@@ -326,21 +275,6 @@ func defaultFingerprintArgsForOS(goos string) []string {
 	}
 	return []string{"--fingerprint-brand=Chrome", "--fingerprint-platform=" + platform}
 }
-func DefaultAutomationRuntimeVersion(nodeVersion, playwrightVersion string) string {
-	return fmt.Sprintf("node-%s-playwright-core-%s", strings.TrimSpace(nodeVersion), strings.TrimSpace(playwrightVersion))
-}
-
-func normalizeAutomationNodeSource(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case AutomationNodeSourceSystem:
-		return AutomationNodeSourceSystem
-	case AutomationNodeSourceBundled:
-		return AutomationNodeSourceBundled
-	default:
-		return AutomationNodeSourceAuto
-	}
-}
-
 func boolPtr(value bool) *bool {
 	v := value
 	return &v

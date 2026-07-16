@@ -46,7 +46,6 @@ func (s *LaunchServer) handleLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.SetActiveProfile(profile)
 	writeJSON(w, http.StatusOK, s.launchSuccessPayload(profile, launchCode))
 	s.appendLaunchLog(r.Method, r.URL.Path, clientIP, launchCode, selector, LaunchRequestParams{}, true, http.StatusOK, "", profile.ProfileId, profile.ProfileName, startAt)
 }
@@ -102,10 +101,7 @@ func (s *LaunchServer) handleLaunchWithBody(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		activeProfile, profileIDs, profileNames := summarizeLaunchedProfiles(profiles)
-		if activeProfile != nil {
-			s.SetActiveProfile(activeProfile)
-		}
+		_, profileIDs, profileNames := summarizeLaunchedProfiles(profiles)
 		writeJSON(w, http.StatusOK, s.launchBatchSuccessPayload(profiles))
 		s.appendLaunchLog(r.Method, r.URL.Path, clientIP, selector.Code, selector, req.LaunchRequestParams, true, http.StatusOK, "", profileIDs, profileNames, startAt)
 		return
@@ -121,7 +117,6 @@ func (s *LaunchServer) handleLaunchWithBody(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	s.SetActiveProfile(profile)
 	writeJSON(w, http.StatusOK, s.launchSuccessPayload(profile, launchCode))
 	s.appendLaunchLog(r.Method, r.URL.Path, clientIP, launchCode, selector, req.LaunchRequestParams, true, http.StatusOK, "", profile.ProfileId, profile.ProfileName, startAt)
 }

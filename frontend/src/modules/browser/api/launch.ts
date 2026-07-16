@@ -5,10 +5,6 @@ export interface LaunchServerInfo {
   port: number
   preferredPort: number
   baseUrl: string
-  cdpUrl: string
-  activeDebugPort: number
-  activeProfileId: string
-  activeProfileName: string
   ready: boolean
   apiAuth: {
     requested: boolean
@@ -25,10 +21,6 @@ function normalizeLaunchServerInfo(payload: any): LaunchServerInfo {
   const fallbackPort = preferredPort > 0 ? preferredPort : 19876
   const effectivePort = port > 0 ? port : fallbackPort
   const baseUrl = String(payload?.baseUrl || (effectivePort > 0 ? `http://${host}:${effectivePort}` : ''))
-  const cdpUrl = String(payload?.cdpUrl || baseUrl)
-  const activeDebugPort = Number(payload?.activeDebugPort) || 0
-  const activeProfileId = String(payload?.activeProfileId || '')
-  const activeProfileName = String(payload?.activeProfileName || '')
   const apiAuthPayload = payload?.apiAuth || {}
 
   return {
@@ -36,10 +28,6 @@ function normalizeLaunchServerInfo(payload: any): LaunchServerInfo {
     port: effectivePort,
     preferredPort,
     baseUrl,
-    cdpUrl,
-    activeDebugPort,
-    activeProfileId,
-    activeProfileName,
     ready: !!payload?.ready && port > 0,
     apiAuth: {
       requested: !!apiAuthPayload?.requested,
@@ -66,10 +54,6 @@ export async function fetchLaunchServerInfo(): Promise<LaunchServerInfo> {
     port: 19876,
     preferredPort: 19876,
     baseUrl: 'http://127.0.0.1:19876',
-    cdpUrl: 'http://127.0.0.1:19876',
-    activeDebugPort: 0,
-    activeProfileId: '',
-    activeProfileName: '',
     ready: false,
     apiAuth: {
       requested: false,
