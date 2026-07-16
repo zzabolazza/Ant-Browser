@@ -59,7 +59,6 @@ func (a *App) backupReloadAfterMutation() error {
 	if a.browserMgr != nil {
 		a.browserMgr.InitData()
 	}
-	a.autoDetectCores()
 	a.loadProxies()
 
 	if a.launchCodeSvc != nil {

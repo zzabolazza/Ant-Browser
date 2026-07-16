@@ -1,5 +1,5 @@
 # Browser Core Placeholder
 
-Place downloaded browser cores under this directory when running from source.
+This directory is kept for packaging compatibility only.
 
-Published macOS and Linux packages include this placeholder only. Actual browser core binaries are user-managed and should live under the writable `chrome/` directory in the runtime state root.
+Browser cores are user-managed and can live in any directory. Register them in **内核管理** via **新增内核** → **选择目录**.

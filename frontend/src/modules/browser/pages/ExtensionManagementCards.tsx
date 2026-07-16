@@ -1,4 +1,4 @@
-import { Download, ExternalLink, FolderOpen, History, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
+import { Download, ExternalLink, History, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
 import { Button, Card, Input } from '../../../shared/components'
 import type { BrowserExtension, BrowserExtensionLookupResult, BrowserProxy } from '../types'
 import { extensionStoreURL, formatExtensionSource, formatExtensionTime, getExtensionManifestMeta, getProxySpeedState } from './extensionManagementUtils'
@@ -23,13 +23,10 @@ export function ProxyStatePill({ useProxy, proxy }: { useProxy: boolean; proxy?:
 export interface ExtensionManagementHeaderProps {
   proxyButtonText: string
   loading: boolean
-  importing: 'none' | 'file' | 'directory'
-  downloadDirectoryLoading: boolean
+  importing: 'none' | 'file'
   onOpenProxy: () => void
   onOpenHistory: () => void
   onImportFile: () => void
-  onImportDirectory: () => void
-  onOpenDownloadDirectory: () => void
   onRefresh: () => void
 }
 
@@ -37,12 +34,9 @@ export function ExtensionManagementHeader({
   proxyButtonText,
   loading,
   importing,
-  downloadDirectoryLoading,
   onOpenProxy,
   onOpenHistory,
   onImportFile,
-  onImportDirectory,
-  onOpenDownloadDirectory,
   onRefresh,
 }: ExtensionManagementHeaderProps) {
   return (
@@ -59,15 +53,7 @@ export function ExtensionManagementHeader({
         </Button>
         <Button size="sm" variant="secondary" onClick={onImportFile} loading={importing === 'file'}>
           <Download className="h-4 w-4" />
-          导入包
-        </Button>
-        <Button size="sm" variant="secondary" onClick={onImportDirectory} loading={importing === 'directory'}>
-          <Download className="h-4 w-4" />
-          导入目录
-        </Button>
-        <Button size="sm" variant="secondary" onClick={onOpenDownloadDirectory} loading={downloadDirectoryLoading}>
-          <FolderOpen className="h-4 w-4" />
-          下载目录安装
+          导入
         </Button>
         <Button size="sm" variant="secondary" onClick={onRefresh} loading={loading}>
           <RefreshCw className="h-4 w-4" />
@@ -89,8 +75,6 @@ export interface ExtensionInstallCardProps {
   lastLookupProxyLabel: string
   onQueryChange: (value: string) => void
   onLookup: () => void
-  onOpenWebStoreQuery: () => void
-  onOpenManualInstall: () => void
   onOpenProxy: () => void
   onInstall: () => void
 }
@@ -106,8 +90,6 @@ export function ExtensionInstallCard({
   lastLookupProxyLabel,
   onQueryChange,
   onLookup,
-  onOpenWebStoreQuery,
-  onOpenManualInstall,
   onOpenProxy,
   onInstall,
 }: ExtensionInstallCardProps) {
@@ -126,14 +108,6 @@ export function ExtensionInstallCard({
         <Button type="button" variant="secondary" onClick={onLookup} loading={querying}>
           <Search className="h-4 w-4" />
           查询
-        </Button>
-        <Button type="button" variant="secondary" onClick={onOpenWebStoreQuery}>
-          <ExternalLink className="h-4 w-4" />
-          网页查询
-        </Button>
-        <Button type="button" variant="secondary" onClick={onOpenManualInstall}>
-          <Download className="h-4 w-4" />
-          手动安装
         </Button>
       </div>
 
@@ -172,9 +146,6 @@ export function ExtensionInstallCard({
             >
               <Download className="h-4 w-4" />
               {installedIds.has(lookup.extensionId) ? '已安装' : '安装'}
-            </Button>
-            <Button type="button" size="sm" variant="secondary" onClick={onOpenManualInstall}>
-              手动安装
             </Button>
           </div>
         </div>

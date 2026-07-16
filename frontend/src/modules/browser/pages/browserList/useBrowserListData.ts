@@ -1,16 +1,13 @@
 ﻿import { useEffect, useRef, useState } from 'react'
-import type { BrowserGroupWithCount, BrowserProfile, BrowserProxy } from '../../types'
-import { fetchBrowserProfiles, fetchBrowserProxies, fetchGroups } from '../../api'
+import type { BrowserCore, BrowserGroupWithCount, BrowserProfile, BrowserProxy } from '../../types'
+import { fetchBrowserCores, fetchBrowserProfiles, fetchBrowserProxies, fetchGroups } from '../../api'
 import { EventsOn } from '../../../../wailsjs/runtime/runtime'
 
-interface UseBrowserListDataOptions {
-  loadCores: () => void
-}
-
-export function useBrowserListData({ loadCores }: UseBrowserListDataOptions) {
+export function useBrowserListData() {
   const [profiles, setProfiles] = useState<BrowserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [proxies, setProxies] = useState<BrowserProxy[]>([])
+  const [cores, setCores] = useState<BrowserCore[]>([])
   const [groups, setGroups] = useState<BrowserGroupWithCount[]>([])
   const [startingIds, setStartingIds] = useState<Set<string>>(new Set())
   const [stoppingIds, setStoppingIds] = useState<Set<string>>(new Set())
@@ -103,7 +100,7 @@ export function useBrowserListData({ loadCores }: UseBrowserListDataOptions) {
     void loadProfiles()
     loadGroups()
     fetchBrowserProxies().then(setProxies)
-    loadCores()
+    fetchBrowserCores().then(setCores)
 
     const clearPending = (payload: any) => {
       const profileId = typeof payload === 'string' ? payload : payload?.profileId
@@ -147,6 +144,7 @@ export function useBrowserListData({ loadCores }: UseBrowserListDataOptions) {
     profiles,
     loading,
     proxies,
+    cores,
     groups,
     startingIds,
     stoppingIds,

@@ -7,7 +7,7 @@ export { featuresConfig } from './features.config'
 export { navigationConfig } from './navigation.config'
 export { projectConfig } from './projectBase.config'
 export { uiConfig } from './ui.config'
-export type { NavItem, NavSection } from './navigation.config'
+export type { NavItem } from './navigation.config'
 
 export default {
   project: projectConfig,

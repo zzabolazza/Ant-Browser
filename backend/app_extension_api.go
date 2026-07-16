@@ -19,24 +19,10 @@ type BrowserExtensionLookupResult = browser.ExtensionLookupResult
 type BrowserProfileExtensionSettings = browser.ProfileExtensionSettings
 
 type BrowserExtensionWebStoreRequest struct {
-	Query       string `json:"query"`
-	UseProxy    bool   `json:"useProxy"`
-	ProxyConfig string `json:"proxyConfig"`
-}
-
-type BrowserExtensionManualInstallGuide struct {
-	ExtensionID string `json:"extensionId"`
-	StoreURL    string `json:"storeUrl"`
-	DownloadURL string `json:"downloadUrl"`
-	DownloadDir string `json:"downloadDir"`
-	FileName    string `json:"fileName"`
-}
-
-type BrowserExtensionManualDownloadFile struct {
-	FileName  string `json:"fileName"`
-	FilePath  string `json:"filePath"`
-	SizeBytes int64  `json:"sizeBytes"`
-	UpdatedAt string `json:"updatedAt"`
+	Query          string `json:"query"`
+	UseProxy       bool   `json:"useProxy"`
+	ProxyConfig    string `json:"proxyConfig"`
+	AllowOverwrite bool   `json:"allowOverwrite"`
 }
 
 func (a *App) BrowserExtensionList() ([]BrowserExtension, error) {
@@ -79,122 +65,7 @@ func (a *App) BrowserExtensionInstallWithProxy(input BrowserExtensionWebStoreReq
 	if err != nil {
 		return BrowserExtension{}, fmt.Errorf("下载代理配置错误: %w", err)
 	}
-	return a.browserMgr.InstallExtensionFromWebStoreWithHTTPClient(a.ctx, input.Query, client)
-}
-
-func (a *App) BrowserExtensionManualInstallGuide(query string) (BrowserExtensionManualInstallGuide, error) {
-	extensionID := browser.NormalizeExtensionID(query)
-	if extensionID == "" {
-		return BrowserExtensionManualInstallGuide{}, fmt.Errorf("请输入 Chrome 插件 ID 或 Chrome Web Store 链接")
-	}
-	downloadDir := a.extensionManualDownloadDir()
-	if err := os.MkdirAll(downloadDir, 0o755); err != nil {
-		return BrowserExtensionManualInstallGuide{}, fmt.Errorf("创建手动下载目录失败: %w", err)
-	}
-	return BrowserExtensionManualInstallGuide{
-		ExtensionID: extensionID,
-		StoreURL:    browser.BuildChromeWebStoreURL(extensionID),
-		DownloadURL: browser.BuildChromeExtensionDownloadURL(extensionID),
-		DownloadDir: downloadDir,
-		FileName:    extensionID + ".crx",
-	}, nil
-}
-
-func (a *App) BrowserExtensionOpenManualDownloadDir() error {
-	downloadDir := a.extensionManualDownloadDir()
-	if err := os.MkdirAll(downloadDir, 0o755); err != nil {
-		return fmt.Errorf("创建手动下载目录失败: %w", err)
-	}
-	absPath, err := filepath.Abs(downloadDir)
-	if err != nil {
-		return err
-	}
-	return openPathInFileManager(absPath)
-}
-
-func (a *App) BrowserExtensionListManualDownloadFiles() ([]BrowserExtensionManualDownloadFile, error) {
-	downloadDir := a.extensionManualDownloadDir()
-	if err := os.MkdirAll(downloadDir, 0o755); err != nil {
-		return nil, fmt.Errorf("创建手动下载目录失败: %w", err)
-	}
-	entries, err := os.ReadDir(downloadDir)
-	if err != nil {
-		return nil, fmt.Errorf("读取手动下载目录失败: %w", err)
-	}
-	files := make([]BrowserExtensionManualDownloadFile, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := strings.TrimSpace(entry.Name())
-		lowerName := strings.ToLower(name)
-		if !strings.HasSuffix(lowerName, ".crx") && !strings.HasSuffix(lowerName, ".zip") {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		files = append(files, BrowserExtensionManualDownloadFile{
-			FileName:  name,
-			FilePath:  filepath.Join(downloadDir, name),
-			SizeBytes: info.Size(),
-			UpdatedAt: info.ModTime().Format("2006-01-02 15:04:05"),
-		})
-	}
-	return files, nil
-}
-
-func (a *App) BrowserExtensionInstallManualDownloadFile(fileName string) (BrowserExtension, error) {
-	a.maintenanceMu.Lock()
-	defer a.maintenanceMu.Unlock()
-
-	if a.browserMgr == nil {
-		return BrowserExtension{}, fmt.Errorf("浏览器管理器未初始化")
-	}
-	path, err := a.resolveManualDownloadFile(fileName)
-	if err != nil {
-		return BrowserExtension{}, err
-	}
-	return a.browserMgr.InstallExtensionPackageFile(path)
-}
-
-func (a *App) extensionManualDownloadDir() string {
-	return a.resolveAppPath(filepath.ToSlash(filepath.Join("data", "extensions", "manual-downloads")))
-}
-
-func (a *App) resolveManualDownloadFile(fileName string) (string, error) {
-	fileName = strings.TrimSpace(fileName)
-	if fileName == "" {
-		return "", fmt.Errorf("请选择要导入的插件包")
-	}
-	baseDir, err := filepath.Abs(a.extensionManualDownloadDir())
-	if err != nil {
-		return "", err
-	}
-	cleanName := filepath.Clean(filepath.FromSlash(fileName))
-	if cleanName == "." || cleanName == "" || filepath.IsAbs(cleanName) || strings.HasPrefix(cleanName, ".."+string(os.PathSeparator)) || cleanName == ".." {
-		return "", fmt.Errorf("插件包路径无效")
-	}
-	lowerName := strings.ToLower(cleanName)
-	if !strings.HasSuffix(lowerName, ".crx") && !strings.HasSuffix(lowerName, ".zip") {
-		return "", fmt.Errorf("只支持导入 .crx 或 .zip 插件包")
-	}
-	fullPath, err := filepath.Abs(filepath.Join(baseDir, cleanName))
-	if err != nil {
-		return "", err
-	}
-	if fullPath != baseDir && !strings.HasPrefix(fullPath, baseDir+string(os.PathSeparator)) {
-		return "", fmt.Errorf("插件包路径越界")
-	}
-	info, err := os.Stat(fullPath)
-	if err != nil {
-		return "", fmt.Errorf("插件包不存在: %w", err)
-	}
-	if info.IsDir() {
-		return "", fmt.Errorf("请选择插件包文件，不是目录")
-	}
-	return fullPath, nil
+	return a.browserMgr.InstallExtensionFromWebStoreWithHTTPClient(a.ctx, input.Query, client, input.AllowOverwrite)
 }
 
 func (a *App) extensionDownloadHTTPClient(useProxy bool, proxyConfig string) (*http.Client, error) {
@@ -250,26 +121,6 @@ func (a *App) BrowserExtensionInstallLocalFile() (BrowserExtension, error) {
 	return a.browserMgr.InstallExtensionPackageFile(path)
 }
 
-func (a *App) BrowserExtensionInstallLocalDirectory() (BrowserExtension, error) {
-	a.maintenanceMu.Lock()
-	defer a.maintenanceMu.Unlock()
-
-	if a.ctx == nil {
-		return BrowserExtension{}, fmt.Errorf("应用上下文未初始化")
-	}
-	if a.browserMgr == nil {
-		return BrowserExtension{}, fmt.Errorf("浏览器管理器未初始化")
-	}
-	path, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{Title: "选择已解压插件目录"})
-	if err != nil {
-		return BrowserExtension{}, fmt.Errorf("打开目录选择框失败: %w", err)
-	}
-	if strings.TrimSpace(path) == "" {
-		return BrowserExtension{}, fmt.Errorf("已取消选择")
-	}
-	return a.browserMgr.InstallExtensionDirectory(path)
-}
-
 func (a *App) BrowserExtensionSetEnabled(extensionID string, enabled bool) (BrowserExtension, error) {
 	if a.browserMgr == nil || a.browserMgr.ExtensionDAO == nil {
 		return BrowserExtension{}, fmt.Errorf("插件管理器未初始化")
@@ -299,16 +150,34 @@ func (a *App) BrowserExtensionDelete(extensionID string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := a.resolveBrowserExtensionInstallDir(extension.InstallDir); err != nil {
+	target, err := a.resolveBrowserExtensionInstallDir(extension.InstallDir)
+	if err != nil {
 		return err
+	}
+	if target != "" {
+		if err := os.RemoveAll(target); err != nil {
+			return fmt.Errorf("删除插件目录失败: %w", err)
+		}
 	}
 	if err := a.browserMgr.ExtensionDAO.Delete(extensionID); err != nil {
 		return err
 	}
-	if err := a.removeBrowserExtensionInstallDir(extension.InstallDir); err != nil {
-		return err
-	}
 	return nil
+}
+
+func canonicalPath(p string) (string, error) {
+	p = strings.TrimSpace(p)
+	if p == "" {
+		return "", nil
+	}
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", err
+	}
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = resolved
+	}
+	return filepath.Clean(abs), nil
 }
 
 func (a *App) resolveBrowserExtensionInstallDir(installDir string) (string, error) {
@@ -316,32 +185,19 @@ func (a *App) resolveBrowserExtensionInstallDir(installDir string) (string, erro
 	if installDir == "" {
 		return "", nil
 	}
-	target, err := filepath.Abs(installDir)
+	target, err := canonicalPath(installDir)
 	if err != nil {
 		return "", fmt.Errorf("解析插件目录失败: %w", err)
 	}
-	root, err := filepath.Abs(a.resolveAppPath(filepath.ToSlash(filepath.Join("data", "extensions"))))
+	root, err := canonicalPath(a.resolveAppPath(filepath.ToSlash(filepath.Join("data", "extensions"))))
 	if err != nil {
 		return "", fmt.Errorf("解析插件根目录失败: %w", err)
 	}
-	target = filepath.Clean(target)
-	root = filepath.Clean(root)
 	rel, err := filepath.Rel(root, target)
 	if err != nil || rel == "." || rel == "" || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("拒绝删除插件根目录外的路径: %s", installDir)
 	}
 	return target, nil
-}
-
-func (a *App) removeBrowserExtensionInstallDir(installDir string) error {
-	target, err := a.resolveBrowserExtensionInstallDir(installDir)
-	if err != nil || target == "" {
-		return err
-	}
-	if err := os.RemoveAll(target); err != nil {
-		return fmt.Errorf("删除插件目录失败: %w", err)
-	}
-	return nil
 }
 
 func (a *App) BrowserProfileExtensionGet(profileID string) (BrowserProfileExtensionSettings, error) {

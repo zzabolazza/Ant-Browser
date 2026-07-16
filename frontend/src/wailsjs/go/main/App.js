@@ -46,32 +46,20 @@ export function BrowserCoreDelete(arg1) {
   return window['go']['main']['App']['BrowserCoreDelete'](arg1);
 }
 
-export function BrowserCoreDownload(arg1, arg2, arg3) {
-  return window['go']['main']['App']['BrowserCoreDownload'](arg1, arg2, arg3);
-}
-
 export function BrowserCoreExtendedInfo() {
   return window['go']['main']['App']['BrowserCoreExtendedInfo']();
-}
-
-export function BrowserCoreImportLocal() {
-  return window['go']['main']['App']['BrowserCoreImportLocal']();
 }
 
 export function BrowserCoreList() {
   return window['go']['main']['App']['BrowserCoreList']();
 }
 
-export function BrowserCoreRedownload(arg1, arg2, arg3) {
-  return window['go']['main']['App']['BrowserCoreRedownload'](arg1, arg2, arg3);
+export function BrowserCorePickDirectory() {
+  return window['go']['main']['App']['BrowserCorePickDirectory']();
 }
 
 export function BrowserCoreSave(arg1) {
   return window['go']['main']['App']['BrowserCoreSave'](arg1);
-}
-
-export function BrowserCoreScan() {
-  return window['go']['main']['App']['BrowserCoreScan']();
 }
 
 export function BrowserCoreSetDefault(arg1) {
@@ -94,16 +82,8 @@ export function BrowserExtensionInstall(arg1) {
   return window['go']['main']['App']['BrowserExtensionInstall'](arg1);
 }
 
-export function BrowserExtensionInstallLocalDirectory() {
-  return window['go']['main']['App']['BrowserExtensionInstallLocalDirectory']();
-}
-
 export function BrowserExtensionInstallLocalFile() {
   return window['go']['main']['App']['BrowserExtensionInstallLocalFile']();
-}
-
-export function BrowserExtensionInstallManualDownloadFile(arg1) {
-  return window['go']['main']['App']['BrowserExtensionInstallManualDownloadFile'](arg1);
 }
 
 export function BrowserExtensionInstallWithProxy(arg1) {
@@ -114,24 +94,12 @@ export function BrowserExtensionList() {
   return window['go']['main']['App']['BrowserExtensionList']();
 }
 
-export function BrowserExtensionListManualDownloadFiles() {
-  return window['go']['main']['App']['BrowserExtensionListManualDownloadFiles']();
-}
-
 export function BrowserExtensionLookup(arg1) {
   return window['go']['main']['App']['BrowserExtensionLookup'](arg1);
 }
 
 export function BrowserExtensionLookupWithProxy(arg1) {
   return window['go']['main']['App']['BrowserExtensionLookupWithProxy'](arg1);
-}
-
-export function BrowserExtensionManualInstallGuide(arg1) {
-  return window['go']['main']['App']['BrowserExtensionManualInstallGuide'](arg1);
-}
-
-export function BrowserExtensionOpenManualDownloadDir() {
-  return window['go']['main']['App']['BrowserExtensionOpenManualDownloadDir']();
 }
 
 export function BrowserExtensionSetEnabled(arg1, arg2) {
@@ -396,10 +364,6 @@ export function GetAppLogs() {
 
 export function GetBrowserSettings() {
   return window['go']['main']['App']['GetBrowserSettings']();
-}
-
-export function GetDashboardStats() {
-  return window['go']['main']['App']['GetDashboardStats']();
 }
 
 export function GetInterceptor() {

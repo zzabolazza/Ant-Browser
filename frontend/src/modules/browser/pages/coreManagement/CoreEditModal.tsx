@@ -9,10 +9,12 @@ interface CoreEditModalProps {
   form: CoreEditForm
   saving: boolean
   pathValidating: boolean
+  pickingPath: boolean
   pathValidResult: BrowserCoreValidateResult | null
   setForm: Dispatch<SetStateAction<CoreEditForm>>
   onClose: () => void
   onSave: () => void
+  onPickDirectory: () => void
 }
 
 export function CoreEditModal({
@@ -21,10 +23,12 @@ export function CoreEditModal({
   form,
   saving,
   pathValidating,
+  pickingPath,
   pathValidResult,
   setForm,
   onClose,
   onSave,
+  onPickDirectory,
 }: CoreEditModalProps) {
   return (
     <Modal
@@ -48,11 +52,25 @@ export function CoreEditModal({
           />
         </FormItem>
         <FormItem label="内核路径" required>
-          <Input
-            value={form.corePath}
-            onChange={e => setForm(prev => ({ ...prev, corePath: e.target.value }))}
-            placeholder="相对路径（如 chrome）或绝对路径"
-          />
+          {isEditing ? (
+            <Input
+              value={form.corePath}
+              onChange={e => setForm(prev => ({ ...prev, corePath: e.target.value }))}
+              placeholder="内核安装目录的绝对路径"
+            />
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={form.corePath}
+                readOnly
+                placeholder="请点击右侧按钮选择内核目录"
+                className="flex-1"
+              />
+              <Button variant="secondary" onClick={onPickDirectory} loading={pickingPath}>
+                选择目录
+              </Button>
+            </div>
+          )}
           {pathValidating && (
             <p className="text-xs text-[var(--color-text-muted)] mt-1">验证中...</p>
           )}

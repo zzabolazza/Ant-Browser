@@ -1,6 +1,11 @@
 import type { BrowserCore, BrowserCoreExtended, BrowserCoreInput, BrowserCoreValidateResult } from '../types'
 import { getBindings, getMockCores, setMockCores } from './runtime'
 
+export interface BrowserCorePickResult {
+  corePath: string
+  suggestedName: string
+}
+
 export async function fetchBrowserCores(): Promise<BrowserCore[]> {
   const bindings: any = await getBindings()
   if (bindings?.BrowserCoreList) {
@@ -63,38 +68,12 @@ export async function fetchCoreExtendedInfo(): Promise<BrowserCoreExtended[]> {
   return []
 }
 
-export async function scanBrowserCores(): Promise<BrowserCore[]> {
+export async function pickBrowserCoreDirectory(): Promise<BrowserCorePickResult | null> {
   const bindings: any = await getBindings()
-  if (bindings?.BrowserCoreScan) {
-    return (await bindings.BrowserCoreScan()) || []
-  }
-  return getMockCores()
-}
-
-export async function importLocalBrowserCore(): Promise<BrowserCore | null> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserCoreImportLocal) {
-    return (await bindings.BrowserCoreImportLocal()) || null
+  if (bindings?.BrowserCorePickDirectory) {
+    return (await bindings.BrowserCorePickDirectory()) || null
   }
   return null
-}
-
-export async function BrowserCoreDownload(coreName: string, url: string, proxyConfig?: string): Promise<boolean> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserCoreDownload) {
-    await bindings.BrowserCoreDownload(coreName, url, proxyConfig || '')
-    return true
-  }
-  return true
-}
-
-export async function redownloadBrowserCore(coreId: string, url: string, proxyConfig?: string): Promise<boolean> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserCoreRedownload) {
-    await bindings.BrowserCoreRedownload(coreId, url, proxyConfig || '')
-    return true
-  }
-  return true
 }
 
 export async function openCorePath(corePath: string): Promise<boolean> {

@@ -297,42 +297,18 @@ export namespace backend {
 	        this.failedList = source["failedList"];
 	    }
 	}
-	export class BrowserExtensionManualDownloadFile {
-	    fileName: string;
-	    filePath: string;
-	    sizeBytes: number;
-	    updatedAt: string;
+	export class BrowserCorePickResult {
+	    corePath: string;
+	    suggestedName: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new BrowserExtensionManualDownloadFile(source);
+	        return new BrowserCorePickResult(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.fileName = source["fileName"];
-	        this.filePath = source["filePath"];
-	        this.sizeBytes = source["sizeBytes"];
-	        this.updatedAt = source["updatedAt"];
-	    }
-	}
-	export class BrowserExtensionManualInstallGuide {
-	    extensionId: string;
-	    storeUrl: string;
-	    downloadUrl: string;
-	    downloadDir: string;
-	    fileName: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new BrowserExtensionManualInstallGuide(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.extensionId = source["extensionId"];
-	        this.storeUrl = source["storeUrl"];
-	        this.downloadUrl = source["downloadUrl"];
-	        this.downloadDir = source["downloadDir"];
-	        this.fileName = source["fileName"];
+	        this.corePath = source["corePath"];
+	        this.suggestedName = source["suggestedName"];
 	    }
 	}
 	export class BrowserExtensionWebStoreRequest {

@@ -33,9 +33,6 @@ export function useBrowserListViewState() {
     } catch { /* ignore */ }
     return EMPTY_FILTERS
   })
-  const [headerCollapsed, setHeaderCollapsed] = useState(() => {
-    return localStorage.getItem('browser:headerCollapsed') === 'true'
-  })
 
   useEffect(() => {
     const serializable = { ...filters, tags: Array.from(filters.tags) }
@@ -46,17 +43,11 @@ export function useBrowserListViewState() {
     localStorage.setItem('browser:viewMode', viewMode)
   }, [viewMode])
 
-  useEffect(() => {
-    localStorage.setItem('browser:headerCollapsed', String(headerCollapsed))
-  }, [headerCollapsed])
-
   return {
     viewMode,
     setViewMode,
     filters,
     setFilters,
-    headerCollapsed,
-    setHeaderCollapsed,
   }
 }
 

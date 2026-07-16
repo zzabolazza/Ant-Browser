@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ExternalLink, Search } from 'lucide-react'
-import { Button, Input, Modal, toast } from '../../../shared/components'
+import { Button, Modal, toast } from '../../../shared/components'
 import type { BrowserExtension, BrowserGroupWithCount, BrowserProfile, BrowserProfileExtensionSettings } from '../types'
-import { fetchBrowserProfileExtensionSettings, saveBrowserProfileExtensionSettings, type BrowserExtensionManualDownloadFile, type BrowserExtensionManualInstallGuide } from '../api/extensions'
+import { fetchBrowserProfileExtensionSettings, saveBrowserProfileExtensionSettings } from '../api/extensions'
 import { fetchGroups } from '../api/groups'
 import { fetchBrowserProfiles } from '../api/profiles'
 import { extensionHistoryActionLabel, formatExtensionTime, sameStringSet, type ExtensionHistoryRecord } from './extensionManagementUtils'
@@ -278,141 +278,6 @@ export function ExtensionHistoryModal({ open, records, onClose, onPick, onClear 
             ))}
           </div>
         )}
-      </div>
-    </Modal>
-  )
-}
-
-export interface ManualInstallModalProps {
-  open: boolean
-  guide: BrowserExtensionManualInstallGuide | null
-  files: BrowserExtensionManualDownloadFile[]
-  loading: boolean
-  fileLoading: boolean
-  importingFileName: string
-  onClose: () => void
-  onOpenDownloadDir: () => void
-  onRefreshFiles: () => void
-  onImportFile: (fileName: string) => void
-  onImportDirectory: () => void
-}
-
-function formatFileSize(sizeBytes: number): string {
-  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) return '0 B'
-  if (sizeBytes < 1024) return `${sizeBytes} B`
-  if (sizeBytes < 1024 * 1024) return `${(sizeBytes / 1024).toFixed(1)} KB`
-  return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`
-}
-
-export function ManualInstallModal({ open, guide, files, loading, fileLoading, importingFileName, onClose, onOpenDownloadDir, onRefreshFiles, onImportFile, onImportDirectory }: ManualInstallModalProps) {
-  const copyText = async (value: string, label: string) => {
-    if (!value) return
-    await navigator.clipboard?.writeText(value)
-    toast.success(`${label}已复制`)
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="手动安装插件" width="720px">
-      {loading ? (
-        <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">正在生成安装信息...</div>
-      ) : guide ? (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-muted)] p-3">
-            <div className="text-xs text-[var(--color-text-muted)]">插件 ID</div>
-            <div className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">{guide.extensionId}</div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-[var(--color-text-primary)]">1. 复制下载地址，用浏览器或下载器下载 CRX</div>
-            <div className="flex items-center gap-2">
-              <Input value={guide.downloadUrl} readOnly className="min-w-0 flex-1 font-mono text-xs" />
-              <Button type="button" variant="secondary" className="shrink-0 whitespace-nowrap px-3" onClick={() => copyText(guide.downloadUrl, '下载地址')}>复制</Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-[var(--color-text-primary)]">2. 推荐保存到这个文件夹</div>
-            <div className="flex items-center gap-2">
-              <Input value={`${guide.downloadDir}\${guide.fileName}`} readOnly className="min-w-0 flex-1 font-mono text-xs" />
-              <Button type="button" variant="secondary" className="shrink-0 whitespace-nowrap px-3" onClick={() => copyText(guide.downloadDir, '文件夹路径')}>复制</Button>
-              <Button type="button" variant="secondary" className="shrink-0 whitespace-nowrap px-3" onClick={onOpenDownloadDir}>打开</Button>
-            </div>
-          </div>
-
-          <div className="space-y-2 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-medium text-[var(--color-text-primary)]">3. 选择下载目录里的插件包导入</div>
-              <Button type="button" size="sm" variant="secondary" onClick={onRefreshFiles} loading={fileLoading}>扫描目录</Button>
-            </div>
-            <div className="text-xs text-[var(--color-text-muted)]">只扫描上面文件夹里的 `.crx` / `.zip` 文件；如果你已经解压成插件目录，点“导入目录”。</div>
-            <div className="max-h-52 overflow-y-auto rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-muted)]">
-              {files.length === 0 ? (
-                <div className="px-3 py-5 text-center text-xs text-[var(--color-text-muted)]">目录里还没有可导入的 `.crx` / `.zip` 文件</div>
-              ) : files.map((file) => (
-                <div key={file.fileName} className="flex items-center justify-between gap-3 border-b border-[var(--color-border-default)] px-3 py-2 last:border-b-0">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">{file.fileName}</div>
-                    <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{formatFileSize(file.sizeBytes)} · {file.updatedAt}</div>
-                  </div>
-                  <Button type="button" size="sm" onClick={() => onImportFile(file.fileName)} loading={importingFileName === file.fileName}>导入</Button>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="secondary" onClick={onImportDirectory}>导入目录</Button>
-              {guide.storeUrl ? (
-                <Button type="button" size="sm" variant="secondary" onClick={() => window.open(guide.storeUrl, '_blank', 'noopener,noreferrer')}>商店页</Button>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">请输入插件 ID 或 Chrome Web Store 链接</div>
-      )}
-    </Modal>
-  )
-}
-
-export interface DownloadDirectoryInstallModalProps {
-  open: boolean
-  files: BrowserExtensionManualDownloadFile[]
-  fileLoading: boolean
-  importingFileName: string
-  onClose: () => void
-  onOpenDownloadDir: () => void
-  onRefreshFiles: () => void
-  onImportFile: (fileName: string) => void
-}
-
-export function DownloadDirectoryInstallModal({ open, files, fileLoading, importingFileName, onClose, onOpenDownloadDir, onRefreshFiles, onImportFile }: DownloadDirectoryInstallModalProps) {
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="从下载目录安装"
-      width="680px"
-      footer={(
-        <>
-          <Button variant="secondary" onClick={onOpenDownloadDir}>打开目录</Button>
-          <Button variant="secondary" onClick={onRefreshFiles} loading={fileLoading}>重新扫描</Button>
-          <Button onClick={onClose}>关闭</Button>
-        </>
-      )}
-    >
-      <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-muted)]">
-        {fileLoading ? (
-          <div className="px-3 py-8 text-center text-sm text-[var(--color-text-muted)]">正在扫描下载目录...</div>
-        ) : files.length === 0 ? (
-          <div className="px-3 py-8 text-center text-sm text-[var(--color-text-muted)]">没有找到可导入的 `.crx` / `.zip` 文件</div>
-        ) : files.map((file) => (
-          <div key={file.fileName} className="flex items-center justify-between gap-3 border-b border-[var(--color-border-default)] px-3 py-2 last:border-b-0">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-[var(--color-text-primary)]">{file.fileName}</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{formatFileSize(file.sizeBytes)} · {file.updatedAt}</div>
-            </div>
-            <Button type="button" size="sm" onClick={() => onImportFile(file.fileName)} loading={importingFileName === file.fileName}>导入</Button>
-          </div>
-        ))}
       </div>
     </Modal>
   )

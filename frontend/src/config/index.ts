@@ -7,4 +7,4 @@ export {
 } from './project.config'
 export { navigationConfig } from './navigation.config'
 
-export type { NavItem, NavSection } from './navigation.config'
+export type { NavItem } from './navigation.config'

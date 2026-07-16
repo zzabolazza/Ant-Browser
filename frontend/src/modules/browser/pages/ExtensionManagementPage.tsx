@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from '../../../shared/components'
+import { ConfirmModal, toast } from '../../../shared/components'
 import type { BrowserExtension, BrowserExtensionLookupResult, BrowserProxy } from '../types'
 import {
   deleteBrowserExtension,
   fetchBrowserExtensions,
-  getBrowserExtensionManualInstallGuide,
   installBrowserExtension,
-  installBrowserExtensionLocalDirectory,
   installBrowserExtensionLocalFile,
-  installBrowserExtensionManualDownloadFile,
-  listBrowserExtensionManualDownloadFiles,
   lookupBrowserExtension,
-  openBrowserExtensionManualDownloadDir,
   setBrowserExtensionEnabled,
-  type BrowserExtensionManualDownloadFile,
-  type BrowserExtensionManualInstallGuide,
 } from '../api/extensions'
 import { fetchBrowserProxies } from '../api/proxies'
 import { ProxyPickerModal } from '../components/ProxyPickerModal'
 import { ExtensionInstallCard, ExtensionManagementHeader, InstalledExtensionsList } from './ExtensionManagementCards'
-import { DownloadDirectoryInstallModal, ExtensionHistoryModal, ExtensionProfileLimitModal, ManualInstallModal } from './ExtensionManagementModals'
+import { ExtensionHistoryModal, ExtensionProfileLimitModal } from './ExtensionManagementModals'
 import { EXTENSION_HISTORY_LIMIT, buildChromeWebStoreQueryURL, createExtensionHistoryRecord, extensionStoreURL, loadExtensionDownloadProxyPreference, loadExtensionHistory, saveExtensionDownloadProxyPreference, saveExtensionHistory, type ExtensionHistoryRecord } from './extensionManagementUtils'
 
 export function ExtensionManagementPage() {
@@ -29,7 +22,7 @@ export function ExtensionManagementPage() {
   const [loading, setLoading] = useState(false)
   const [querying, setQuerying] = useState(false)
   const [installing, setInstalling] = useState(false)
-  const [importing, setImporting] = useState<'none' | 'file' | 'directory'>('none')
+  const [importing, setImporting] = useState<'none' | 'file'>('none')
   const [updatingId, setUpdatingId] = useState('')
   const [busyId, setBusyId] = useState('')
   const [proxies, setProxies] = useState<BrowserProxy[]>([])
@@ -38,15 +31,9 @@ export function ExtensionManagementPage() {
   const [proxyModalOpen, setProxyModalOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyRecords, setHistoryRecords] = useState<ExtensionHistoryRecord[]>([])
-  const [manualOpen, setManualOpen] = useState(false)
-  const [manualLoading, setManualLoading] = useState(false)
-  const [manualGuide, setManualGuide] = useState<BrowserExtensionManualInstallGuide | null>(null)
-  const [manualFiles, setManualFiles] = useState<BrowserExtensionManualDownloadFile[]>([])
-  const [manualFileLoading, setManualFileLoading] = useState(false)
-  const [manualImportingFileName, setManualImportingFileName] = useState('')
-  const [downloadDirOpen, setDownloadDirOpen] = useState(false)
   const [lastLookupProxyLabel, setLastLookupProxyLabel] = useState('')
   const [limitExtension, setLimitExtension] = useState<BrowserExtension | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<BrowserExtension | null>(null)
 
   const installedIds = useMemo(() => new Set(items.map((item) => item.extensionId)), [items])
   const selectedProxy = useMemo(
@@ -146,95 +133,6 @@ export function ExtensionManagementPage() {
     }
   }
 
-  const handleOpenWebStoreQuery = () => {
-    window.open(buildChromeWebStoreQueryURL(query), '_blank', 'noopener,noreferrer')
-  }
-
-  const refreshManualFiles = async () => {
-    setManualFileLoading(true)
-    try {
-      setManualFiles(await listBrowserExtensionManualDownloadFiles())
-    } catch (error: any) {
-      toast.error(error?.message || '扫描下载目录失败')
-    } finally {
-      setManualFileLoading(false)
-    }
-  }
-
-  const handleOpenManualInstall = async () => {
-    const target = lookup?.extensionId || query.trim()
-    if (!target) {
-      toast.warning('请输入插件 ID 或 Chrome Web Store 链接')
-      return
-    }
-    setManualOpen(true)
-    setManualLoading(true)
-    try {
-      setManualGuide(await getBrowserExtensionManualInstallGuide(target))
-      void refreshManualFiles()
-    } catch (error: any) {
-      setManualGuide(null)
-      toast.error(error?.message || '生成手动安装信息失败')
-    } finally {
-      setManualLoading(false)
-    }
-  }
-
-  const handleOpenManualDownloadDir = async () => {
-    try {
-      await openBrowserExtensionManualDownloadDir()
-    } catch (error: any) {
-      toast.error(error?.message || '打开下载目录失败')
-    }
-  }
-
-  const handleOpenDownloadDirectoryInstall = async () => {
-    setDownloadDirOpen(true)
-    try {
-      await openBrowserExtensionManualDownloadDir()
-      await refreshManualFiles()
-    } catch (error: any) {
-      toast.error(error?.message || '打开下载目录失败')
-    }
-  }
-
-  const handleImportManualFile = async (fileName: string) => {
-    setManualImportingFileName(fileName)
-    try {
-      const installed = await installBrowserExtensionManualDownloadFile(fileName)
-      appendHistory({
-        action: 'import',
-        query: fileName,
-        extensionId: installed.extensionId || '',
-        name: installed.name || '',
-        version: installed.version || '',
-        storeUrl: installed.sourceUrl || '',
-        proxyLabel: '手动下载目录',
-        ok: true,
-        message: '导入成功',
-      })
-      toast.success(`已导入 ${installed.name || installed.extensionId}`)
-      setManualOpen(false)
-      setDownloadDirOpen(false)
-      await refresh()
-    } catch (error: any) {
-      appendHistory({
-        action: 'import',
-        query: fileName,
-        extensionId: '',
-        name: '',
-        version: '',
-        storeUrl: '',
-        proxyLabel: '手动下载目录',
-        ok: false,
-        message: error?.message || '导入插件失败',
-      })
-      toast.error(error?.message || '导入插件失败')
-    } finally {
-      setManualImportingFileName('')
-    }
-  }
-
   const handleInstall = async () => {
     const target = lookup?.extensionId || query.trim()
     if (!target) return
@@ -279,15 +177,13 @@ export function ExtensionManagementPage() {
     }
   }
 
-  const handleImportLocal = async (mode: 'file' | 'directory') => {
-    setImporting(mode)
+  const handleImportLocal = async () => {
+    setImporting('file')
     try {
-      const installed = mode === 'file'
-        ? await installBrowserExtensionLocalFile()
-        : await installBrowserExtensionLocalDirectory()
+      const installed = await installBrowserExtensionLocalFile()
       appendHistory({
         action: 'import',
-        query: mode === 'file' ? '本地插件包' : '本地插件目录',
+        query: '本地插件包',
         extensionId: installed.extensionId || '',
         name: installed.name || '',
         version: installed.version || '',
@@ -303,7 +199,7 @@ export function ExtensionManagementPage() {
       if (!message.includes('已取消')) {
         appendHistory({
           action: 'import',
-          query: mode === 'file' ? '本地插件包' : '本地插件目录',
+          query: '本地插件包',
           extensionId: '',
           name: '',
           version: '',
@@ -326,7 +222,7 @@ export function ExtensionManagementPage() {
     }
     setUpdatingId(item.extensionId)
     try {
-      const installed = await installBrowserExtension(item.extensionId, downloadProxyConfig, useProxy)
+      const installed = await installBrowserExtension(item.extensionId, downloadProxyConfig, useProxy, true)
       appendHistory({
         action: 'install',
         query: item.extensionId,
@@ -372,8 +268,11 @@ export function ExtensionManagementPage() {
     }
   }
 
-  const handleDelete = async (item: BrowserExtension) => {
-    if (!window.confirm(`删除插件「${item.name || item.extensionId}」？`)) return
+  const handleDelete = (item: BrowserExtension) => {
+    setDeleteTarget(item)
+  }
+
+  const performDelete = async (item: BrowserExtension) => {
     setBusyId(item.extensionId)
     try {
       await deleteBrowserExtension(item.extensionId)
@@ -409,12 +308,9 @@ export function ExtensionManagementPage() {
         proxyButtonText={proxyButtonText}
         loading={loading}
         importing={importing}
-        downloadDirectoryLoading={manualFileLoading && downloadDirOpen}
         onOpenProxy={() => setProxyModalOpen(true)}
         onOpenHistory={() => setHistoryOpen(true)}
-        onImportFile={() => void handleImportLocal('file')}
-        onImportDirectory={() => void handleImportLocal('directory')}
-        onOpenDownloadDirectory={() => void handleOpenDownloadDirectoryInstall()}
+        onImportFile={() => void handleImportLocal()}
         onRefresh={refresh}
       />
 
@@ -470,32 +366,16 @@ export function ExtensionManagementPage() {
         onClose={() => setLimitExtension(null)}
       />
 
-      <ManualInstallModal
-        open={manualOpen}
-        guide={manualGuide}
-        files={manualFiles}
-        loading={manualLoading}
-        fileLoading={manualFileLoading}
-        importingFileName={manualImportingFileName}
-        onClose={() => setManualOpen(false)}
-        onOpenDownloadDir={handleOpenManualDownloadDir}
-        onRefreshFiles={() => void refreshManualFiles()}
-        onImportFile={(fileName) => void handleImportManualFile(fileName)}
-        onImportDirectory={() => {
-          setManualOpen(false)
-          void handleImportLocal('directory')
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="删除插件"
+        content={deleteTarget ? `确定删除插件「${deleteTarget.name || deleteTarget.extensionId}」？` : ''}
+        confirmText="删除"
+        danger
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) void performDelete(deleteTarget)
         }}
-      />
-
-      <DownloadDirectoryInstallModal
-        open={downloadDirOpen}
-        files={manualFiles}
-        fileLoading={manualFileLoading}
-        importingFileName={manualImportingFileName}
-        onClose={() => setDownloadDirOpen(false)}
-        onOpenDownloadDir={handleOpenManualDownloadDir}
-        onRefreshFiles={() => void refreshManualFiles()}
-        onImportFile={(fileName) => void handleImportManualFile(fileName)}
       />
 
       <ExtensionInstallCard
@@ -509,8 +389,6 @@ export function ExtensionManagementPage() {
         lastLookupProxyLabel={lastLookupProxyLabel}
         onQueryChange={setQuery}
         onLookup={() => void handleLookup()}
-        onOpenWebStoreQuery={handleOpenWebStoreQuery}
-        onOpenManualInstall={handleOpenManualInstall}
         onOpenProxy={() => setProxyModalOpen(true)}
         onInstall={() => void handleInstall()}
       />
@@ -522,7 +400,7 @@ export function ExtensionManagementPage() {
         onRestrictProfiles={setLimitExtension}
         onUpdate={(target) => void handleUpdateExtension(target)}
         onToggle={(target) => void handleToggle(target)}
-        onDelete={(target) => void handleDelete(target)}
+        onDelete={(target) => handleDelete(target)}
       />
     </div>
 

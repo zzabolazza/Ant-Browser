@@ -24,18 +24,3 @@ export interface CoreEditForm {
   coreName: string
   corePath: string
 }
-
-export interface CoreDownloadForm {
-  coreId?: string
-  name: string
-  url: string
-  proxyMode: string
-  proxyId: string
-  mode?: 'download' | 'redownload'
-}
-
-export interface CoreDownloadProgress {
-  phase: string
-  progress: number
-  message: string
-}

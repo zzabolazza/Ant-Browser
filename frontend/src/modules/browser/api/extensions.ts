@@ -1,21 +1,6 @@
 import type { BrowserExtension, BrowserExtensionLookupResult, BrowserProfileExtensionSettings } from '../types'
 import { getBindings, getGoApp } from './runtime'
 
-export interface BrowserExtensionManualInstallGuide {
-  extensionId: string
-  storeUrl: string
-  downloadUrl: string
-  downloadDir: string
-  fileName: string
-}
-
-export interface BrowserExtensionManualDownloadFile {
-  fileName: string
-  filePath: string
-  sizeBytes: number
-  updatedAt: string
-}
-
 function normalizeExtension(payload: any): BrowserExtension {
   return {
     extensionId: String(payload?.extensionId || ''),
@@ -44,25 +29,6 @@ function normalizeLookup(payload: any): BrowserExtensionLookupResult {
   }
 }
 
-function normalizeManualInstallGuide(payload: any): BrowserExtensionManualInstallGuide {
-  return {
-    extensionId: String(payload?.extensionId || ''),
-    storeUrl: String(payload?.storeUrl || ''),
-    downloadUrl: String(payload?.downloadUrl || ''),
-    downloadDir: String(payload?.downloadDir || ''),
-    fileName: String(payload?.fileName || ''),
-  }
-}
-
-function normalizeManualDownloadFile(payload: any): BrowserExtensionManualDownloadFile {
-  return {
-    fileName: String(payload?.fileName || ''),
-    filePath: String(payload?.filePath || ''),
-    sizeBytes: Number(payload?.sizeBytes || 0),
-    updatedAt: String(payload?.updatedAt || ''),
-  }
-}
-
 export async function fetchBrowserExtensions(): Promise<BrowserExtension[]> {
   const bindings: any = await getBindings()
   if (bindings?.BrowserExtensionList) {
@@ -84,68 +50,23 @@ export async function lookupBrowserExtension(query: string, proxyConfig = '', us
   throw new Error('当前环境不支持插件查询')
 }
 
-export async function installBrowserExtension(query: string, proxyConfig = '', useProxy = false): Promise<BrowserExtension> {
+export async function installBrowserExtension(query: string, proxyConfig = '', useProxy = false, allowOverwrite = false): Promise<BrowserExtension> {
   const bindings: any = await getBindings()
   if (bindings?.BrowserExtensionInstallWithProxy) {
-    return normalizeExtension(await bindings.BrowserExtensionInstallWithProxy({ query, useProxy, proxyConfig }))
+    return normalizeExtension(await bindings.BrowserExtensionInstallWithProxy({ query, useProxy, proxyConfig, allowOverwrite }))
   }
   if (useProxy) throw new Error('当前后端版本不支持插件下载代理，请重启或更新应用')
   if (bindings?.BrowserExtensionInstall) {
     return normalizeExtension(await bindings.BrowserExtensionInstall(query))
   }
+  const goApp = getGoApp()
+  if (goApp?.BrowserExtensionInstallWithProxy) {
+    return normalizeExtension(await goApp.BrowserExtensionInstallWithProxy({ query, useProxy, proxyConfig, allowOverwrite }))
+  }
+  if (goApp?.BrowserExtensionInstall) {
+    return normalizeExtension(await goApp.BrowserExtensionInstall(query))
+  }
   throw new Error('当前环境不支持插件安装')
-}
-
-export async function getBrowserExtensionManualInstallGuide(query: string): Promise<BrowserExtensionManualInstallGuide> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserExtensionManualInstallGuide) {
-    return normalizeManualInstallGuide(await bindings.BrowserExtensionManualInstallGuide(query))
-  }
-  const goApp = getGoApp()
-  if (goApp?.BrowserExtensionManualInstallGuide) {
-    return normalizeManualInstallGuide(await goApp.BrowserExtensionManualInstallGuide(query))
-  }
-  throw new Error('当前环境不支持手动安装指南')
-}
-
-export async function openBrowserExtensionManualDownloadDir(): Promise<void> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserExtensionOpenManualDownloadDir) {
-    await bindings.BrowserExtensionOpenManualDownloadDir()
-    return
-  }
-  const goApp = getGoApp()
-  if (goApp?.BrowserExtensionOpenManualDownloadDir) {
-    await goApp.BrowserExtensionOpenManualDownloadDir()
-    return
-  }
-  throw new Error('当前环境不支持打开下载目录')
-}
-
-export async function listBrowserExtensionManualDownloadFiles(): Promise<BrowserExtensionManualDownloadFile[]> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserExtensionListManualDownloadFiles) {
-    const result = await bindings.BrowserExtensionListManualDownloadFiles()
-    return Array.isArray(result) ? result.map(normalizeManualDownloadFile) : []
-  }
-  const goApp = getGoApp()
-  if (goApp?.BrowserExtensionListManualDownloadFiles) {
-    const result = await goApp.BrowserExtensionListManualDownloadFiles()
-    return Array.isArray(result) ? result.map(normalizeManualDownloadFile) : []
-  }
-  return []
-}
-
-export async function installBrowserExtensionManualDownloadFile(fileName: string): Promise<BrowserExtension> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserExtensionInstallManualDownloadFile) {
-    return normalizeExtension(await bindings.BrowserExtensionInstallManualDownloadFile(fileName))
-  }
-  const goApp = getGoApp()
-  if (goApp?.BrowserExtensionInstallManualDownloadFile) {
-    return normalizeExtension(await goApp.BrowserExtensionInstallManualDownloadFile(fileName))
-  }
-  throw new Error('当前环境不支持导入手动下载插件包')
 }
 
 export async function installBrowserExtensionLocalFile(): Promise<BrowserExtension> {
@@ -153,21 +74,21 @@ export async function installBrowserExtensionLocalFile(): Promise<BrowserExtensi
   if (bindings?.BrowserExtensionInstallLocalFile) {
     return normalizeExtension(await bindings.BrowserExtensionInstallLocalFile())
   }
-  throw new Error('当前环境不支持本地插件包导入')
-}
-
-export async function installBrowserExtensionLocalDirectory(): Promise<BrowserExtension> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserExtensionInstallLocalDirectory) {
-    return normalizeExtension(await bindings.BrowserExtensionInstallLocalDirectory())
+  const goApp = getGoApp()
+  if (goApp?.BrowserExtensionInstallLocalFile) {
+    return normalizeExtension(await goApp.BrowserExtensionInstallLocalFile())
   }
-  throw new Error('当前环境不支持本地插件目录导入')
+  throw new Error('当前环境不支持本地插件包导入')
 }
 
 export async function setBrowserExtensionEnabled(extensionId: string, enabled: boolean): Promise<BrowserExtension> {
   const bindings: any = await getBindings()
   if (bindings?.BrowserExtensionSetEnabled) {
     return normalizeExtension(await bindings.BrowserExtensionSetEnabled(extensionId, enabled))
+  }
+  const goApp = getGoApp()
+  if (goApp?.BrowserExtensionSetEnabled) {
+    return normalizeExtension(await goApp.BrowserExtensionSetEnabled(extensionId, enabled))
   }
   throw new Error('当前环境不支持插件状态切换')
 }
@@ -176,6 +97,11 @@ export async function deleteBrowserExtension(extensionId: string): Promise<void>
   const bindings: any = await getBindings()
   if (bindings?.BrowserExtensionDelete) {
     await bindings.BrowserExtensionDelete(extensionId)
+    return
+  }
+  const goApp = getGoApp()
+  if (goApp?.BrowserExtensionDelete) {
+    await goApp.BrowserExtensionDelete(extensionId)
     return
   }
   throw new Error('当前环境不支持插件删除')

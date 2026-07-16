@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Bell, Settings, Check, Trash2, Info, AlertCircle, CheckCircle } from 'lucide-react'
+import { Bell, BookOpen, Check, Trash2, Info, AlertCircle, CheckCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { useNotificationStore, type Notification } from '../../store/notificationStore'
@@ -174,11 +174,11 @@ export function Topbar() {
         </div>
 
         <Link
-          to="/settings"
+          to="/system/docs"
           className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] rounded-md transition-colors duration-150"
-          title="设置"
+          title="文档中心"
         >
-          <Settings className="w-4 h-4" />
+          <BookOpen className="w-4 h-4" />
         </Link>
       </div>
     </header>

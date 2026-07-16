@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react'
 import { toast } from '../../../shared/components'
 import type { BrowserProfile, BrowserProfileCopyOptions, BrowserProxy } from '../types'
-import { BrowserCoreEditorModal, BrowserListHeader, BrowserListSettingsModal } from '../components/BrowserListLayout'
+import { BrowserListHeader } from '../components/BrowserListLayout'
 import { BatchToolbar } from '../components/BrowserListWidgets'
 import { BrowserProfilesPanel } from '../components/BrowserProfilesPanel'
 import { BrowserBackupModal } from '../components/BrowserBackupModal'
@@ -12,7 +12,6 @@ import { buildBrowserProfileCopyName } from '../copyName'
 import { resolveActionFeedback } from '../utils/actionErrors'
 import { BrowserListDialogs } from './browserList/BrowserListDialogs'
 import { useBrowserListDerived, useBrowserListViewState } from './browserList/useBrowserListViewState'
-import { useBrowserListSettings } from './browserList/useBrowserListSettings'
 import { useBrowserListData } from './browserList/useBrowserListData'
 import { useBrowserProfileActions } from './browserList/useBrowserProfileActions'
 import { warmupProfileProxyBeforeStart } from '../utils/proxyWarmup'
@@ -20,10 +19,7 @@ import {
   copyBrowserProfile,
   deleteBrowserProfile,
   exportBrowserProfilePackage,
-  fetchBrowserProfileTrash,
   importBrowserProfilePackage,
-  permanentlyDeleteBrowserProfile,
-  restoreBrowserProfile,
   startBrowserInstance,
   stopBrowserInstance,
   updateBrowserProfile,
@@ -41,8 +37,6 @@ export function BrowserListPage() {
     setViewMode,
     filters,
     setFilters,
-    headerCollapsed,
-    setHeaderCollapsed,
   } = useBrowserListViewState()
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -81,15 +75,6 @@ export function BrowserListPage() {
   const [copyName, setCopyName] = useState('')
   const [copyOptions, setCopyOptions] = useState<BrowserProfileCopyOptions>(() => createBrowserProfileCopyOptions())
   const [copying, setCopying] = useState(false)
-  const [trashModalOpen, setTrashModalOpen] = useState(false)
-  const [trashProfiles, setTrashProfiles] = useState<BrowserProfile[]>([])
-  const [trashLoading, setTrashLoading] = useState(false)
-  const [restoringId, setRestoringId] = useState('')
-  const [permanentlyDeletingId, setPermanentlyDeletingId] = useState('')
-  const [permanentDeleteConfirm, setPermanentDeleteConfirm] = useState<{ open: boolean; profile: BrowserProfile | null }>({
-    open: false,
-    profile: null,
-  })
 
   const openCopyModal = (profile: BrowserProfile) => {
     setCopyName(buildBrowserProfileCopyName(profile.profileName))
@@ -102,38 +87,10 @@ export function BrowserListPage() {
     setCopyOptions(createBrowserProfileCopyOptions())
   }
   const {
-    settingsModalOpen,
-    setSettingsModalOpen,
-    settings,
-    setSettings,
-    fingerprintText,
-    setFingerprintText,
-    launchText,
-    setLaunchText,
-    startUrlsText,
-    setStartUrlsText,
-    savingSettings,
-    cores,
-    coreModalOpen,
-    setCoreModalOpen,
-    coreForm,
-    setCoreForm,
-    coreValidation,
-    setCoreValidation,
-    savingCore,
-    loadCores,
-    handleOpenSettings,
-    handleSaveSettings,
-    handleOpenCoreModal,
-    handleValidateCorePath,
-    handleSaveCore,
-    handleDeleteCore,
-    handleSetDefaultCore,
-  } = useBrowserListSettings()
-  const {
     profiles,
     loading,
     proxies,
+    cores,
     groups,
     startingIds,
     stoppingIds,
@@ -144,7 +101,7 @@ export function BrowserListPage() {
     mergeProfileState,
     updateProxiesState,
     loadProfiles,
-  } = useBrowserListData({ loadCores })
+  } = useBrowserListData()
   const {
     runningCount,
     allTags,
@@ -370,52 +327,6 @@ export function BrowserListPage() {
     })
   }
 
-  const loadTrashProfiles = async () => {
-    setTrashLoading(true)
-    try {
-      setTrashProfiles(await fetchBrowserProfileTrash())
-    } catch (error: any) {
-      toast.error(error?.message || '加载回收站失败')
-    } finally {
-      setTrashLoading(false)
-    }
-  }
-
-  const openTrashModal = () => {
-    setTrashModalOpen(true)
-    void loadTrashProfiles()
-  }
-
-  const handleRestoreProfile = async (profileId: string) => {
-    setRestoringId(profileId)
-    try {
-      await restoreBrowserProfile(profileId)
-      toast.success('实例已恢复')
-      await loadTrashProfiles()
-      await loadProfiles()
-    } catch (error: any) {
-      toast.error(error?.message || '恢复失败')
-    } finally {
-      setRestoringId('')
-    }
-  }
-
-  const handleConfirmPermanentDelete = async () => {
-    const profile = permanentDeleteConfirm.profile
-    if (!profile) return
-    setPermanentlyDeletingId(profile.profileId)
-    try {
-      await permanentlyDeleteBrowserProfile(profile.profileId)
-      toast.success('实例已彻底删除')
-      setPermanentDeleteConfirm({ open: false, profile: null })
-      await loadTrashProfiles()
-    } catch (error: any) {
-      toast.error(error?.message || '彻底删除失败')
-    } finally {
-      setPermanentlyDeletingId('')
-    }
-  }
-
   const openBatchDeleteConfirm = () => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
@@ -507,7 +418,6 @@ export function BrowserListPage() {
         profileCount={profiles.length}
         filteredProfileCount={filteredProfiles.length}
         runningCount={runningCount}
-        headerCollapsed={headerCollapsed}
         viewMode={viewMode}
         proxies={proxies}
         cores={cores}
@@ -515,10 +425,7 @@ export function BrowserListPage() {
         allTags={allTags}
         filters={filters}
         onFiltersChange={setFilters}
-        onToggleHeaderCollapsed={() => setHeaderCollapsed((prev) => !prev)}
         onRefresh={() => { void loadProfiles() }}
-        onOpenSettings={handleOpenSettings}
-        onOpenTrash={openTrashModal}
         onImportProfiles={handleImportProfiles}
         onOpenBackup={() => setBackupModalOpen(true)}
         importingProfiles={profilePackageBusy}
@@ -600,42 +507,6 @@ export function BrowserListPage() {
         onClose={closeExtensionModal}
       />
 
-      <BrowserListSettingsModal
-        open={settingsModalOpen}
-        settings={settings}
-        fingerprintText={fingerprintText}
-        launchText={launchText}
-        startUrlsText={startUrlsText}
-        savingSettings={savingSettings}
-        cores={cores}
-        onClose={() => setSettingsModalOpen(false)}
-        onSave={handleSaveSettings}
-        onSettingsChange={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
-        onFingerprintTextChange={setFingerprintText}
-        onLaunchTextChange={setLaunchText}
-        onStartUrlsTextChange={setStartUrlsText}
-        onAddCore={() => handleOpenCoreModal()}
-        onEditCore={handleOpenCoreModal}
-        onDeleteCore={handleDeleteCore}
-        onSetDefaultCore={handleSetDefaultCore}
-      />
-
-      <BrowserCoreEditorModal
-        open={coreModalOpen}
-        coreForm={coreForm}
-        coreValidation={coreValidation}
-        savingCore={savingCore}
-        onClose={() => setCoreModalOpen(false)}
-        onSave={handleSaveCore}
-        onValidate={handleValidateCorePath}
-        onCoreFormChange={(patch) => {
-          setCoreForm((prev) => ({ ...prev, ...patch }))
-          if (Object.prototype.hasOwnProperty.call(patch, 'corePath')) {
-            setCoreValidation(null)
-          }
-        }}
-      />
-
       <BrowserListDialogs
         proxyErrorModal={proxyErrorModal}
         pendingStartId={pendingStartId}
@@ -670,17 +541,6 @@ export function BrowserListPage() {
         deleting={batchLoading}
         onCloseDeleteConfirm={closeDeleteConfirm}
         onConfirmDelete={() => { void handleConfirmDelete() }}
-        trashModalOpen={trashModalOpen}
-        trashProfiles={trashProfiles}
-        trashLoading={trashLoading}
-        restoringId={restoringId}
-        permanentlyDeletingId={permanentlyDeletingId}
-        permanentDeleteConfirm={permanentDeleteConfirm}
-        onCloseTrash={() => setTrashModalOpen(false)}
-        onRestoreProfile={(profileId) => { void handleRestoreProfile(profileId) }}
-        onOpenPermanentDelete={(profile) => setPermanentDeleteConfirm({ open: true, profile })}
-        onClosePermanentDelete={() => setPermanentDeleteConfirm({ open: false, profile: null })}
-        onConfirmPermanentDelete={() => { void handleConfirmPermanentDelete() }}
         opError={opError}
         onCloseOpError={() => setOpError('')}
       />

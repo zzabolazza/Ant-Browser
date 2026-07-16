@@ -6,27 +6,6 @@ import (
 	goruntime "runtime"
 )
 
-func (a *App) GetDashboardStats() map[string]interface{} {
-	profiles := []BrowserProfile{}
-	if a.browserMgr != nil {
-		profiles = a.browserMgr.List()
-	}
-	stats := browser.BuildDashboardStats(profiles, a.config)
-
-	var mem goruntime.MemStats
-	goruntime.ReadMemStats(&mem)
-	memUsedMB := float64(mem.Alloc) / 1024 / 1024
-
-	return map[string]interface{}{
-		"totalInstances":   stats.TotalInstances,
-		"runningInstances": stats.RunningInstances,
-		"proxyCount":       stats.ProxyCount,
-		"coreCount":        stats.CoreCount,
-		"memUsedMB":        int(memUsedMB),
-		"appVersion":       a.appVersion(),
-	}
-}
-
 func (a *App) GetAppConfig() map[string]interface{} {
 	return map[string]interface{}{
 		"name":    a.appName(),

@@ -56,23 +56,6 @@ func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Conf
 		}
 	}
 
-	chromeSrc := filepath.Join(payloadRoot, "browser", "cores", "chrome")
-	chromeDst := a.resolveAppPath("chrome")
-	if backupPathExists(chromeSrc) {
-		if resetFirst {
-			_ = os.RemoveAll(chromeDst)
-			if err := os.MkdirAll(chromeDst, 0755); err != nil {
-				report("browser_core_root", "默认内核目录", err)
-			} else if err := backupSyncDir(chromeSrc, chromeDst, true, stats, nil); err != nil {
-				report("browser_core_root", "默认内核目录", err)
-			}
-		} else {
-			if err := backupSyncDir(chromeSrc, chromeDst, false, stats, nil); err != nil {
-				report("browser_core_root", "默认内核目录", err)
-			}
-		}
-	}
-
 	externalSrcRoot := filepath.Join(payloadRoot, "browser", "cores", "external")
 	if backupPathExists(externalSrcRoot) {
 		sourceExternal := make([]string, 0)
@@ -131,7 +114,6 @@ func (a *App) backupCollectExternalCorePaths(cfg *config.Config) []string {
 	if cfg == nil {
 		return nil
 	}
-	defaultChromeRoot := a.resolveAppPath("chrome")
 	seen := map[string]struct{}{}
 	result := make([]string, 0)
 	for _, core := range cfg.Browser.Cores {
@@ -139,9 +121,11 @@ func (a *App) backupCollectExternalCorePaths(cfg *config.Config) []string {
 		if p == "" {
 			continue
 		}
-		abs := a.resolveAppPath(p)
-		if backupPathWithin(abs, defaultChromeRoot) {
-			continue
+		abs := p
+		if !filepath.IsAbs(p) {
+			abs = a.resolveAppPath(p)
+		} else {
+			abs = filepath.Clean(p)
 		}
 		norm := backupNormalizePath(abs)
 		if _, ok := seen[norm]; ok {

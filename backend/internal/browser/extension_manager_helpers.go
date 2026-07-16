@@ -169,18 +169,6 @@ func readExtensionLocaleMessagesFromZip(data []byte, manifest extensionManifest)
 	return nil
 }
 
-func readExtensionLocaleMessagesFromDir(sourceDir string, manifest extensionManifest) map[string]string {
-	locale := resolveExtensionLocale(manifest)
-	if locale == "" {
-		return nil
-	}
-	data, err := os.ReadFile(filepath.Join(sourceDir, "_locales", locale, "messages.json"))
-	if err != nil {
-		return nil
-	}
-	return parseExtensionLocaleMessages(data)
-}
-
 func parseExtensionLocaleMessages(data []byte) map[string]string {
 	var raw map[string]struct {
 		Message string `json:"message"`
@@ -247,19 +235,6 @@ func readExtensionIconDataURLFromZip(data []byte, manifest extensionManifest) st
 		}
 	}
 	return ""
-}
-
-func readExtensionIconDataURLFromDir(sourceDir string, manifest extensionManifest) string {
-	iconPath := resolveExtensionIconPath(manifest)
-	if iconPath == "" {
-		return ""
-	}
-	fullPath := filepath.Join(sourceDir, filepath.FromSlash(iconPath))
-	content, err := os.ReadFile(fullPath)
-	if err != nil || len(content) > 1<<20 {
-		return ""
-	}
-	return extensionIconDataURL(iconPath, content)
 }
 
 func resolveExtensionIconPath(manifest extensionManifest) string {
@@ -376,70 +351,6 @@ func replaceExtensionDirFromZip(data []byte, installDir string) error {
 		if err := os.WriteFile(targetPath, content, 0o644); err != nil {
 			return fmt.Errorf("写入插件文件失败: %w", err)
 		}
-	}
-	if err := os.RemoveAll(installDir); err != nil {
-		return fmt.Errorf("清理旧插件失败: %w", err)
-	}
-	if err := os.Rename(tmpDir, installDir); err != nil {
-		return fmt.Errorf("安装插件失败: %w", err)
-	}
-	success = true
-	return nil
-}
-
-func copyExtensionDirectory(sourceDir string, installDir string) error {
-	tmpDir := installDir + ".tmp"
-	_ = os.RemoveAll(tmpDir)
-	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-		return fmt.Errorf("创建插件目录失败: %w", err)
-	}
-	success := false
-	defer func() {
-		if !success {
-			_ = os.RemoveAll(tmpDir)
-		}
-	}()
-
-	sourceClean, err := filepath.Abs(sourceDir)
-	if err != nil {
-		return err
-	}
-	if err := filepath.WalkDir(sourceClean, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entry.Type()&os.ModeSymlink != 0 {
-			return fmt.Errorf("插件目录包含符号链接: %s", path)
-		}
-		if entry.IsDir() {
-			name := entry.Name()
-			if name == ".git" || name == "node_modules" {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		info, err := entry.Info()
-		if err != nil {
-			return err
-		}
-		if info.Size() > extensionMaxPackageBytes {
-			return fmt.Errorf("插件文件过大: %s", path)
-		}
-		relativePath, err := filepath.Rel(sourceClean, path)
-		if err != nil {
-			return err
-		}
-		targetPath := filepath.Join(tmpDir, relativePath)
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-			return err
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		return os.WriteFile(targetPath, data, 0o644)
-	}); err != nil {
-		return fmt.Errorf("复制插件目录失败: %w", err)
 	}
 	if err := os.RemoveAll(installDir); err != nil {
 		return fmt.Errorf("清理旧插件失败: %w", err)

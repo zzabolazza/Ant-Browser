@@ -89,22 +89,6 @@ func (a *App) shouldBlockClose(ctx context.Context) bool {
 	return backend.ShouldBlockClose(a.App, ctx)
 }
 
-func (a *App) BrowserExtensionManualInstallGuide(query string) (backend.BrowserExtensionManualInstallGuide, error) {
-	return a.App.BrowserExtensionManualInstallGuide(query)
-}
-
-func (a *App) BrowserExtensionOpenManualDownloadDir() error {
-	return a.App.BrowserExtensionOpenManualDownloadDir()
-}
-
-func (a *App) BrowserExtensionListManualDownloadFiles() ([]backend.BrowserExtensionManualDownloadFile, error) {
-	return a.App.BrowserExtensionListManualDownloadFiles()
-}
-
-func (a *App) BrowserExtensionInstallManualDownloadFile(fileName string) (backend.BrowserExtension, error) {
-	return a.App.BrowserExtensionInstallManualDownloadFile(fileName)
-}
-
 func main() {
 	// 确定应用根目录：
 	// 1. 生产环境：exe 所在目录（快捷方式启动时 CWD 可能不对，需要修正）

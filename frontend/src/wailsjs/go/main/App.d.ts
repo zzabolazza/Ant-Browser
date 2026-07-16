@@ -31,19 +31,13 @@ export function BrowserClearCookies(arg1:string):Promise<void>;
 
 export function BrowserCoreDelete(arg1:string):Promise<void>;
 
-export function BrowserCoreDownload(arg1:string,arg2:string,arg3:string):Promise<void>;
-
 export function BrowserCoreExtendedInfo():Promise<Array<browser.CoreExtendedInfo>>;
-
-export function BrowserCoreImportLocal():Promise<config.BrowserCore>;
 
 export function BrowserCoreList():Promise<Array<config.BrowserCore>>;
 
-export function BrowserCoreRedownload(arg1:string,arg2:string,arg3:string):Promise<void>;
+export function BrowserCorePickDirectory():Promise<backend.BrowserCorePickResult>;
 
 export function BrowserCoreSave(arg1:browser.CoreInput):Promise<void>;
-
-export function BrowserCoreScan():Promise<Array<config.BrowserCore>>;
 
 export function BrowserCoreSetDefault(arg1:string):Promise<void>;
 
@@ -55,25 +49,15 @@ export function BrowserExtensionDelete(arg1:string):Promise<void>;
 
 export function BrowserExtensionInstall(arg1:string):Promise<browser.Extension>;
 
-export function BrowserExtensionInstallLocalDirectory():Promise<browser.Extension>;
-
 export function BrowserExtensionInstallLocalFile():Promise<browser.Extension>;
-
-export function BrowserExtensionInstallManualDownloadFile(arg1:string):Promise<browser.Extension>;
 
 export function BrowserExtensionInstallWithProxy(arg1:backend.BrowserExtensionWebStoreRequest):Promise<browser.Extension>;
 
 export function BrowserExtensionList():Promise<Array<browser.Extension>>;
 
-export function BrowserExtensionListManualDownloadFiles():Promise<Array<backend.BrowserExtensionManualDownloadFile>>;
-
 export function BrowserExtensionLookup(arg1:string):Promise<browser.ExtensionLookupResult>;
 
 export function BrowserExtensionLookupWithProxy(arg1:backend.BrowserExtensionWebStoreRequest):Promise<browser.ExtensionLookupResult>;
-
-export function BrowserExtensionManualInstallGuide(arg1:string):Promise<backend.BrowserExtensionManualInstallGuide>;
-
-export function BrowserExtensionOpenManualDownloadDir():Promise<void>;
 
 export function BrowserExtensionSetEnabled(arg1:string,arg2:boolean):Promise<browser.Extension>;
 
@@ -206,8 +190,6 @@ export function GetAppConfig():Promise<Record<string, any>>;
 export function GetAppLogs():Promise<Array<logger.MemoryLogEntry>>;
 
 export function GetBrowserSettings():Promise<browser.Settings>;
-
-export function GetDashboardStats():Promise<Record<string, any>>;
 
 export function GetInterceptor():Promise<logger.MethodInterceptor>;
 

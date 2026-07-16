@@ -73,18 +73,7 @@ func BuildScope(opts BuildOptions) (Scope, error) {
 		Description: "浏览器用户数据根目录（若与 data 重合则自动去重）",
 	})
 
-	chromeRoot := resolvePath(appRootAbs, "chrome")
-	builder.add(ScopeEntry{
-		ID:          "browser_core_root",
-		Category:    CategoryCoreData,
-		EntryType:   EntryTypeDir,
-		Required:    false,
-		SourcePath:  chromeRoot,
-		ArchivePath: "payload/browser/cores/chrome/",
-		Description: "默认内核目录",
-	})
-
-	corePaths := collectExtraCorePaths(cfg.Browser.Cores, appRootAbs, chromeRoot)
+	corePaths := collectConfiguredCorePaths(cfg.Browser.Cores, appRootAbs)
 	for idx, corePath := range corePaths {
 		coreID := fmt.Sprintf("external-%02d", idx+1)
 		builder.add(ScopeEntry{
@@ -94,7 +83,7 @@ func BuildScope(opts BuildOptions) (Scope, error) {
 			Required:    false,
 			SourcePath:  corePath,
 			ArchivePath: "payload/browser/cores/external/" + coreID + "/",
-			Description: "额外内核目录（来自配置 cores）",
+			Description: "已配置的内核目录",
 		})
 	}
 
@@ -198,7 +187,7 @@ func BuildManifest(scope Scope, appName, appVersion string, createdAt time.Time)
 	}
 }
 
-func collectExtraCorePaths(cores []config.BrowserCore, appRootAbs, defaultChromeRoot string) []string {
+func collectConfiguredCorePaths(cores []config.BrowserCore, appRootAbs string) []string {
 	result := make([]string, 0)
 	seen := make(map[string]struct{})
 	for _, core := range cores {
@@ -207,9 +196,6 @@ func collectExtraCorePaths(cores []config.BrowserCore, appRootAbs, defaultChrome
 			continue
 		}
 		coreAbs := resolvePath(appRootAbs, corePath)
-		if isPathWithin(coreAbs, defaultChromeRoot) {
-			continue
-		}
 		key := normalizeForCompare(coreAbs)
 		if _, ok := seen[key]; ok {
 			continue

@@ -35,7 +35,6 @@ func (a *App) startup(ctx context.Context) {
 		log.Error("创建 data 目录失败", logger.F("error", err))
 	}
 
-	a.ensureDefaultCores()
 	a.startupInitInterceptor(log, cfg)
 
 	db, err := a.startupInitDatabase(cfg)
@@ -136,9 +135,8 @@ func (a *App) startupInitManagers(cfg *config.Config, db *database.DB) {
 
 	a.browserMgr.InitData()
 	if err := a.browserMgr.CleanupExpiredTrash(); err != nil {
-		logger.New("Browser").Error("启动清理回收站失败", logger.F("error", err))
+		logger.New("Browser").Error("启动清理历史回收站实例失败", logger.F("error", err))
 	}
-	a.autoDetectCores()
 	a.loadProxies()
 	a.reconcileProfileProxyBindings()
 }

@@ -18,8 +18,3 @@ func (a *App) appStateRootAbs() string {
 func (a *App) appDataDir() string {
 	return a.resolveAppPath("data")
 }
-
-// appChromeDir 返回 chrome 根目录绝对路径。
-func (a *App) appChromeDir() string {
-	return a.resolveAppPath("chrome")
-}

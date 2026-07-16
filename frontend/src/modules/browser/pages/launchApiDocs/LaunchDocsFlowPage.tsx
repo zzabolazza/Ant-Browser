@@ -16,12 +16,12 @@ export function LaunchDocsFlowPage({ baseUrl }: LaunchDocsFlowPageProps) {
   const steps: FlowStep[] = [
     {
       step: '01',
-      title: '内核下载',
-      summary: '先准备浏览器内核，并在应用里确认已识别。',
-      path: '指纹浏览器 -> 内核管理 -> 下载内核 -> 设为默认',
-      example: `chrome/
-  chrome-<version>/
-    chrome.exe`,
+      title: '内核准备',
+      summary: '从 Releases 下载 fingerprint-chromium，解压后新增内核或等待自动识别。',
+      path: '指纹浏览器 -> 内核管理 -> 新增内核 -> 设为默认',
+      example: `/path/to/fingerprint-chromium/
+  Chromium (或 chrome.exe)
+  ...`,
     },
     {
       step: '02',

@@ -109,49 +109,40 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
-        {navigationConfig.map((section) => (
-          <div key={section.title}>
-            {!sidebarCollapsed && (
-              <h3 className="px-3 mb-2 text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-widest">
-                {section.title}
-              </h3>
-            )}
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const Icon = getIcon(item.icon);
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path !== "/" &&
-                    location.pathname.startsWith(`${item.path}/`));
+      <nav className="flex-1 py-4 px-3 overflow-y-auto">
+        <div className="space-y-1">
+          {navigationConfig.map((item) => {
+            const Icon = getIcon(item.icon);
+            const isActive =
+              location.pathname === item.path ||
+              (item.path !== "/" &&
+                location.pathname.startsWith(`${item.path}/`));
 
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    title={sidebarCollapsed ? item.name : undefined}
-                    className={clsx(
-                      "flex items-center rounded-lg transition-all duration-150",
-                      isActive
-                        ? "bg-[var(--color-accent)] text-[var(--color-text-inverse)] shadow-sm"
-                        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] hover:text-[var(--color-text-primary)]",
-                      sidebarCollapsed
-                        ? "justify-center w-10 h-10 mx-auto"
-                        : "px-3 py-2.5 gap-3",
-                    )}
-                  >
-                    <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-                    {!sidebarCollapsed && (
-                      <span className="text-sm font-medium truncate">
-                        {item.name}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                title={sidebarCollapsed ? item.name : undefined}
+                className={clsx(
+                  "flex items-center rounded-lg transition-all duration-150",
+                  isActive
+                    ? "bg-[var(--color-accent)] text-[var(--color-text-inverse)] shadow-sm"
+                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)] hover:text-[var(--color-text-primary)]",
+                  sidebarCollapsed
+                    ? "justify-center w-10 h-10 mx-auto"
+                    : "px-3 py-2.5 gap-3",
+                )}
+              >
+                <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                {!sidebarCollapsed && (
+                  <span className="text-sm font-medium truncate">
+                    {item.name}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Toggle Button */}

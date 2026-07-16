@@ -2,6 +2,8 @@ package browser
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -116,10 +118,10 @@ func (m *Manager) LookupExtensionWithHTTPClient(query string, client *http.Clien
 }
 
 func (m *Manager) InstallExtensionFromWebStore(ctx context.Context, query string) (Extension, error) {
-	return m.InstallExtensionFromWebStoreWithHTTPClient(ctx, query, nil)
+	return m.InstallExtensionFromWebStoreWithHTTPClient(ctx, query, nil, false)
 }
 
-func (m *Manager) InstallExtensionFromWebStoreWithHTTPClient(ctx context.Context, query string, client *http.Client) (Extension, error) {
+func (m *Manager) InstallExtensionFromWebStoreWithHTTPClient(ctx context.Context, query string, client *http.Client, allowOverwrite bool) (Extension, error) {
 	extensionID := NormalizeExtensionID(query)
 	if extensionID == "" {
 		return Extension{}, fmt.Errorf("请输入 Chrome 插件 ID 或 Chrome Web Store 链接")
@@ -128,10 +130,10 @@ func (m *Manager) InstallExtensionFromWebStoreWithHTTPClient(ctx context.Context
 	if err != nil {
 		return Extension{}, err
 	}
-	return m.InstallExtensionPackageBytes(extensionID, BuildChromeWebStoreURL(extensionID), data)
+	return m.InstallExtensionPackageBytes(extensionID, BuildChromeWebStoreURL(extensionID), data, allowOverwrite)
 }
 
-func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL string, data []byte) (Extension, error) {
+func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL string, data []byte, allowOverwrite bool) (Extension, error) {
 	if len(data) == 0 {
 		return Extension{}, fmt.Errorf("插件包为空")
 	}
@@ -157,6 +159,14 @@ func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL str
 	}
 	if resolvedID == "" {
 		return Extension{}, fmt.Errorf("无法识别插件 ID")
+	}
+
+	installed, err := m.extensionInstalled(resolvedID)
+	if err != nil {
+		return Extension{}, err
+	}
+	if installed && !allowOverwrite {
+		return Extension{}, fmt.Errorf("插件已安装")
 	}
 
 	installDir := filepath.Join(m.ResolveRelativePath(filepath.Join("data", extensionsRootDir)), resolvedID)
@@ -198,49 +208,25 @@ func (m *Manager) InstallExtensionPackageFile(path string) (Extension, error) {
 	if err != nil {
 		return Extension{}, fmt.Errorf("读取插件文件失败: %w", err)
 	}
-	return m.InstallExtensionPackageBytes("", normalizedPath, data)
+	return m.InstallExtensionPackageBytes("", normalizedPath, data, false)
 }
 
-func (m *Manager) InstallExtensionDirectory(sourceDir string) (Extension, error) {
-	normalizedDir := strings.TrimSpace(sourceDir)
-	if normalizedDir == "" {
-		return Extension{}, fmt.Errorf("插件目录不能为空")
+func (m *Manager) extensionInstalled(extensionID string) (bool, error) {
+	if m == nil || m.ExtensionDAO == nil {
+		return false, nil
 	}
-	manifestPath := filepath.Join(normalizedDir, "manifest.json")
-	manifestData, err := os.ReadFile(manifestPath)
-	if err != nil {
-		return Extension{}, fmt.Errorf("插件目录缺少 manifest.json: %w", err)
+	extensionID = strings.TrimSpace(extensionID)
+	if extensionID == "" {
+		return false, nil
 	}
-	manifest, err := parseExtensionManifest(manifestData)
-	if err != nil {
-		return Extension{}, err
+	_, err := m.ExtensionDAO.Get(extensionID)
+	if err == nil {
+		return true, nil
 	}
-	extensionID := extensionIDFromManifest(manifestData)
-	installDir := filepath.Join(m.ResolveRelativePath(filepath.Join("data", extensionsRootDir)), extensionID)
-	if err := copyExtensionDirectory(normalizedDir, installDir); err != nil {
-		return Extension{}, err
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
 	}
-	localeMessages := readExtensionLocaleMessagesFromDir(normalizedDir, manifest)
-	extension := Extension{
-		ExtensionID:  extensionID,
-		Name:         resolveExtensionMessage(resolveExtensionName(manifest, extensionID), localeMessages),
-		Version:      strings.TrimSpace(manifest.Version),
-		Description:  resolveExtensionDescription(manifest, localeMessages),
-		IconDataURL:  readExtensionIconDataURLFromDir(normalizedDir, manifest),
-		ManifestJSON: string(manifestData),
-		SourceURL:    normalizedDir,
-		InstallDir:   installDir,
-		Enabled:      true,
-	}
-	if m.ExtensionDAO != nil {
-		if err := m.ExtensionDAO.Upsert(extension); err != nil {
-			return Extension{}, err
-		}
-		if stored, err := m.ExtensionDAO.Get(extensionID); err == nil {
-			return stored, nil
-		}
-	}
-	return extension, nil
+	return false, err
 }
 
 func (m *Manager) EnabledExtensionDirs() []string {
