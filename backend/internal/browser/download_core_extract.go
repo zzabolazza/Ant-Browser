@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ulikunitz/xz"
@@ -25,6 +26,16 @@ type archiveProgress struct {
 
 func SupportedCoreArchivePattern() string {
 	return "*.zip;*.tar;*.tar.gz;*.tgz;*.tar.xz;*.txz;*.tar.bz2;*.tbz2"
+}
+
+// SupportedCoreArchiveDialogPattern is for OpenFileDialog filters.
+// Wails on macOS maps extensions via UTType and crashes on compound
+// patterns like *.tar.gz or *.*; use single-segment extensions there.
+func SupportedCoreArchiveDialogPattern() string {
+	if runtime.GOOS == "darwin" {
+		return "*.zip;*.tar;*.tgz;*.gz;*.txz;*.xz;*.tbz2;*.bz2"
+	}
+	return SupportedCoreArchivePattern()
 }
 
 func SupportedCoreArchiveDescription() string {
