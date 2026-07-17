@@ -11,7 +11,7 @@ import {
 } from '../api/extensions'
 import { fetchBrowserProxies } from '../api/proxies'
 import { ProxyPickerModal } from '../components/ProxyPickerModal'
-import { ExtensionInstallCard, ExtensionManagementHeader, InstalledExtensionsList } from './ExtensionManagementCards'
+import { ExtensionInstallCard, ExtensionManagementHeader, InstalledExtensionsList, type ExtensionViewMode } from './ExtensionManagementCards'
 import { ExtensionHistoryModal, ExtensionProfileLimitModal } from './ExtensionManagementModals'
 import { EXTENSION_HISTORY_LIMIT, buildChromeWebStoreQueryURL, createExtensionHistoryRecord, extensionStoreURL, loadExtensionDownloadProxyPreference, loadExtensionHistory, saveExtensionDownloadProxyPreference, saveExtensionHistory, type ExtensionHistoryRecord } from './extensionManagementUtils'
 
@@ -34,6 +34,7 @@ export function ExtensionManagementPage() {
   const [lastLookupProxyLabel, setLastLookupProxyLabel] = useState('')
   const [limitExtension, setLimitExtension] = useState<BrowserExtension | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<BrowserExtension | null>(null)
+  const [viewMode, setViewMode] = useState<ExtensionViewMode>('list')
 
   const installedIds = useMemo(() => new Set(items.map((item) => item.extensionId)), [items])
   const selectedProxy = useMemo(
@@ -397,6 +398,8 @@ export function ExtensionManagementPage() {
         items={items}
         busyId={busyId}
         updatingId={updatingId}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         onRestrictProfiles={setLimitExtension}
         onUpdate={(target) => void handleUpdateExtension(target)}
         onToggle={(target) => void handleToggle(target)}

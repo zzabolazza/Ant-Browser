@@ -57,11 +57,11 @@ func (a *App) backupInitializeLocked(applyReload bool) (map[string]interface{}, 
 		}
 	}
 
-	log.Info("系统初始化完成", logger.F("cleared_dirs", strings.Join(cleared, ";")))
+	log.Info("系统已恢复出厂设置", logger.F("cleared_dirs", strings.Join(cleared, ";")))
 	return map[string]interface{}{
 		"cancelled":   false,
 		"resetDone":   true,
 		"clearedDirs": cleared,
-		"message":     "系统已初始化到默认状态",
+		"message":     "系统已恢复出厂设置",
 	}, nil
 }

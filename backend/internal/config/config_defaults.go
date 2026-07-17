@@ -200,9 +200,26 @@ func DefaultConfig() *Config {
 		},
 		ProxyCheck: ProxyCheckConfig{
 			PrepareTimeoutMs: 15000,
-			SpeedTargetID:    "",
-			IPHealthTargetID: "",
-			Targets:          []ProxyCheckTarget{},
+			SpeedTargetID:    "gstatic_generate_204",
+			IPHealthTargetID: "ippure_info",
+			Targets: []ProxyCheckTarget{
+				{
+					ID:             "gstatic_generate_204",
+					Name:           "Google generate_204",
+					Type:           "speed",
+					URL:            "http://www.gstatic.com/generate_204",
+					TimeoutMs:      3000,
+					ExpectedStatus: []int{204},
+				},
+				{
+					ID:        "ippure_info",
+					Name:      "IPPure 出口信息",
+					Type:      "ip_health",
+					URL:       "https://my.ippure.com/v1/info",
+					Parser:    "json",
+					TimeoutMs: 10000,
+				},
+			},
 		},
 		Logging: LoggingConfig{
 			Level:           "info",

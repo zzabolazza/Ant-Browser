@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ConfirmModal, toast } from '../../../shared/components'
 import type { SortOrder } from '../../../shared/components/Table'
 import type { BrowserProxy, ProxyIPHealthResult } from '../types'
@@ -192,6 +192,11 @@ export function ProxyPoolPage() {
     removeSelectedId,
   } = useProxySelection({ proxies, filteredList, saveProxies })
 
+  const selectedProxyList = useMemo(
+    () => filteredList.filter((item) => selectedIds.has(item.proxyId)),
+    [filteredList, selectedIds],
+  )
+
   const handleEdit = (record: ProxyDisplayInfo) => {
     const proxy = proxies.find((p) => p.proxyId === record.proxyId)
     if (!proxy) return
@@ -247,16 +252,25 @@ export function ProxyPoolPage() {
     handleDeleteConfirm,
   } = useProxyDeleteFlow({ proxies, saveProxies, removeSelectedId })
 
+  const { availableCount, avgLatencyMs } = useMemo(() => {
+    const latencyValues = displayList
+      .map((item) => latencyMap[item.proxyId])
+      .filter((value): value is number => typeof value === 'number' && value >= 0)
+    const available = latencyValues.length
+    const avg = available === 0
+      ? null
+      : Math.round(latencyValues.reduce((sum, value) => sum + value, 0) / available)
+    return { availableCount: available, avgLatencyMs: avg }
+  }, [displayList, latencyMap])
+
   return (
     <div className="space-y-5 animate-fade-in">
       <ProxyPoolHeader
-        checkingAllIPHealth={checkingAllIPHealth}
-        onCheckAllIPHealth={() => void handleCheckAllIPHealth(filteredList)}
         onOpenSettings={() => void openCheckSettings()}
         onOpenImport={() => setImportModalOpen(true)}
-        onTestAll={() => void handleTestAll(filteredList)}
-        testingAll={testingAll}
-        totalCount={filteredList.length}
+        totalCount={displayList.length}
+        availableCount={availableCount}
+        avgLatencyMs={avgLatencyMs}
       />
 
       <ProxyPoolTableCard
@@ -273,6 +287,10 @@ export function ProxyPoolPage() {
         latencyEngineMap={latencyEngineMap}
         latencyErrorMap={latencyErrorMap}
         loading={loading}
+        checkingAllIPHealth={checkingAllIPHealth}
+        testingAll={testingAll}
+        onBatchCheckIPHealth={() => void handleCheckAllIPHealth(selectedProxyList)}
+        onBatchTestSpeed={() => void handleTestAll(selectedProxyList)}
         onCheckOneIPHealth={(record) => void handleCheckOneIPHealth(record)}
         onClearFilters={() => {
           setFilterProtocol('all')

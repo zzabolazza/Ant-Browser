@@ -1,6 +1,6 @@
 ﻿import { Link } from 'react-router-dom'
 import clsx from 'clsx'
-import { Archive, LayoutGrid, List, Play, RefreshCw, Upload } from 'lucide-react'
+import { Download, LayoutGrid, List, Play, RefreshCw, Upload } from 'lucide-react'
 
 import { Button } from '../../../shared/components'
 
@@ -57,7 +57,7 @@ export function BrowserListHeader({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
             管理全部浏览器配置与实例：启动、停止、代理切换、标签分组、批量操作。
@@ -68,10 +68,10 @@ export function BrowserListHeader({
             <RefreshCw className="h-4 w-4" />刷新
           </Button>
           <Button variant="secondary" size="sm" onClick={onImportProfiles} loading={importingProfiles}>
-            <Upload className="h-4 w-4" />导入
+            <Download className="h-4 w-4" />导入
           </Button>
           <Button variant="secondary" size="sm" onClick={onOpenBackup}>
-            <Archive className="h-4 w-4" />备份
+            <Upload className="h-4 w-4" />导出
           </Button>
           <Link to="/browser/edit/new">
             <Button size="sm">
@@ -87,9 +87,8 @@ export function BrowserListHeader({
             key={item.label}
             className="rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-4 py-3"
           >
-            <div className="flex items-center gap-2 text-[11.5px] font-semibold text-[var(--color-text-muted)]">
-              {item.tone === 'success' && <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)] shadow-[0_0_0_3px_rgb(22_199_132_/_0.14)]" />}
-              <span>{item.label}</span>
+            <div className="text-[11.5px] font-semibold text-[var(--color-text-muted)]">
+              {item.label}
             </div>
             <div className={clsx(
               "mt-1.5 text-2xl font-extrabold tracking-tight",

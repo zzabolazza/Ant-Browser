@@ -16,8 +16,8 @@ import {
   Bot,
   Puzzle,
   Tag,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
@@ -139,21 +139,13 @@ export function Sidebar() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className={clsx(
-            "flex h-9 items-center rounded-lg text-[#8b8fa3] transition-colors hover:bg-white/[0.06] hover:text-[#e7e8f2]",
-            sidebarCollapsed
-              ? "mx-auto w-10 justify-center"
-              : "w-full justify-center gap-2 px-3 max-sm:mx-auto max-sm:w-10 max-sm:px-0",
-          )}
+          className="mx-auto flex h-9 w-10 items-center justify-center rounded-lg text-[#8b8fa3] transition-colors hover:bg-white/[0.06] hover:text-[#e7e8f2]"
           title={sidebarCollapsed ? "展开侧边栏" : "收起侧边栏"}
         >
           {sidebarCollapsed ? (
-            <PanelLeftOpen className="h-[18px] w-[18px]" />
+            <ChevronRight className="h-[18px] w-[18px]" />
           ) : (
-            <>
-              <PanelLeftClose className="h-[18px] w-[18px]" />
-              <span className="text-sm max-sm:hidden">收起侧边栏</span>
-            </>
+            <ChevronLeft className="h-[18px] w-[18px]" />
           )}
         </button>
       </div>

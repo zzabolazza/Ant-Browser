@@ -1,7 +1,10 @@
-import { Download, ExternalLink, History, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
+import clsx from 'clsx'
+import { Download, ExternalLink, History, LayoutGrid, List, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
 import { Button, Card, Input } from '../../../shared/components'
 import type { BrowserExtension, BrowserExtensionLookupResult, BrowserProxy } from '../types'
 import { extensionStoreURL, formatExtensionSource, formatExtensionTime, getExtensionManifestMeta, getProxySpeedState } from './extensionManagementUtils'
+
+export type ExtensionViewMode = 'list' | 'grid'
 
 export function ProxyStatePill({ useProxy, proxy }: { useProxy: boolean; proxy?: BrowserProxy }) {
   if (!useProxy) {
@@ -40,9 +43,11 @@ export function ExtensionManagementHeader({
   onRefresh,
 }: ExtensionManagementHeaderProps) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">插件包管理</h1>
-      <div className="flex gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+        统一管理扩展包，按需挂载到指定实例范围，支持商店链接安装与本地导入。
+      </p>
+      <div className="flex flex-wrap justify-end gap-2">
         <Button size="sm" variant="secondary" onClick={onOpenProxy}>
           <Settings className="h-4 w-4" />
           {proxyButtonText}
@@ -94,27 +99,24 @@ export function ExtensionInstallCard({
   onInstall,
 }: ExtensionInstallCardProps) {
   return (
-    <Card>
-      <div className="flex flex-col gap-3 md:flex-row">
+    <Card padding="sm">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <Input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') onLookup()
           }}
-          placeholder="Chrome Web Store 链接或 32 位插件 ID"
-          className="flex-1"
+          placeholder="粘贴 Chrome 应用商店 URL 或扩展 ID…"
+          className="flex-1 font-mono text-[12.5px]"
         />
-        <Button type="button" variant="secondary" onClick={onLookup} loading={querying}>
-          <Search className="h-4 w-4" />
-          查询
-        </Button>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
         <ProxyStatePill useProxy={useProxy} proxy={selectedProxy} />
         <Button type="button" size="sm" variant="ghost" onClick={onOpenProxy}>
           切换代理
+        </Button>
+        <Button type="button" size="sm" onClick={onLookup} loading={querying}>
+          <Search className="h-4 w-4" />
+          解析
         </Button>
       </div>
 
@@ -158,44 +160,82 @@ export interface InstalledExtensionsListProps {
   items: BrowserExtension[]
   busyId: string
   updatingId: string
+  viewMode: ExtensionViewMode
+  onViewModeChange: (next: ExtensionViewMode) => void
   onRestrictProfiles: (item: BrowserExtension) => void
   onUpdate: (item: BrowserExtension) => void
   onToggle: (item: BrowserExtension) => void
   onDelete: (item: BrowserExtension) => void
 }
 
-export function InstalledExtensionsList({ items, busyId, updatingId, onRestrictProfiles, onUpdate, onToggle, onDelete }: InstalledExtensionsListProps) {
+export function InstalledExtensionsList({
+  items,
+  busyId,
+  updatingId,
+  viewMode,
+  onViewModeChange,
+  onRestrictProfiles,
+  onUpdate,
+  onToggle,
+  onDelete,
+}: InstalledExtensionsListProps) {
   return (
     <Card>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm font-medium text-[var(--color-text-primary)]">已安装插件（{items.length}）</div>
+        <div className="flex overflow-hidden rounded-md border border-[var(--color-border-default)]">
+          <button
+            type="button"
+            className={clsx(
+              "flex h-8 w-8 items-center justify-center text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]",
+              viewMode === 'grid' && "bg-[var(--color-bg-muted)] text-[var(--color-accent)]",
+            )}
+            onClick={() => onViewModeChange('grid')}
+            title="多列网格"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={clsx(
+              "flex h-8 w-8 items-center justify-center text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]",
+              viewMode === 'list' && "bg-[var(--color-bg-muted)] text-[var(--color-accent)]",
+            )}
+            onClick={() => onViewModeChange('list')}
+            title="纵向列表"
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
       </div>
-      <div className="space-y-2">
-        {items.map((item) => (
-          <InstalledExtensionCard
-            key={item.extensionId}
-            item={item}
-            busy={busyId === item.extensionId}
-            updating={updatingId === item.extensionId}
-            onRestrictProfiles={onRestrictProfiles}
-            onUpdate={onUpdate}
-            onToggle={onToggle}
-            onDelete={onDelete}
-          />
-        ))}
-
-        {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
-            暂无插件，先通过上方输入插件 ID 或商店链接安装。
-          </div>
-        ) : null}
-      </div>
+      {items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
+          暂无插件，先通过上方输入插件 ID 或商店链接安装。
+        </div>
+      ) : (
+        <div className={viewMode === 'grid' ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'space-y-2'}>
+          {items.map((item) => (
+            <InstalledExtensionCard
+              key={item.extensionId}
+              item={item}
+              viewMode={viewMode}
+              busy={busyId === item.extensionId}
+              updating={updatingId === item.extensionId}
+              onRestrictProfiles={onRestrictProfiles}
+              onUpdate={onUpdate}
+              onToggle={onToggle}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
+      )}
     </Card>
   )
 }
 
 export interface InstalledExtensionCardProps {
   item: BrowserExtension
+  viewMode: ExtensionViewMode
   busy: boolean
   updating: boolean
   onRestrictProfiles: (item: BrowserExtension) => void
@@ -204,18 +244,28 @@ export interface InstalledExtensionCardProps {
   onDelete: (item: BrowserExtension) => void
 }
 
-export function InstalledExtensionCard({ item, busy, updating, onRestrictProfiles, onUpdate, onToggle, onDelete }: InstalledExtensionCardProps) {
+export function InstalledExtensionCard({ item, viewMode, busy, updating, onRestrictProfiles, onUpdate, onToggle, onDelete }: InstalledExtensionCardProps) {
   const meta = getExtensionManifestMeta(item)
   const storeUrl = extensionStoreURL(item)
+  const isGrid = viewMode === 'grid'
   return (
-    <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3 shadow-[var(--shadow-xs)]">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-muted)]">
+    <div className={clsx(
+      "rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] p-3 shadow-[var(--shadow-xs)]",
+      isGrid && "h-full",
+    )}>
+      <div className={clsx(
+        "flex gap-3",
+        isGrid ? "h-full flex-col" : "flex-col md:flex-row md:items-start md:justify-between",
+      )}>
+        <div className={clsx("flex min-w-0 gap-3", isGrid && "flex-1")}>
+          <div className={clsx(
+            "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-muted)]",
+            isGrid ? "h-11 w-11" : "h-12 w-12",
+          )}>
             {item.iconDataUrl ? (
-              <img src={item.iconDataUrl} alt="" className="h-9 w-9 object-contain" />
+              <img src={item.iconDataUrl} alt="" className={isGrid ? "h-8 w-8 object-contain" : "h-9 w-9 object-contain"} />
             ) : (
-              <Puzzle className="h-6 w-6 text-[var(--color-text-muted)]" />
+              <Puzzle className={isGrid ? "h-5 w-5 text-[var(--color-text-muted)]" : "h-6 w-6 text-[var(--color-text-muted)]"} />
             )}
           </div>
           <div className="min-w-0">
@@ -242,7 +292,10 @@ export function InstalledExtensionCard({ item, busy, updating, onRestrictProfile
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className={clsx(
+          "flex shrink-0 flex-wrap gap-2",
+          isGrid && "border-t border-[var(--color-border-muted)] pt-3",
+        )}>
           {storeUrl ? (
             <Button type="button" size="sm" variant="secondary" onClick={() => window.open(storeUrl, '_blank')}>
               <ExternalLink className="h-4 w-4" />

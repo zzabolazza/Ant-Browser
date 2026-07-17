@@ -93,20 +93,20 @@ export function BackupSettingsCard({
   onOpenImport,
 }: BackupSettingsCardProps) {
   return (
-    <Card title="配置备份与恢复" subtitle="初始化、导出、加载全量配置与浏览器数据">
+    <Card title="系统备份" padding="sm">
       <div className="space-y-3">
         <p className="text-xs text-[var(--color-text-muted)]">
-          加载配置时可选择先初始化后全量恢复，或在现有数据上按规则判重合并。
+          加载配置时可选择清空现有数据后完整恢复，或在现有数据上按规则判重合并。
         </p>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant="danger"
+            variant="secondary"
             size="sm"
             onClick={onInitialize}
             loading={actionLoading === 'init'}
           >
             <RotateCcw className="w-4 h-4" />
-            初始化系统
+            恢复出厂设置
           </Button>
           <Button
             variant="secondary"
@@ -117,7 +117,11 @@ export function BackupSettingsCard({
             <Download className="w-4 h-4" />
             导出配置
           </Button>
-          <Button size="sm" onClick={onOpenImport}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenImport}
+          >
             <Upload className="w-4 h-4" />
             加载配置
           </Button>
@@ -169,7 +173,7 @@ export function BackupImportModal({
             loading={actionLoading === 'import-reset'}
             disabled={actionLoading !== 'none' && actionLoading !== 'import-reset'}
           >
-            是，先初始化后加载
+            清空现有数据后加载
           </Button>
           <Button
             onClick={() => onImport(false)}
@@ -182,9 +186,9 @@ export function BackupImportModal({
       )}
     >
       <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-        <p>是否先执行初始化再加载 ZIP 配置？</p>
+        <p>是否清空现有数据后再加载 ZIP 配置？</p>
         <p className="text-xs text-[var(--color-text-muted)]">
-          选择“是”会先清空当前数据，再全量恢复；选择“否”会在现有数据上做判重合并。
+          选择清空后加载会完整恢复备份；直接加载则会保留现有数据并判重合并。
         </p>
         {importProgress && (
           <BackupProgressPanel progress={importProgress} loadingLabel="加载中" />

@@ -43,13 +43,13 @@ export function ProxyPoolCheckSettingsModal({
             onChange={(e) => onCheckSettingsChange(prev => ({ ...prev, prepareTimeoutMs: Number(e.target.value) || 15000 }))}
           />
         </FormItem>
-        <FormItem label="测速目标 ID">
+        <FormItem label="测速目标">
           <Input
             value={checkSettings.speedTargetId}
             onChange={(e) => onCheckSettingsChange(prev => ({ ...prev, speedTargetId: e.target.value }))}
           />
         </FormItem>
-        <FormItem label="IP 健康目标 ID">
+        <FormItem label="IP 健康目标">
           <Input
             value={checkSettings.ipHealthTargetId}
             onChange={(e) => onCheckSettingsChange(prev => ({ ...prev, ipHealthTargetId: e.target.value }))}

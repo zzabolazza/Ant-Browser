@@ -53,13 +53,15 @@ function TagPanel({ tags, selected, profilesByTag, totalCount, onSelect, onCreat
   }
 
   return (
-    <div className="w-52 shrink-0 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-surface)]">
-      <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
-        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">标签列表</span>
+    <div className="w-52 shrink-0 flex flex-col rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]">
+      <div className="px-4 py-3 border-b border-[var(--color-border-muted)] flex items-center justify-between">
+        <span className="text-[13.5px] font-bold text-[var(--color-text-primary)]">
+          标签 <span className="ml-1 font-mono text-[10.5px] font-medium text-[var(--color-text-muted)]">{tags.length}</span>
+        </span>
         <button
           onClick={() => { setCreating(true); setTimeout(() => inputRef.current?.focus(), 50) }}
           title="新建标签"
-          className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+          className="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-muted)] transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -67,22 +69,22 @@ function TagPanel({ tags, selected, profilesByTag, totalCount, onSelect, onCreat
       <div className="flex-1 overflow-y-auto py-2">
         <button
           onClick={() => onSelect(null)}
-          className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between transition-colors ${selected === null
-              ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium'
-              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]'
+          className={`w-full text-left px-4 py-2 text-[13px] flex items-center justify-between transition-colors ${selected === null
+              ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)] font-semibold'
+              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
             }`}
         >
           <span>全部实例</span>
-          <span className="text-xs opacity-60">{totalCount}</span>
+          <span className="text-[11px] opacity-60">{totalCount}</span>
         </button>
         {tags.map(tag => (
           <div
             key={tag}
             onContextMenu={e => { e.preventDefault(); startEdit(tag) }}
             onClick={() => onSelect(tag)}
-            className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between gap-2 transition-colors cursor-pointer group ${selected === tag
-                ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium'
-                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]'
+            className={`w-full text-left px-4 py-2 text-[13px] flex items-center justify-between gap-2 transition-colors cursor-pointer group ${selected === tag
+                ? 'bg-[var(--color-accent-muted)] text-[var(--color-accent)] font-semibold'
+                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)]'
               }`}
             title="右键可以重命名"
           >
@@ -97,7 +99,7 @@ function TagPanel({ tags, selected, profilesByTag, totalCount, onSelect, onCreat
                   if (e.key === 'Escape') setEditingTag(null)
                 }}
                 onClick={e => e.stopPropagation()}
-                className="flex-1 min-w-0 px-1.5 py-0.5 text-xs rounded border border-[var(--color-primary)] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] focus:outline-none"
+                className="flex-1 min-w-0 px-1.5 py-0.5 text-xs rounded border border-[var(--color-accent)] bg-[var(--color-bg-muted)] text-[var(--color-text-primary)] focus:outline-none"
               />
             ) : (
               <span className="flex items-center gap-1.5 truncate">
@@ -107,12 +109,12 @@ function TagPanel({ tags, selected, profilesByTag, totalCount, onSelect, onCreat
             )}
 
             {editingTag !== tag && (
-              <span className="text-xs opacity-60 shrink-0">{profilesByTag[tag] ?? 0}</span>
+              <span className="font-mono text-[11px] opacity-60 shrink-0">{profilesByTag[tag] ?? 0}</span>
             )}
           </div>
         ))}
         {tags.length === 0 && !creating && (
-          <p className="px-4 py-3 text-xs text-[var(--color-text-muted)]">暂无标签，点击 + 创建</p>
+          <p className="px-4 py-3 text-[12px] text-[var(--color-text-muted)]">暂无标签，点击 + 创建</p>
         )}
 
         {/* 内联新建输入框 */}
@@ -125,7 +127,7 @@ function TagPanel({ tags, selected, profilesByTag, totalCount, onSelect, onCreat
               onKeyDown={handleKeyDown}
               onBlur={commit}
               placeholder="标签名称"
-              className="flex-1 min-w-0 px-2 py-1 text-xs rounded border border-[var(--color-primary)] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none"
+              className="flex-1 min-w-0 px-2 py-1 text-xs rounded border border-[var(--color-accent)] bg-[var(--color-bg-muted)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none"
             />
           </div>
         )}
@@ -158,8 +160,8 @@ function ActionBar({ selectedCount, allTags, onAddTags, onRemoveTags, onClear }:
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 rounded-lg text-sm">
-      <span className="text-[var(--color-primary)] font-medium shrink-0">已选 {selectedCount} 个</span>
+    <div className="flex items-center gap-3 px-4 py-2.5 bg-[var(--color-accent-muted)] border border-[rgb(75_110_255_/_0.2)] rounded-[10px] text-[13px]">
+      <span className="text-[var(--color-accent)] font-semibold shrink-0">已选 {selectedCount} 个</span>
       <div className="flex items-center gap-1.5 flex-1 flex-wrap">
         {/* 添加标签 */}
         <div className="flex items-center gap-1">
@@ -168,7 +170,7 @@ function ActionBar({ selectedCount, allTags, onAddTags, onRemoveTags, onClear }:
             onChange={e => setAddInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
             placeholder="输入标签，逗号分隔"
-            className="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] w-40"
+            className="px-2 py-1 text-xs rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] w-40"
           />
           <Button size="sm" onClick={handleAdd} disabled={!addInput.trim()}>
             <Plus className="w-3.5 h-3.5" />添加标签
@@ -180,7 +182,7 @@ function ActionBar({ selectedCount, allTags, onAddTags, onRemoveTags, onClear }:
             <select
               value={removeTag}
               onChange={e => setRemoveTag(e.target.value)}
-              className="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+              className="px-2 py-1 text-xs rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
             >
               <option value="">选择要移除的标签</option>
               {allTags.map(t => <option key={t} value={t}>{t}</option>)}
@@ -316,7 +318,12 @@ export function TagManagementPage() {
   }
 
   return (
-    <div className="flex h-full animate-fade-in">
+    <div className="flex h-full flex-col gap-4 animate-fade-in">
+      <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+        创建标签用于分组与批量操作；左侧选标签筛选实例，右侧可批量打标或移除。
+      </p>
+
+      <div className="flex min-h-0 flex-1 gap-4">
       {/* 左侧标签面板 */}
       <TagPanel
         tags={allTags}
@@ -329,7 +336,15 @@ export function TagManagementPage() {
       />
 
       {/* 右侧内容区 */}
-      <div className="flex-1 flex flex-col overflow-hidden pl-5 gap-4">
+      <div className="flex-1 flex flex-col overflow-hidden gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[13.5px] font-bold text-[var(--color-text-primary)]">
+            {selectedTag === null
+              ? `全部实例（${displayProfiles.length}）`
+              : `标签「${selectedTag}」下的实例（${displayProfiles.length}）`}
+          </div>
+        </div>
+
         {/* 批量操作栏 */}
         <ActionBar
           selectedCount={selectedIds.size}
@@ -345,7 +360,7 @@ export function TagManagementPage() {
             <table className="min-w-full">
               <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 bg-[var(--color-bg-muted)] w-10">
+                  <th className="px-3.5 py-2.5 bg-[var(--color-bg-subtle)] w-10 border-b border-[var(--color-border-default)]">
                     <input
                       type="checkbox"
                       className="w-4 h-4 rounded cursor-pointer accent-[var(--color-accent)]"
@@ -354,9 +369,9 @@ export function TagManagementPage() {
                       onChange={toggleAll}
                     />
                   </th>
-                  <th className="px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider bg-[var(--color-bg-muted)] text-left">实例名称</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider bg-[var(--color-bg-muted)] text-left">当前标签</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider bg-[var(--color-bg-muted)] text-left">状态</th>
+                  <th className="px-3.5 py-2.5 text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.04em] bg-[var(--color-bg-subtle)] text-left border-b border-[var(--color-border-default)]">实例</th>
+                  <th className="px-3.5 py-2.5 text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.04em] bg-[var(--color-bg-subtle)] text-left border-b border-[var(--color-border-default)]">当前标签</th>
+                  <th className="px-3.5 py-2.5 text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.04em] bg-[var(--color-bg-subtle)] text-left border-b border-[var(--color-border-default)]">状态</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border-muted)] bg-[var(--color-bg-surface)]">
@@ -367,10 +382,10 @@ export function TagManagementPage() {
                 ) : displayProfiles.map(p => (
                   <tr
                     key={p.profileId}
-                    className={`transition-colors cursor-pointer ${selectedIds.has(p.profileId) ? 'bg-[var(--color-primary)]/5' : 'hover:bg-[var(--color-bg-muted)]/50'}`}
+                    className={`transition-colors cursor-pointer ${selectedIds.has(p.profileId) ? 'bg-[var(--color-accent-muted)]' : 'hover:bg-[var(--color-bg-subtle)]'}`}
                     onClick={() => toggleOne(p.profileId)}
                   >
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-3.5 py-3" onClick={e => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded cursor-pointer accent-[var(--color-accent)]"
@@ -378,16 +393,16 @@ export function TagManagementPage() {
                         onChange={() => toggleOne(p.profileId)}
                       />
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-[var(--color-text-primary)]">{p.profileName}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3.5 py-3 text-[13px] font-semibold text-[var(--color-text-primary)]">{p.profileName}</td>
+                    <td className="px-3.5 py-3">
                       <div className="flex flex-wrap gap-1">
                         {p.tags?.length ? p.tags.map(t => (
                           <Badge key={t} variant={t === selectedTag ? 'info' : 'default'}>{t}</Badge>
                         )) : <span className="text-xs text-[var(--color-text-muted)]">无标签</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={p.running ? 'success' : 'warning'} dot>{p.running ? '运行中' : '已停止'}</Badge>
+                    <td className="px-3.5 py-3">
+                      <Badge variant={p.running ? 'success' : 'default'} dot>{p.running ? '运行中' : '已停止'}</Badge>
                     </td>
                   </tr>
                 ))}
@@ -403,6 +418,7 @@ export function TagManagementPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

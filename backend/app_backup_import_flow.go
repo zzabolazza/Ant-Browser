@@ -23,11 +23,11 @@ func (a *App) backupImportFromPathLocked(zipPath string, resetFirst bool) (map[s
 	stats := &backupMergeStats{}
 
 	if resetFirst {
-		a.backupEmitImportProgress("preparing", 30, "正在初始化系统数据...")
+		a.backupEmitImportProgress("preparing", 30, "正在清空现有数据...")
 		if _, err := a.backupInitializeLocked(false); err != nil {
 			return nil, err
 		}
-		a.backupEmitImportProgress("preparing", 40, "初始化完成，继续加载备份内容...")
+		a.backupEmitImportProgress("preparing", 40, "现有数据已清空，继续加载备份内容...")
 	}
 
 	payloadRoot := filepath.Join(extractRoot, "payload")

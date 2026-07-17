@@ -208,14 +208,13 @@ function ProfileMoreActions({
     <>
     <div ref={triggerRef} className="inline-flex">
       <Button
-        size="sm"
+        size="icon"
         variant="ghost"
         onClick={onToggle}
         title="更多"
         disabled={disabled}
-        className="h-7 w-7 px-0"
       >
-        <MoreHorizontal className="h-3.5 w-3.5" />
+        <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
       </Button>
     </div>
       {open && createPortal(
@@ -272,7 +271,7 @@ function EditProfileAction({
   disabled: boolean
   compact?: boolean
 }) {
-  const iconClassName = compact ? 'w-3.5 h-3.5' : 'w-4 h-4 mr-1.5'
+  const iconClassName = 'h-3.5 w-3.5 shrink-0'
   const linkClassName = compact
     ? 'inline-flex h-7 w-7 items-center justify-center rounded-lg px-0 text-xs font-semibold text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-border-strong)]'
     : 'inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-[var(--color-text-secondary)] transition-all duration-150 hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--color-border-strong)]'
@@ -280,10 +279,9 @@ function EditProfileAction({
   if (disabled) {
     return (
       <Button
-        size="sm"
+        size={compact ? 'icon' : 'sm'}
         variant="ghost"
         title="配置"
-        className={compact ? 'h-7 w-7 px-0' : 'px-3'}
         disabled
       >
         <Settings className={iconClassName} />
@@ -376,22 +374,29 @@ function BrowserProfileCard({
         <div className="flex items-center gap-1 flex-wrap">
           {profile.running ? (
             <Button size="sm" variant="secondary" onClick={() => onStop(profile.profileId)} title={isStopping ? '停止中' : '停止'} loading={isStopping}>
-              {!isStopping && <Square className="w-4 h-4 mr-1.5" />}
+              {!isStopping && <Square className="h-3.5 w-3.5 shrink-0" />}
               {isStopping ? '停止中' : '停止'}
             </Button>
           ) : (
-            <Button size="sm" onClick={() => onStart(profile.profileId)} title={isStarting ? '启动中' : '启动'} loading={isStarting}>
-              {!isStarting && <Play className="w-4 h-4 fill-current mr-1.5" />}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onStart(profile.profileId)}
+              title={isStarting ? '启动中' : '启动'}
+              loading={isStarting}
+              className="group hover:!bg-transparent hover:!text-[var(--color-text-secondary)]"
+            >
+              {!isStarting && <Play className="h-3.5 w-3.5 shrink-0 transition-colors group-hover:text-[var(--color-success)]" />}
               {isStarting ? '启动中' : '启动'}
             </Button>
           )}
           <span className="w-px h-4 bg-[var(--color-border-muted)] mx-1"></span>
-          <Button size="sm" variant="ghost" onClick={() => onRestart(profile.profileId)} title="重启" className="px-3" disabled={isBusy}><RotateCcw className="w-4 h-4 mr-1.5" />重启</Button>
-          <Button size="sm" variant="ghost" onClick={() => onOpenKeywords(profile)} title="关键字管理" className="px-3" disabled={isBusy}><Key className="w-4 h-4 mr-1.5" />关键字</Button>
-          <Button size="sm" variant="ghost" onClick={() => onOpenExtensions(profile)} title="插件配置" className="px-3" disabled={isBusy}><Puzzle className="w-4 h-4 mr-1.5" />插件</Button>
+          <Button size="sm" variant="ghost" onClick={() => onRestart(profile.profileId)} title="重启" disabled={isBusy}><RotateCcw className="h-3.5 w-3.5 shrink-0" />重启</Button>
+          <Button size="sm" variant="ghost" onClick={() => onOpenKeywords(profile)} title="关键字管理" disabled={isBusy}><Key className="h-3.5 w-3.5 shrink-0" />关键字</Button>
+          <Button size="sm" variant="ghost" onClick={() => onOpenExtensions(profile)} title="插件配置" disabled={isBusy}><Puzzle className="h-3.5 w-3.5 shrink-0" />插件</Button>
           <EditProfileAction profileId={profile.profileId} disabled={isBusy} />
-          <Button size="sm" variant="ghost" onClick={() => onOpenCopy(profile)} title="克隆" className="px-3" disabled={isBusy}><Copy className="w-4 h-4 mr-1.5" />克隆</Button>
-          <Button size="sm" variant="ghost" onClick={() => onDelete(profile.profileId)} title="删除" className="px-3 text-red-500 hover:text-red-600 hover:bg-red-50" disabled={isBusy}><Trash2 className="w-4 h-4 mr-1.5" />删除</Button>
+          <Button size="sm" variant="ghost" onClick={() => onOpenCopy(profile)} title="克隆" disabled={isBusy}><Copy className="h-3.5 w-3.5 shrink-0" />克隆</Button>
+          <Button size="sm" variant="ghost" onClick={() => onDelete(profile.profileId)} title="删除" className="text-red-500 hover:text-red-600 hover:bg-red-50" disabled={isBusy}><Trash2 className="h-3.5 w-3.5 shrink-0" />删除</Button>
         </div>
       </div>
 
@@ -572,16 +577,23 @@ export function BrowserProfilesPanel({
         return (
           <div className="flex justify-end gap-1.5 whitespace-nowrap">
             {record.running ? (
-              <Button size="sm" variant="secondary" className="h-7 w-7 px-0" onClick={() => onStop(record.profileId)} title="停止" loading={isStopping}>
-                {!isStopping && <Square className="w-3.5 h-3.5" />}
+              <Button size="icon" variant="secondary" onClick={() => onStop(record.profileId)} title="停止" loading={isStopping}>
+                {!isStopping && <Square className="h-3.5 w-3.5 shrink-0" />}
               </Button>
             ) : (
-              <Button size="sm" className="h-7 w-7 px-0" onClick={() => onStart(record.profileId)} title="启动" loading={isStarting}>
-                {!isStarting && <Play className="w-3.5 h-3.5 fill-current" />}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onStart(record.profileId)}
+                title="启动"
+                loading={isStarting}
+                className="group hover:!bg-transparent hover:!text-[var(--color-text-secondary)]"
+              >
+                {!isStarting && <Play className="h-3.5 w-3.5 shrink-0 transition-colors group-hover:text-[var(--color-success)]" />}
               </Button>
             )}
             <EditProfileAction profileId={record.profileId} disabled={isBusy} compact />
-            <Button size="sm" variant="ghost" className="h-7 w-7 px-0" onClick={() => onOpenCopy(record)} title="克隆" disabled={isBusy}><Copy className="w-3.5 h-3.5" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => onOpenCopy(record)} title="克隆" disabled={isBusy}><Copy className="h-3.5 w-3.5 shrink-0" /></Button>
             <ProfileMoreActions
               open={isMoreOpen}
               disabled={isBusy}
@@ -592,7 +604,7 @@ export function BrowserProfilesPanel({
               onOpenExtensions={() => onOpenExtensions(record)}
               onExport={() => onExport(record)}
             />
-            <Button size="sm" variant="ghost" className="h-7 w-7 px-0" onClick={() => onDelete(record.profileId)} title="删除" disabled={isBusy}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => onDelete(record.profileId)} title="删除" disabled={isBusy}><Trash2 className="h-3.5 w-3.5 shrink-0 text-red-500" /></Button>
           </div>
         )
       },

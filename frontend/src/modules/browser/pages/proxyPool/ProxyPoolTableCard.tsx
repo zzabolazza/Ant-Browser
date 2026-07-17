@@ -17,6 +17,10 @@ interface ProxyPoolTableCardProps {
   groups: string[]
   ipHealthMap: Record<string, ProxyIPHealthResult>
   loading: boolean
+  checkingAllIPHealth: boolean
+  testingAll: boolean
+  onBatchCheckIPHealth: () => void
+  onBatchTestSpeed: () => void
   onCheckOneIPHealth: (record: ProxyDisplayInfo) => void
   onClearFilters: () => void
   onDelete: (proxyId: string) => void
@@ -76,6 +80,10 @@ export function ProxyPoolTableCard({
   latencyMap,
   latencyEngineMap,
   latencyErrorMap,
+  checkingAllIPHealth,
+  testingAll,
+  onBatchCheckIPHealth,
+  onBatchTestSpeed,
 }: ProxyPoolTableCardProps) {
   const hasActiveFilters = filterProtocol !== 'all' || !!filterKeyword || filterGroup !== 'all' || filterAvailableOnly
 
@@ -256,8 +264,8 @@ export function ProxyPoolTableCard({
   ])
 
   return (
-    <Card>
-      <div className="flex items-center gap-3 mb-4">
+    <Card padding="sm">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input
           value={filterKeyword}
           onChange={(event) => onFilterKeywordChange(event.target.value)}
@@ -267,7 +275,7 @@ export function ProxyPoolTableCard({
         <select
           value={filterProtocol}
           onChange={(event) => onFilterProtocolChange(event.target.value)}
-          className="h-9 px-3 text-sm rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
+          className="h-8 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-2.5 text-[12.5px] text-[var(--color-text-primary)]"
         >
           {protocolOptions.map((protocol) => (
             <option key={protocol} value={protocol}>{protocol === 'all' ? '全部协议' : protocol.toUpperCase()}</option>
@@ -276,7 +284,7 @@ export function ProxyPoolTableCard({
         <select
           value={filterGroup}
           onChange={(event) => onFilterGroupChange(event.target.value)}
-          className="h-9 px-3 text-sm rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]"
+          className="h-8 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-muted)] px-2.5 text-[12.5px] text-[var(--color-text-primary)]"
         >
           <option value="all">全部分组</option>
           {groups.map((group) => <option key={group} value={group}>{group}</option>)}
@@ -284,18 +292,18 @@ export function ProxyPoolTableCard({
         {hasActiveFilters && (
           <Button size="sm" variant="ghost" onClick={onClearFilters}>清除筛选</Button>
         )}
-        <label className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] cursor-pointer select-none">
+        <label className="flex cursor-pointer select-none items-center gap-1.5 text-[12.5px] text-[var(--color-text-secondary)]">
           <input
             type="checkbox"
             checked={filterAvailableOnly}
             onChange={(event) => onFilterAvailableOnlyChange(event.target.checked)}
-            className="w-4 h-4 rounded border-[var(--color-border-default)] accent-[var(--color-accent)] cursor-pointer"
+            className="h-4 w-4 cursor-pointer rounded border-[var(--color-border-default)] accent-[var(--color-accent)]"
           />
           只展示可用
         </label>
         <div className="flex-1" />
         {data.length > 0 && (
-          <label className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] cursor-pointer select-none">
+          <label className="flex cursor-pointer select-none items-center gap-1.5 text-[12.5px] text-[var(--color-text-muted)]">
             <input
               type="checkbox"
               checked={allFilteredSelected}
@@ -305,15 +313,23 @@ export function ProxyPoolTableCard({
                 }
               }}
               onChange={onToggleAll}
-              className="w-4 h-4 rounded border-[var(--color-border-default)] accent-[var(--color-accent)] cursor-pointer"
+              className="h-4 w-4 cursor-pointer rounded border-[var(--color-border-default)] accent-[var(--color-accent)]"
             />
             全选
           </label>
         )}
         {selectedCount > 0 && (
-          <Button size="sm" variant="danger" onClick={onOpenBatchDelete}>
-            删除所选 ({selectedCount})
-          </Button>
+          <>
+            <Button size="sm" variant="secondary" onClick={onBatchCheckIPHealth} loading={checkingAllIPHealth}>
+              批量健康检测 ({selectedCount})
+            </Button>
+            <Button size="sm" variant="secondary" onClick={onBatchTestSpeed} loading={testingAll}>
+              批量测速 ({selectedCount})
+            </Button>
+            <Button size="sm" variant="danger" onClick={onOpenBatchDelete}>
+              删除所选 ({selectedCount})
+            </Button>
+          </>
         )}
       </div>
       <Table
@@ -325,6 +341,7 @@ export function ProxyPoolTableCard({
         sortColumn={sortColumn}
         sortOrder={sortOrder}
         onSort={onSort}
+        className="rounded-[10px] border-0"
       />
     </Card>
   )

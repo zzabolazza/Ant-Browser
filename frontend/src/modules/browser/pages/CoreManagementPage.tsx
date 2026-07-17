@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { FolderOpen } from 'lucide-react'
+import { Edit2, FolderOpen, Plus, Star, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, ConfirmModal, Table, toast } from '../../../shared/components'
 import type { TableColumn } from '../../../shared/components/Table'
 import type { BrowserCore, BrowserCoreInput, BrowserCoreValidateResult, BrowserSettings } from '../types'
@@ -18,7 +18,6 @@ import {
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime'
 import { CoreEditModal } from './coreManagement/CoreEditModal'
 import { CoreSettingsCard } from './coreManagement/CoreSettingsCard'
-import { CoreSettingsModal } from './coreManagement/CoreSettingsModal'
 import type { CoreDisplayInfo, CoreEditForm, CoreSettingsForm } from './coreManagement.types'
 
 export function CoreManagementPage() {
@@ -36,7 +35,7 @@ export function CoreManagementPage() {
     startReadyTimeoutMs: 3000,
     startStableWindowMs: 1200,
   })
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false)
+  const [settingsEditing, setSettingsEditing] = useState(false)
   const [settingsForm, setSettingsForm] = useState<CoreSettingsForm>({
     userDataRoot: '',
     defaultFingerprintArgs: '',
@@ -125,32 +124,59 @@ export function CoreManagementPage() {
   }, [editForm.corePath, editModalOpen, validatePath])
 
   const columns: TableColumn<CoreDisplayInfo>[] = [
-    { key: 'coreName', title: '内核名称', width: '150px' },
-    { key: 'corePath', title: '内核路径', width: '180px' },
+    {
+      key: 'coreName',
+      title: '内核名称',
+      width: '180px',
+      render: (val, record) => (
+        <div className="min-w-0">
+          <div className="truncate font-semibold text-[var(--color-text-primary)]">{val}</div>
+          {record.pathMessage && (
+            <div className="mt-1 truncate text-[11.5px] text-[var(--color-text-muted)]" title={record.pathMessage}>
+              {record.pathMessage}
+            </div>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'chromeVersion',
       title: 'Chrome 版本',
       width: '130px',
-      render: (val) => val || '-',
+      render: (val) => (
+        <span className="font-mono text-[12px] text-[var(--color-text-secondary)]">
+          {val || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'corePath',
+      title: '路径',
+      width: '260px',
+      render: (val) => (
+        <div className="max-w-[320px] truncate font-mono text-[12px] text-[var(--color-text-secondary)]" title={val}>
+          {val || '-'}
+        </div>
+      ),
     },
     {
       key: 'instanceCount',
-      title: '使用实例',
-      width: '90px',
-      render: (val) => <Badge variant="default">{val}</Badge>,
+      title: '被引用实例',
+      width: '110px',
+      render: (val) => <span className="font-medium text-[var(--color-text-primary)]">{val} 个实例</span>,
     },
     {
       key: 'isDefault',
       title: '默认',
       width: '70px',
-      render: (val) => val ? <Badge variant="info">默认</Badge> : null,
+      render: (val) => val ? <Badge variant="success">默认</Badge> : <span className="text-[var(--color-text-muted)]">-</span>,
     },
     {
       key: 'pathValid',
       title: '状态',
-      width: '80px',
+      width: '90px',
       render: (val) => (
-        <Badge variant={val ? 'success' : 'error'}>
+        <Badge variant={val ? 'success' : 'error'} dot>
           {val ? '有效' : '无效'}
         </Badge>
       ),
@@ -158,21 +184,26 @@ export function CoreManagementPage() {
     {
       key: 'actions',
       title: '操作',
-      width: '180px',
+      width: '240px',
+      align: 'right',
       render: (_, record) => (
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleOpenPath(record.corePath) }} title="打开目录">
-            <FolderOpen className="w-4 h-4" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEdit(record) }}>
+        <div className="flex justify-end gap-1.5">
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEdit(record) }} title="编辑">
+            <Edit2 className="h-4 w-4" />
             编辑
           </Button>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleOpenPath(record.corePath) }} title="打开目录">
+            <FolderOpen className="h-4 w-4" />
+            打开
+          </Button>
           {!record.isDefault && (
-            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleSetDefault(record.coreId) }}>
-              设为默认
+            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleSetDefault(record.coreId) }} title="设为默认">
+              <Star className="h-4 w-4" />
+              默认
             </Button>
           )}
-          <Button size="sm" variant="danger" onClick={(e) => { e.stopPropagation(); handleDeleteClick(record) }}>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteClick(record) }} title="删除" className="text-[var(--color-error)] hover:text-[var(--color-error)]">
+            <Trash2 className="h-4 w-4" />
             删除
           </Button>
         </div>
@@ -293,7 +324,11 @@ export function CoreManagementPage() {
       startReadyTimeoutMs: settings.startReadyTimeoutMs,
       startStableWindowMs: settings.startStableWindowMs,
     })
-    setSettingsModalOpen(true)
+    setSettingsEditing(true)
+  }
+
+  const handleCancelSettings = () => {
+    setSettingsEditing(false)
   }
 
   const handleSaveSettings = async () => {
@@ -311,7 +346,7 @@ export function CoreManagementPage() {
       }
       await saveBrowserSettings(newSettings)
       setSettings(newSettings)
-      setSettingsModalOpen(false)
+      setSettingsEditing(false)
       toast.success('设置已保存')
     } catch (error: any) {
       toast.error(error?.message || '保存失败')
@@ -322,42 +357,47 @@ export function CoreManagementPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">内核管理</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            管理{' '}
+          <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+            管理可用的{' '}
             <button
               type="button"
               onClick={() => BrowserOpenURL('https://github.com/adryfish/fingerprint-chromium/releases')}
-              className="text-[var(--color-accent)] hover:underline cursor-pointer font-medium"
+              className="cursor-pointer font-semibold text-[var(--color-accent)] hover:underline"
             >
               fingerprint-chromium
             </button>
-            {' '}内核版本和全局设置
+            {' '}
+            / 指纹内核版本，设置默认内核与全局启动参数。
           </p>
         </div>
-        <Button size="sm" onClick={handleAdd}>新增内核</Button>
+        <Button size="sm" onClick={handleAdd}>
+          <Plus className="h-4 w-4" />
+          新增内核
+        </Button>
       </div>
 
-      <CoreSettingsCard settings={settings} onEdit={handleEditSettings} />
-
-      <Card title="内核列表" subtitle="已配置的 Chrome 内核">
+      <Card padding="none">
         <Table
           columns={columns}
           data={displayList}
           rowKey="coreId"
           loading={loading}
           emptyText="暂无内核，请添加内核"
+          maxHeight="calc(100vh - 360px)"
+          className="rounded-[10px] border-0"
         />
       </Card>
 
-      <CoreSettingsModal
-        open={settingsModalOpen}
+      <CoreSettingsCard
+        settings={settings}
         form={settingsForm}
+        editing={settingsEditing}
         saving={savingSettings}
         setForm={setSettingsForm}
-        onClose={() => setSettingsModalOpen(false)}
+        onEdit={handleEditSettings}
+        onCancel={handleCancelSettings}
         onSave={handleSaveSettings}
       />
 

@@ -81,19 +81,19 @@ export function SettingsPage() {
   }
 
   const handleInitializeSystem = async () => {
-    if (!confirm('初始化会清空当前数据并恢复默认状态，是否继续？')) {
+    if (!confirm('恢复出厂设置会清空所有实例、代理、分组及浏览器数据，且无法撤销。建议先导出配置，是否继续？')) {
       return
     }
     setActionLoading('init')
     try {
       const res = await initializeSystemData()
       if (res.cancelled) {
-        toast.info('已取消初始化')
+        toast.info('已取消恢复出厂设置')
         return
       }
-      toast.success(res.message || '初始化完成')
+      toast.success(res.message || '已恢复出厂设置')
     } catch (error: any) {
-      toast.error(error?.message || '初始化失败')
+      toast.error(error?.message || '恢复出厂设置失败')
     } finally {
       setActionLoading('none')
     }
@@ -138,7 +138,7 @@ export function SettingsPage() {
     setImportProgress({
       phase: 'starting',
       progress: 0,
-      message: resetFirst ? '等待选择 ZIP 配置（先初始化后加载）...' : '等待选择 ZIP 配置（判重合并）...',
+      message: resetFirst ? '等待选择 ZIP 配置（清空现有数据后加载）...' : '等待选择 ZIP 配置（判重合并）...',
     })
     try {
       const res = await importSystemConfig(resetFirst)
@@ -193,25 +193,24 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 w-full animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">系统设置</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">配置应用的各项参数</p>
-        </div>
-        <div className="flex gap-2">
+    <div className="space-y-5 w-full animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+          应用级偏好、主题、功能开关与数据备份。
+        </p>
+        <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" size="sm" onClick={handleReset}>
             <RotateCcw className="w-4 h-4" />
             重置
           </Button>
-          <Button variant="danger" size="sm" onClick={handleSave} loading={saving} disabled={!hasChanges}>
+          <Button size="sm" onClick={handleSave} loading={saving} disabled={!hasChanges}>
             <Save className="w-4 h-4" />
-            保存
+            保存设置
           </Button>
         </div>
       </div>
 
-      <Card title="主题设置" subtitle="选择您喜欢的界面主题">
+      <Card title="主题" padding="sm">
         <ThemeSwitcher />
       </Card>
 

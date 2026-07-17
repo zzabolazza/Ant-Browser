@@ -10,9 +10,9 @@ type ProxyCheckTarget = config.ProxyCheckTarget
 
 func (a *App) GetProxyCheckSettings() ProxyCheckSettings {
 	if a.config == nil {
-		return config.DefaultConfig().ProxyCheck
+		return proxy.NormalizeCheckSettings(config.DefaultConfig().ProxyCheck)
 	}
-	settings := a.config.ProxyCheck
+	settings := proxy.NormalizeCheckSettings(a.config.ProxyCheck)
 	settings.Targets = append([]config.ProxyCheckTarget{}, settings.Targets...)
 	return settings
 }

@@ -13,21 +13,22 @@ export function useProxySelection({ proxies, filteredList, saveProxies }: UsePro
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [batchDeleteConfirmOpen, setBatchDeleteConfirmOpen] = useState(false)
 
-  const allFilteredSelected = filteredList.length > 0 && filteredList.every(p => selectedIds.has(p.proxyId))
-  const someFilteredSelected = filteredList.some(p => selectedIds.has(p.proxyId))
+  const selectableFiltered = filteredList.filter(p => !BUILTIN_PROXY_IDS.has(p.proxyId))
+  const allFilteredSelected = selectableFiltered.length > 0 && selectableFiltered.every(p => selectedIds.has(p.proxyId))
+  const someFilteredSelected = selectableFiltered.some(p => selectedIds.has(p.proxyId))
   const selectedCount = selectedIds.size
 
   const handleToggleAll = () => {
     if (allFilteredSelected) {
       setSelectedIds(prev => {
         const next = new Set(prev)
-        filteredList.forEach(p => next.delete(p.proxyId))
+        selectableFiltered.forEach(p => next.delete(p.proxyId))
         return next
       })
     } else {
       setSelectedIds(prev => {
         const next = new Set(prev)
-        filteredList.filter(p => !BUILTIN_PROXY_IDS.has(p.proxyId)).forEach(p => next.add(p.proxyId))
+        selectableFiltered.forEach(p => next.add(p.proxyId))
         return next
       })
     }

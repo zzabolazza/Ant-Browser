@@ -11,7 +11,7 @@ interface SettingsCardsProps {
 export function SettingsBasicFeatureCards({ settings, onChange }: SettingsCardsProps) {
   return (
     <>
-      <Card title="基础设置" subtitle="应用的基本信息配置">
+      <Card title="基础信息" padding="sm">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormItem label="应用名称" required>
@@ -31,20 +31,19 @@ export function SettingsBasicFeatureCards({ settings, onChange }: SettingsCardsP
         </div>
       </Card>
 
-      <Card title="功能设置" subtitle="启用或禁用特定功能">
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
+      <Card title="功能开关" padding="sm">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--color-border-muted)] px-3 py-2.5">
             <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">启用通知</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">接收系统通知和提醒</p>
+              <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">启用通知</p>
+              <p className="text-[11.5px] text-[var(--color-text-muted)] mt-0.5">接收系统通知和提醒</p>
             </div>
             <Switch checked={settings.enableNotifications} onChange={v => onChange('enableNotifications', v)} />
           </div>
-          <div className="h-px bg-[var(--color-border-muted)]" />
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--color-border-muted)] px-3 py-2.5">
             <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">自动保存</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">自动保存编辑中的内容</p>
+              <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">自动保存</p>
+              <p className="text-[11.5px] text-[var(--color-text-muted)] mt-0.5">自动保存编辑中的内容</p>
             </div>
             <Switch checked={settings.enableAutoSave} onChange={v => onChange('enableAutoSave', v)} />
           </div>
@@ -62,11 +61,10 @@ export function SettingsBasicFeatureCards({ settings, onChange }: SettingsCardsP
               </FormItem>
             </div>
           )}
-          <div className="h-px bg-[var(--color-border-muted)]" />
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--color-border-muted)] px-3 py-2.5">
             <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">启用缓存</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">缓存数据以提高性能</p>
+              <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">启用缓存</p>
+              <p className="text-[11.5px] text-[var(--color-text-muted)] mt-0.5">缓存数据以提高性能</p>
             </div>
             <Switch checked={settings.cacheEnabled} onChange={v => onChange('cacheEnabled', v)} />
           </div>
@@ -78,7 +76,7 @@ export function SettingsBasicFeatureCards({ settings, onChange }: SettingsCardsP
 
 export function SettingsAdvancedCard({ settings, onChange }: SettingsCardsProps) {
   return (
-    <Card title="高级设置" subtitle="高级配置选项">
+    <Card title="高级选项" padding="sm">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <FormItem label="最大上传大小（MB）">
           <Input type="number" value={settings.maxUploadSize} onChange={e => onChange('maxUploadSize', parseInt(e.target.value) || 10)} min={1} max={100} />
