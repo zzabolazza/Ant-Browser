@@ -2,8 +2,6 @@ package backend
 
 import "ant-chrome/backend/internal/proxy"
 
-type ProxyBuildDiagnostic = proxy.ProxyBuildDiagnostic
-
 // ProxyValidationResult 代理验证结果
 type ProxyValidationResult struct {
 	Supported bool   `json:"supported"`
@@ -27,26 +25,6 @@ func buildProxyTestResult(result proxy.TestResult) ProxyTestResult {
 		Engine:    result.Engine,
 		Error:     result.Error,
 	}
-}
-
-type ProxyBrowserProbeRequest struct {
-	ProxyId     string   `json:"proxyId"`
-	URLs        []string `json:"urls"`
-	Concurrency int      `json:"concurrency"`
-	TimeoutMs   int      `json:"timeoutMs"`
-}
-
-type ProxyBrowserProbeResult struct {
-	ProxyId     string `json:"proxyId"`
-	Ok          bool   `json:"ok"`
-	TotalMs     int64  `json:"totalMs"`
-	AverageMs   int64  `json:"averageMs"`
-	P95Ms       int64  `json:"p95Ms"`
-	Bytes       int64  `json:"bytes"`
-	Completed   int    `json:"completed"`
-	Failed      int    `json:"failed"`
-	Concurrency int    `json:"concurrency"`
-	Error       string `json:"error"`
 }
 
 // ProxyIPHealthResult 代理出口 IP 健康信息（透传第三方接口结果）

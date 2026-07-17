@@ -393,54 +393,6 @@ export namespace backend {
 	        this.message = source["message"];
 	    }
 	}
-	export class ProxyBrowserProbeRequest {
-	    proxyId: string;
-	    urls: string[];
-	    concurrency: number;
-	    timeoutMs: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ProxyBrowserProbeRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.proxyId = source["proxyId"];
-	        this.urls = source["urls"];
-	        this.concurrency = source["concurrency"];
-	        this.timeoutMs = source["timeoutMs"];
-	    }
-	}
-	export class ProxyBrowserProbeResult {
-	    proxyId: string;
-	    ok: boolean;
-	    totalMs: number;
-	    averageMs: number;
-	    p95Ms: number;
-	    bytes: number;
-	    completed: number;
-	    failed: number;
-	    concurrency: number;
-	    error: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ProxyBrowserProbeResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.proxyId = source["proxyId"];
-	        this.ok = source["ok"];
-	        this.totalMs = source["totalMs"];
-	        this.averageMs = source["averageMs"];
-	        this.p95Ms = source["p95Ms"];
-	        this.bytes = source["bytes"];
-	        this.completed = source["completed"];
-	        this.failed = source["failed"];
-	        this.concurrency = source["concurrency"];
-	        this.error = source["error"];
-	    }
-	}
 	export class ProxyIPHealthResult {
 	    proxyId: string;
 	    ok: boolean;
@@ -1279,34 +1231,4 @@ export namespace logger {
 
 }
 
-export namespace proxy {
-	
-	export class ProxyBuildDiagnostic {
-	    proxyId: string;
-	    proxyName: string;
-	    found: boolean;
-	    ok: boolean;
-	    engine: string;
-	    rawConfigMasked: string;
-	    standardProxy: string;
-	    errors: string[];
-	
-	    static createFrom(source: any = {}) {
-	        return new ProxyBuildDiagnostic(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.proxyId = source["proxyId"];
-	        this.proxyName = source["proxyName"];
-	        this.found = source["found"];
-	        this.ok = source["ok"];
-	        this.engine = source["engine"];
-	        this.rawConfigMasked = source["rawConfigMasked"];
-	        this.standardProxy = source["standardProxy"];
-	        this.errors = source["errors"];
-	    }
-	}
-
-}
 

@@ -12,40 +12,8 @@ Output artifacts:
 
 ## Runtime policy
 
-Linux publish uses repository-pinned runtime files and hash verification.
-
-Pinned upstream source lock file:
-
-- `publish/runtime-sources.json`
-
-Required files:
-
-- `bin/linux-amd64/xray`
-- `bin/linux-amd64/sing-box`
-- `bin/linux-arm64/xray`
-- `bin/linux-arm64/sing-box`
-
-Hashes are validated by:
-
-- `tools/runtime/verify-runtime.sh`
-- `publish/runtime-manifest.json`
-
-Recommended way to refresh runtime files (download + archive checksum + extract + manifest update):
-
-```bash
-python3 tools/runtime/sync-runtime.py
-python3 tools/runtime/sync-runtime.py --target linux-amd64
-python3 tools/runtime/sync-runtime.py --target linux-arm64
-```
-
-If you replace runtime files manually, update manifest hashes:
-
-```bash
-python3 tools/runtime/update-runtime-manifest.py --target linux-amd64
-python3 tools/runtime/update-runtime-manifest.py --target linux-arm64
-```
-
-If runtime file or hash is missing/mismatched, publish will fail.
+Ant Browser only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
+so Linux packages no longer bundle any external proxy engine binaries.
 
 ## Commands
 
@@ -69,7 +37,6 @@ bash publish/linux/publish-linux-all.sh
 - Linux packages do **not** include browser cores (`chrome/` is not bundled).
 - Build on native architecture runner for stability.
 - `.deb` installs app files under `/opt/ant-browser`.
-- `.deb` bundles `xray` and `sing-box` under `/opt/ant-browser/bin`.
 - Linux packages keep an empty `chrome/` placeholder with `README.md`, but do **not** bundle browser core binaries.
 - `.deb` registers an application launcher at `/usr/share/applications/ant-browser.desktop`.
 - `.deb` installs standard Linux desktop icons under `/usr/share/icons/hicolor/*/apps/ant-browser.png` and `/usr/share/pixmaps/ant-browser.png`, so menus and launchers are more likely to pick up the app icon correctly.

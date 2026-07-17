@@ -132,7 +132,6 @@ export function BrowserProxyBatchCheckIPHealth(arg1:Array<string>,arg2:number):P
 export function BrowserProxyBatchTestSpeed(arg1:Array<string>,arg2:number):Promise<Array<backend.ProxyTestResult>>;
 
 
-export function BrowserProxyBuildDiagnostic(arg1:string,arg2:string):Promise<proxy.ProxyBuildDiagnostic>;
 
 export function BrowserProxyCheckIPHealth(arg1:string):Promise<backend.ProxyIPHealthResult>;
 
@@ -144,11 +143,9 @@ export function BrowserProxyCheckIPHealth(arg1:string):Promise<backend.ProxyIPHe
 
 export function BrowserProxyList():Promise<Array<config.BrowserProxy>>;
 
-export function BrowserProxyListByGroup(arg1:string):Promise<Array<config.BrowserProxy>>;
 
 export function BrowserProxyListGroups():Promise<Array<string>>;
 
-export function BrowserProxyProbeBrowserPage(arg1:backend.ProxyBrowserProbeRequest):Promise<backend.ProxyBrowserProbeResult>;
 
 export function BrowserProxyResolveLocation(arg1:string):Promise<backend.ProxyLocationResolveResult>;
 
@@ -226,7 +223,6 @@ export function StopInstance(arg1:string):Promise<browser.Profile>;
 
 export function TestProxyConnectivity(arg1:string,arg2:string):Promise<backend.ProxyTestResult>;
 
-export function TestProxyRealConnectivity(arg1:string):Promise<backend.ProxyTestResult>;
 
 export function TriggerGC():Promise<void>;
 

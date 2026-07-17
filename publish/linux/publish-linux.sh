@@ -7,7 +7,6 @@ STAGING_ROOT="$ROOT_DIR/publish/staging/linux"
 ARCH=""
 VERSION=""
 SKIP_BUILD=0
-SKIP_RUNTIME_VERIFY=0
 KEEP_STAGING=0
 ALLOW_CROSS=0
 
@@ -20,7 +19,6 @@ Options:
   --arch <amd64|arm64>   Target architecture (required)
   --version <ver>        Package version (default: read from wails.json)
   --skip-build           Skip wails build step
-  --skip-runtime-verify  Skip runtime hash verification (not recommended)
   --keep-staging         Keep staging directory after packaging
   --allow-cross          Allow building target arch different from host arch
   -h, --help             Show help
@@ -39,10 +37,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-build)
       SKIP_BUILD=1
-      shift
-      ;;
-    --skip-runtime-verify)
-      SKIP_RUNTIME_VERIFY=1
       shift
       ;;
     --keep-staging)
@@ -126,9 +120,6 @@ PY
 fi
 
 TARGET="linux-$ARCH"
-RUNTIME_DIR="$ROOT_DIR/bin/$TARGET"
-XRAY_SRC="$RUNTIME_DIR/xray"
-SINGBOX_SRC="$RUNTIME_DIR/sing-box"
 APP_ICON_SRC="$ROOT_DIR/build/appicon.png"
 APP_BIN="$ROOT_DIR/build/bin/ant-chrome"
 WAILS_CONFIG="$ROOT_DIR/wails.json"
@@ -153,18 +144,6 @@ echo "Target : $TARGET"
 echo "Version: $VERSION"
 echo "Root   : $ROOT_DIR"
 echo
-
-if [[ "$SKIP_RUNTIME_VERIFY" -ne 1 ]]; then
-  bash "$ROOT_DIR/tools/runtime/verify-runtime.sh" "$TARGET"
-else
-  echo "[WARN] runtime verification skipped"
-fi
-
-if [[ ! -f "$XRAY_SRC" || ! -f "$SINGBOX_SRC" ]]; then
-  echo "[ERROR] runtime files missing for $TARGET" >&2
-  echo "        expected: $XRAY_SRC and $SINGBOX_SRC" >&2
-  exit 1
-fi
 
 if [[ ! -f "$APP_ICON_SRC" ]]; then
   echo "[ERROR] app icon missing: $APP_ICON_SRC" >&2
@@ -213,13 +192,11 @@ echo "[4/5] Assembling staging files..."
 APP_STAGE="$STAGING_ROOT/$TARGET/app"
 DEB_STAGE="$STAGING_ROOT/$TARGET/deb"
 rm -rf "$APP_STAGE" "$DEB_STAGE"
-mkdir -p "$APP_STAGE/bin" "$APP_STAGE/data" "$DEB_STAGE"
+mkdir -p "$APP_STAGE/data" "$DEB_STAGE"
 
 cp "$APP_BIN" "$APP_STAGE/ant-chrome"
 cp "$ROOT_DIR/publish/config.init.linux.yaml" "$APP_STAGE/config.yaml"
-cp "$XRAY_SRC" "$APP_STAGE/bin/xray"
-cp "$SINGBOX_SRC" "$APP_STAGE/bin/sing-box"
-chmod +x "$APP_STAGE/ant-chrome" "$APP_STAGE/bin/xray" "$APP_STAGE/bin/sing-box"
+chmod +x "$APP_STAGE/ant-chrome"
 
 if [[ -f "$CHROME_README_SRC" ]]; then
   mkdir -p "$APP_STAGE/chrome"
@@ -236,7 +213,7 @@ DESKTOP_ROOT="$PKG_ROOT/usr/share/applications"
 ICON_THEME_ROOT="$PKG_ROOT/usr/share/icons/hicolor"
 PIXMAPS_ROOT="$PKG_ROOT/usr/share/pixmaps"
 METAINFO_ROOT="$PKG_ROOT/usr/share/metainfo"
-mkdir -p "$INSTALL_ROOT/bin" "$INSTALL_ROOT/data" "$PKG_ROOT/DEBIAN" "$DESKTOP_ROOT" "$PIXMAPS_ROOT" "$METAINFO_ROOT"
+mkdir -p "$INSTALL_ROOT/data" "$PKG_ROOT/DEBIAN" "$DESKTOP_ROOT" "$PIXMAPS_ROOT" "$METAINFO_ROOT"
 
 for size in "${ICON_SIZES[@]}"; do
   mkdir -p "$ICON_THEME_ROOT/${size}x${size}/apps"
@@ -244,8 +221,6 @@ done
 
 cp "$APP_STAGE/ant-chrome" "$INSTALL_ROOT/ant-chrome"
 cp "$APP_STAGE/config.yaml" "$INSTALL_ROOT/config.yaml"
-cp "$APP_STAGE/bin/xray" "$INSTALL_ROOT/bin/xray"
-cp "$APP_STAGE/bin/sing-box" "$INSTALL_ROOT/bin/sing-box"
 if [[ -f "$APP_STAGE/chrome/README.md" ]]; then
   mkdir -p "$INSTALL_ROOT/chrome"
   cp "$APP_STAGE/chrome/README.md" "$INSTALL_ROOT/chrome/README.md"
@@ -258,7 +233,7 @@ for size in "${ICON_SIZES[@]}"; do
 done
 ln -sf "../icons/hicolor/512x512/apps/${APP_ICON_NAME}.png" "$PIXMAPS_ROOT/${APP_ICON_NAME}.png"
 touch "$INSTALL_ROOT/data/.keep"
-chmod +x "$INSTALL_ROOT/ant-chrome" "$INSTALL_ROOT/bin/xray" "$INSTALL_ROOT/bin/sing-box"
+chmod +x "$INSTALL_ROOT/ant-chrome"
 
 cat > "$DESKTOP_ROOT/$APP_DESKTOP_ID" <<EOF
 [Desktop Entry]
@@ -292,7 +267,7 @@ cat > "$METAINFO_ROOT/${APP_PACKAGE_NAME}.metainfo.xml" <<EOF
   </provides>
   <description>
     <p>Ant Browser manages isolated browser profiles, proxy binding, and local environment configuration for multi-account workflows.</p>
-    <p>The Debian package installs a launcher, theme icons, and runtime helpers for standard Linux desktop environments.</p>
+    <p>The Debian package installs a launcher and theme icons for standard Linux desktop environments.</p>
   </description>
   <categories>
     <category>Network</category>
@@ -338,7 +313,7 @@ cat > "$PKG_ROOT/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
 ln -sf /opt/ant-browser/ant-chrome /usr/bin/ant-chrome
-chmod +x /opt/ant-browser/ant-chrome /opt/ant-browser/bin/xray /opt/ant-browser/bin/sing-box || true
+chmod +x /opt/ant-browser/ant-chrome || true
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi

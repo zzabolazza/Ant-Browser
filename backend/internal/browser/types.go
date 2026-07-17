@@ -123,7 +123,6 @@ type GroupWithCount struct {
 // 类型别名
 type Proxy = config.BrowserProxy
 type Core = config.BrowserCore
-type Environment = config.BrowserEnvironment
 type ProfileConfig = config.BrowserProfileConfig
 
 // CodeProvider 提供 LaunchCode 的接口（由 launchcode.LaunchCodeService 实现）

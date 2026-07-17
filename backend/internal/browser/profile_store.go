@@ -17,7 +17,6 @@ func (m *Manager) InitData() {
 	if m.BrowserProcesses == nil {
 		m.BrowserProcesses = make(map[string]*exec.Cmd)
 	}
-	m.MigrateConfig()
 	if len(m.Profiles) > 0 {
 		return
 	}

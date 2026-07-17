@@ -9,8 +9,10 @@ The goal is to turn the current codebase into a macOS build that can:
 - build on a native macOS machine
 - launch from `/Applications`
 - keep user-writable state outside the `.app` bundle
-- bundle required proxy runtime binaries
 - avoid breaking existing Windows and Linux packaging flows
+
+Ant Browser only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
+so packages do **not** bundle any external proxy engine binaries.
 
 ## Current Entry Command
 
@@ -38,12 +40,8 @@ The repository already has:
 
 - Windows packaging flow
 - Linux packaging flow
-- partial Darwin runtime compatibility in backend code
 - initial `publish/mac/publish-mac.sh` scaffold for internal test builds
 - initial `publish/config.init.mac.yaml` template
-- committed Darwin runtime binaries under `bin/darwin-amd64/` and `bin/darwin-arm64/`
-- Darwin runtime entries in `publish/runtime-manifest.json`
-- Darwin runtime source lock entries in `publish/runtime-sources.json`
 
 The repository does not yet have:
 
@@ -53,14 +51,12 @@ The repository now includes the first macOS writable-state implementation for ap
 
 - when the app root is inside `.app/Contents/MacOS` or `.app/Contents/Resources`
 - writable state is redirected to `~/Library/Application Support/ant-browser`
-- `bin/` stays in the app bundle
 - config, chrome, and data move to the user state root
 
 ## Current Implementation Note
 
-The current initial macOS packaging scaffold intentionally places helper binaries and seed files under:
+The current initial macOS packaging scaffold intentionally places seed files under:
 
-- `Ant Browser.app/Contents/MacOS/bin`
 - `Ant Browser.app/Contents/MacOS/config.yaml`
 - `Ant Browser.app/Contents/MacOS/chrome/README.md`
 
@@ -70,12 +66,11 @@ After the first internal build is stable, the bundle layout can be reviewed and 
 
 ## Why macOS Looks More Complex
 
-macOS is not difficult because of Wails alone. The real complexity comes from four areas:
+macOS is not difficult because of Wails alone. The real complexity comes from three areas:
 
 1. Installed `.app` bundles under `/Applications` should be treated as read-only.
 2. User data must not be written inside the `.app` bundle.
-3. External helper binaries such as `xray` and `sing-box` must exist for Darwin and must be bundled correctly.
-4. Public distribution usually requires code signing and notarization, otherwise Gatekeeper may block launch.
+3. Public distribution usually requires code signing and notarization, otherwise Gatekeeper may block launch.
 
 ## Recommended Scope
 
@@ -104,7 +99,7 @@ Target:
 Why:
 
 - end users expect double-click install and normal launch
-- unsigned apps and embedded helper binaries are more likely to be blocked
+- unsigned apps are more likely to be blocked
 
 ## Recommended Runtime Layout
 
@@ -113,8 +108,6 @@ Why:
 Recommended structure inside the built app:
 
 - `Ant Browser.app/Contents/MacOS/ant-chrome`
-- `Ant Browser.app/Contents/Resources/bin/xray`
-- `Ant Browser.app/Contents/Resources/bin/sing-box`
 - optional placeholder `chrome/README.md` if you want to keep behavior aligned with Linux
 
 ### User-Writable State
@@ -132,7 +125,6 @@ Recommended contents under the state root:
 
 Rule:
 
-- runtime binaries stay in the app bundle
 - config, database, browser cores, logs, and profile data stay in the user state root
 
 ## Code Changes Required
@@ -152,33 +144,7 @@ Expected result:
 
 - app launch from `/Applications` does not try to write config/data into the bundle
 
-### 2. Add Darwin Runtime Binaries
-
-Current runtime manifest has Windows and Linux only:
-
-- `publish/runtime-manifest.json`
-
-Required additions:
-
-- `bin/darwin-arm64/xray`
-- `bin/darwin-arm64/sing-box`
-- optional `bin/darwin-amd64/xray`
-- optional `bin/darwin-amd64/sing-box`
-- manifest hash entries for the new targets
-
-Status:
-
-- implemented for both `darwin-arm64` and `darwin-amd64`
-- files are committed into the repository
-- runtime manifest verification now works for both Darwin targets
-
-Related scripts to extend:
-
-- `tools/runtime/sync-runtime.py`
-- `tools/runtime/update-runtime-manifest.py`
-- `tools/runtime/verify-runtime.sh`
-
-### 3. Add macOS Publish Script
+### 2. Add macOS Publish Script
 
 New file to add:
 
@@ -191,9 +157,8 @@ Recommended responsibilities:
 3. install frontend dependencies
 4. build frontend
 5. run `wails build -platform darwin/arm64`
-6. place runtime binaries into the app bundle
-7. optionally archive to `.zip`
-8. optionally sign and notarize when environment variables are provided
+6. optionally archive to `.zip`
+7. optionally sign and notarize when environment variables are provided
 
 Current scaffold status:
 
@@ -202,26 +167,7 @@ Current scaffold status:
 - requires a native macOS host
 - intentionally does not attempt notarization yet
 
-### 4. Add macOS Runtime Placement Logic
-
-The app currently resolves most paths through shared runtime helpers, which is good.
-
-Files likely involved:
-
-- `backend/app.go`
-- `backend/app_paths.go`
-- `backend/app_utils.go`
-- `backend/internal/browser/types.go`
-- `backend/internal/proxy/xray.go`
-- `backend/internal/proxy/singbox.go`
-- `main.go`
-
-Goal:
-
-- all writable files go to the user state root
-- helper binaries continue to resolve from the app bundle
-
-### 5. Signing and Notarization
+### 3. Signing and Notarization
 
 This is not required for a first internal test build, but is required for a serious public release.
 
@@ -234,23 +180,20 @@ Needed later:
 
 Typical flow:
 
-1. sign helper binaries
-2. sign the `.app`
-3. zip or build dmg
-4. notarize
-5. staple
+1. sign the `.app`
+2. zip or build dmg
+3. notarize
+4. staple
 
 ## Recommended Implementation Order
 
 1. Deliver `darwin/arm64` internal test build only.
 2. Add macOS detached state root.
-3. Add Darwin runtime binaries and manifest support.
-4. Add `publish/mac/publish-mac.sh`.
-5. Verify launch from `/Applications`.
-6. Verify browser core placement under user state root.
-7. Verify proxy runtime launch on macOS.
-8. Add signing and notarization only after the unsigned build is stable.
-9. Decide whether `darwin/amd64` is worth supporting.
+3. Add `publish/mac/publish-mac.sh`.
+4. Verify launch from `/Applications`.
+5. Verify browser core placement under user state root.
+6. Add signing and notarization only after the unsigned build is stable.
+7. Decide whether `darwin/amd64` is worth supporting.
 
 ## Validation Checklist
 
@@ -261,7 +204,6 @@ The macOS work should not be considered complete until all items below are verif
 - build completes on native macOS
 - output `.app` exists
 - output `.zip` or `.dmg` exists
-- bundled helper binaries are executable
 
 ### First Launch
 
@@ -276,12 +218,6 @@ The macOS work should not be considered complete until all items below are verif
 - manually placed browser core can be detected
 - browser core path persists in config or database
 - browser instance can actually start
-
-### Proxy Runtime
-
-- `xray` can be launched from the app bundle
-- `sing-box` can be launched from the app bundle
-- work directories are created under the user state root
 
 ### Exit Behavior
 
@@ -303,7 +239,6 @@ Difficulty: medium
 
 Main blockers:
 
-- mac runtime binaries
 - detached writable state
 - mac packaging script
 
@@ -316,7 +251,6 @@ Main blockers:
 - signing
 - notarization
 - quarantine / Gatekeeper behavior
-- helper binary signing order
 
 ## Suggested First Deliverable
 
@@ -327,7 +261,6 @@ The safest first milestone is:
 - unsigned `.app`
 - zipped artifact for internal testing
 - detached writable state under `~/Library/Application Support/ant-browser`
-- bundled `xray` and `sing-box`
 
 Do not start with:
 
@@ -352,11 +285,6 @@ Likely updated files:
 - `backend/runtime_paths.go`
 - `backend/app.go`
 - `main.go`
-- `publish/runtime-manifest.json`
-- `publish/runtime-sources.json`
-- `tools/runtime/sync-runtime.py`
-- `tools/runtime/update-runtime-manifest.py`
-- `tools/runtime/verify-runtime.sh`
 
 ## Decision Record
 

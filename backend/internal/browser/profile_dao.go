@@ -214,61 +214,6 @@ func (d *SQLiteProfileDAO) Delete(profileId string) error {
 	return nil
 }
 
-// ListByGroup 按分组筛选实例
-// groupId 为空字符串时返回未分组的实例
-// includeChildren=true 时同时包含 childGroupIds 中的子分组实例
-func (d *SQLiteProfileDAO) ListByGroup(groupId string, includeChildren bool, childGroupIds []string) ([]*Profile, error) {
-	var rows *sql.Rows
-	var err error
-
-	if includeChildren && len(childGroupIds) > 0 {
-		// 构建 IN 子句，包含当前分组和所有子分组
-		allIds := append([]string{groupId}, childGroupIds...)
-		inClause := ""
-		args := make([]interface{}, len(allIds))
-		for i, id := range allIds {
-			if i > 0 {
-				inClause += ","
-			}
-			inClause += "?"
-			args[i] = id
-		}
-		rows, err = d.db.Query(fmt.Sprintf(`
-			SELECT profile_id, profile_name, user_data_dir, core_id,
-			       fingerprint_args, proxy_id, proxy_config,
-			       COALESCE(proxy_bind_name, ''), COALESCE(proxy_bind_updated_at, ''),
-			       launch_args,
-			       tags, keywords, group_id, created_at, updated_at,
-			       COALESCE(deleted_at, '')
-			FROM browser_profiles WHERE COALESCE(deleted_at, '') = '' AND group_id IN (%s) ORDER BY created_at ASC`, inClause), args...)
-	} else {
-		// 仅查询指定分组
-		rows, err = d.db.Query(`
-			SELECT profile_id, profile_name, user_data_dir, core_id,
-			       fingerprint_args, proxy_id, proxy_config,
-			       COALESCE(proxy_bind_name, ''), COALESCE(proxy_bind_updated_at, ''),
-			       launch_args,
-			       tags, keywords, group_id, created_at, updated_at,
-			       COALESCE(deleted_at, '')
-			FROM browser_profiles WHERE COALESCE(deleted_at, '') = '' AND group_id = ? ORDER BY created_at ASC`, groupId)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("按分组查询实例失败: %w", err)
-	}
-	defer rows.Close()
-
-	var list []*Profile
-	for rows.Next() {
-		p, err := scanProfile(rows)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, p)
-	}
-	return list, rows.Err()
-}
-
 // MoveToGroup 批量移动实例到分组
 func (d *SQLiteProfileDAO) MoveToGroup(profileIds []string, groupId string) error {
 	if len(profileIds) == 0 {

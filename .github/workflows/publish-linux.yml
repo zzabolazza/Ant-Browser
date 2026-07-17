@@ -72,9 +72,6 @@ jobs:
       - name: Add Go bin to PATH
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Verify runtime files
-        run: bash tools/runtime/verify-runtime.sh linux-${{ matrix.arch }}
-
       - name: Build Linux packages
         env:
           VERSION: ${{ inputs.version }}
@@ -103,8 +100,6 @@ jobs:
           echo "Validating: $tar_file"
           tar -xzf "$tar_file" -C "$validate_dir"
           test -x "$validate_dir/ant-chrome"
-          test -x "$validate_dir/bin/xray"
-          test -x "$validate_dir/bin/sing-box"
           test -f "$validate_dir/config.yaml"
 
       - name: Upload artifacts

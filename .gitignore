@@ -35,24 +35,6 @@ chrome/*
 *.so
 *.dylib
 
-# Runtime binaries (must be versioned for release/dev convenience)
-!/bin/
-!/bin/README.md
-!/bin/xray.exe
-!/bin/sing-box.exe
-!/bin/linux-amd64/
-!/bin/linux-amd64/xray
-!/bin/linux-amd64/sing-box
-!/bin/linux-arm64/
-!/bin/linux-arm64/xray
-!/bin/linux-arm64/sing-box
-!/bin/darwin-amd64/
-!/bin/darwin-amd64/xray
-!/bin/darwin-amd64/sing-box
-!/bin/darwin-arm64/
-!/bin/darwin-arm64/xray
-!/bin/darwin-arm64/sing-box
-
 # Publish artifacts
 publish/staging/
 publish/output/
@@ -84,9 +66,6 @@ frontend/.vite/
 __pycache__/
 *.pyc
 
-# Local runtime cache
-.tmp/runtime-cache/
-
 # Test outputs / coverage
 coverage/
 *.out
@@ -99,10 +78,6 @@ tmp-debug-port*/
 
 # Local sensitive configs / accounts
 *.ovpn
-clash.yaml
-mihomo.yaml
-singbox.json
-xray.json
 proxy-subscription.yaml
 proxy-subscriptions.yaml
 subscription.yaml

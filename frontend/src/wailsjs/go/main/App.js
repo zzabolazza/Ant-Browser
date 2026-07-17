@@ -247,9 +247,6 @@ export function BrowserProxyBatchTestSpeed(arg1, arg2) {
 }
 
 
-export function BrowserProxyBuildDiagnostic(arg1, arg2) {
-  return window['go']['main']['App']['BrowserProxyBuildDiagnostic'](arg1, arg2);
-}
 
 export function BrowserProxyCheckIPHealth(arg1) {
   return window['go']['main']['App']['BrowserProxyCheckIPHealth'](arg1);
@@ -265,17 +262,11 @@ export function BrowserProxyList() {
   return window['go']['main']['App']['BrowserProxyList']();
 }
 
-export function BrowserProxyListByGroup(arg1) {
-  return window['go']['main']['App']['BrowserProxyListByGroup'](arg1);
-}
 
 export function BrowserProxyListGroups() {
   return window['go']['main']['App']['BrowserProxyListGroups']();
 }
 
-export function BrowserProxyProbeBrowserPage(arg1) {
-  return window['go']['main']['App']['BrowserProxyProbeBrowserPage'](arg1);
-}
 
 export function BrowserProxyResolveLocation(arg1) {
   return window['go']['main']['App']['BrowserProxyResolveLocation'](arg1);
@@ -427,9 +418,6 @@ export function TestProxyConnectivity(arg1, arg2) {
   return window['go']['main']['App']['TestProxyConnectivity'](arg1, arg2);
 }
 
-export function TestProxyRealConnectivity(arg1) {
-  return window['go']['main']['App']['TestProxyRealConnectivity'](arg1);
-}
 
 export function TriggerGC() {
   return window['go']['main']['App']['TriggerGC']();

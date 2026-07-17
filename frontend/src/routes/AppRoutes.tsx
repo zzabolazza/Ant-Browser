@@ -4,10 +4,6 @@ const SettingsPage = lazyNamed(
   () => import("../modules/settings/SettingsPage"),
   "SettingsPage",
 );
-const ChartsPage = lazyNamed(
-  () => import("../modules/charts/ChartsPage"),
-  "ChartsPage",
-);
 const BrowserListPage = lazyNamed(
   () => import("../modules/browser/pages/BrowserListPage"),
   "BrowserListPage",
@@ -53,7 +49,6 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/browser/list" replace />} />
-      <Route path="/charts" element={<ChartsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/browser/list" element={<BrowserListPage />} />
       <Route path="/browser/detail/:id" element={<BrowserDetailPage />} />

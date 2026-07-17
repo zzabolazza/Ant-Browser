@@ -64,8 +64,6 @@ jobs:
           zip_path="$(ls -1 publish/output/AntBrowser-*-macos-${{ matrix.arch }}.zip | head -n 1)"
           echo "Validating: $app_path"
           test -x "$app_path/Contents/MacOS/ant-chrome"
-          test -x "$app_path/Contents/MacOS/bin/xray"
-          test -x "$app_path/Contents/MacOS/bin/sing-box"
           plutil -lint "$app_path/Contents/Info.plist"
           ditto -x -k "$zip_path" /tmp/ant-browser-macos-validate
           test -x "/tmp/ant-browser-macos-validate/$(basename "$app_path")/Contents/MacOS/ant-chrome"

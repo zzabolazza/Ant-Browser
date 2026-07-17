@@ -7,7 +7,6 @@ STAGING_ROOT="$ROOT_DIR/publish/staging/mac"
 ARCH=""
 VERSION=""
 SKIP_BUILD=0
-SKIP_RUNTIME_VERIFY=0
 KEEP_STAGING=0
 
 usage() {
@@ -19,7 +18,6 @@ Options:
   --arch <arm64|amd64>   Target architecture (required)
   --version <ver>        Package version (default: read from wails.json)
   --skip-build           Skip frontend and Wails build steps
-  --skip-runtime-verify  Skip runtime hash verification
   --keep-staging         Keep assembled .app bundle in publish/staging/mac
   -h, --help             Show help
 EOF
@@ -37,10 +35,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-build)
       SKIP_BUILD=1
-      shift
-      ;;
-    --skip-runtime-verify)
-      SKIP_RUNTIME_VERIFY=1
       shift
       ;;
     --keep-staging)
@@ -119,9 +113,6 @@ PY
 fi
 
 TARGET="darwin-$ARCH"
-RUNTIME_DIR="$ROOT_DIR/bin/$TARGET"
-XRAY_SRC="$RUNTIME_DIR/xray"
-SINGBOX_SRC="$RUNTIME_DIR/sing-box"
 APP_BIN_DIR="$ROOT_DIR/build/bin"
 CHROME_README_SRC="$ROOT_DIR/chrome/README.md"
 CONFIG_INIT_SRC="$ROOT_DIR/publish/config.init.mac.yaml"
@@ -148,26 +139,6 @@ print(candidates[0])
 PY
 }
 
-manifest_has_target() {
-  python3 - "$ROOT_DIR/publish/runtime-manifest.json" "$TARGET" <<'PY'
-import json
-import sys
-
-manifest_path = sys.argv[1]
-target = sys.argv[2]
-
-with open(manifest_path, "r", encoding="utf-8") as f:
-    data = json.load(f)
-
-for item in data.get("files", []):
-    if target in (item.get("targets") or []):
-        print("yes")
-        raise SystemExit(0)
-
-raise SystemExit(1)
-PY
-}
-
 echo "========================================"
 echo "  Ant Browser macOS Publish"
 echo "========================================"
@@ -176,25 +147,9 @@ echo "Version: $VERSION"
 echo "Root   : $ROOT_DIR"
 echo
 
-if [[ ! -f "$XRAY_SRC" || ! -f "$SINGBOX_SRC" ]]; then
-  echo "[ERROR] runtime files missing for $TARGET" >&2
-  echo "        expected: $XRAY_SRC and $SINGBOX_SRC" >&2
-  exit 1
-fi
-
 if [[ ! -f "$CONFIG_INIT_SRC" ]]; then
   echo "[ERROR] mac config template missing: $CONFIG_INIT_SRC" >&2
   exit 1
-fi
-
-if [[ "$SKIP_RUNTIME_VERIFY" -ne 1 ]]; then
-  if manifest_has_target >/dev/null 2>&1; then
-    bash "$ROOT_DIR/tools/runtime/verify-runtime.sh" "$TARGET"
-  else
-    echo "[WARN] runtime manifest does not yet define $TARGET, skipping hash verification"
-  fi
-else
-  echo "[WARN] runtime verification skipped"
 fi
 
 if [[ "$SKIP_BUILD" -ne 1 ]]; then
@@ -230,11 +185,7 @@ if [[ ! -d "$APP_MACOS_DIR" ]]; then
   exit 1
 fi
 
-mkdir -p "$APP_MACOS_DIR/bin"
-cp "$XRAY_SRC" "$APP_MACOS_DIR/bin/xray"
-cp "$SINGBOX_SRC" "$APP_MACOS_DIR/bin/sing-box"
 cp "$CONFIG_INIT_SRC" "$APP_MACOS_DIR/config.yaml"
-chmod +x "$APP_MACOS_DIR/bin/xray" "$APP_MACOS_DIR/bin/sing-box"
 
 if [[ -f "$CHROME_README_SRC" ]]; then
   mkdir -p "$APP_MACOS_DIR/chrome"

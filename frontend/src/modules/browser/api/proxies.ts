@@ -21,14 +21,6 @@ export async function fetchBrowserProxyGroups(): Promise<string[]> {
   return []
 }
 
-export async function fetchBrowserProxiesByGroup(groupName: string): Promise<BrowserProxy[]> {
-  const bindings: any = await getBindings()
-  if (bindings?.BrowserProxyListByGroup) {
-    return (await bindings.BrowserProxyListByGroup(groupName)) || []
-  }
-  return getMockProxies().filter((proxy) => proxy.groupName === groupName)
-}
-
 export async function saveBrowserProxies(proxies: BrowserProxy[]): Promise<boolean> {
   const bindings: any = await getBindings()
   if (bindings?.SaveBrowserProxies) {
@@ -54,15 +46,6 @@ export async function testProxyConnectivity(proxyId: string, proxyConfig: string
   }
   await sleep(300 + Math.random() * 500)
   return { proxyId, ok: true, latencyMs: Math.floor(100 + Math.random() * 200), engine: 'mock', error: '' }
-}
-
-export async function testProxyRealConnectivity(proxyId: string): Promise<ProxySpeedTestResult> {
-  const bindings: any = await getBindings()
-  if (bindings?.TestProxyRealConnectivity) {
-    return (await bindings.TestProxyRealConnectivity(proxyId)) || { proxyId, ok: false, latencyMs: 0, engine: 'unknown', error: '调用失败' }
-  }
-  await sleep(300 + Math.random() * 500)
-  return { proxyId, ok: true, latencyMs: Math.floor(100 + Math.random() * 400), engine: 'mock', error: '' }
 }
 
 export async function browserProxyTestSpeed(proxyId: string): Promise<ProxySpeedTestResult> {

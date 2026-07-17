@@ -9,7 +9,6 @@ import (
 // ProxyDAO 代理列表持久化接口
 type ProxyDAO interface {
 	List() ([]Proxy, error)
-	ListByGroup(groupName string) ([]Proxy, error)
 	ListGroups() ([]string, error)
 	Upsert(proxy Proxy) error
 	Delete(proxyId string) error
@@ -37,21 +36,6 @@ func (d *SQLiteProxyDAO) List() ([]Proxy, error) {
 		FROM browser_proxies ORDER BY sort_order ASC, created_at ASC`)
 	if err != nil {
 		return nil, fmt.Errorf("查询代理列表失败: %w", err)
-	}
-	defer rows.Close()
-	return scanProxies(rows)
-}
-
-func (d *SQLiteProxyDAO) ListByGroup(groupName string) ([]Proxy, error) {
-	rows, err := d.db.Query(`
-		SELECT proxy_id, proxy_name, proxy_config, COALESCE(group_name, ''),
-		       COALESCE(last_latency_ms, -1), COALESCE(last_test_ok, 0), COALESCE(last_tested_at, ''),
-		       COALESCE(last_ip_health_json, ''),
-		       sort_order
-		FROM browser_proxies WHERE group_name = ?
-		ORDER BY sort_order ASC, created_at ASC`, groupName)
-	if err != nil {
-		return nil, fmt.Errorf("按分组查询代理失败: %w", err)
 	}
 	defer rows.Close()
 	return scanProxies(rows)

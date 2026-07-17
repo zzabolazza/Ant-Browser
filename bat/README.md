@@ -133,8 +133,6 @@ Windows 分支使用的项目路径：
 输入：
 - build\bin\ant-chrome.exe
 - publish\config.init.yaml
-- bin\xray.exe
-- bin\sing-box.exe
 
 临时目录：
 - publish\staging\
@@ -145,7 +143,7 @@ Windows 分支使用的项目路径：
 
 说明：
 
-- Windows 安装包包含应用本体、默认配置和代理运行时。
+- Windows 安装包包含应用本体和默认配置。
 - 如果 `chrome\` 根目录或其一级子目录中检测到有效的 Windows `chrome.exe`，会自动一起打进 EXE 安装包。
 - 如果未检测到 Windows 内核，安装包仍会保留 `chrome\README.md` 说明文件。
 

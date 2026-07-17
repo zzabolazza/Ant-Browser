@@ -75,10 +75,8 @@ install_abort:
   Abort "安装已取消：安装目录中的旧进程仍未退出。"
 
 fallback_taskkill:
-  DetailPrint "PowerShell 不可用，回退到 taskkill 清理主进程和代理进程..."
+  DetailPrint "PowerShell 不可用，回退到 taskkill 清理主进程..."
   ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM ${PRODUCT_EXE}' $2
-  ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM xray.exe' $2
-  ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM sing-box.exe' $2
   Sleep 1500
 
 done:
@@ -111,10 +109,8 @@ uninstall_abort:
   Abort "卸载已取消：安装目录中的旧进程仍未退出。"
 
 fallback_taskkill:
-  DetailPrint "PowerShell 不可用，回退到 taskkill 清理主进程和代理进程..."
+  DetailPrint "PowerShell 不可用，回退到 taskkill 清理主进程..."
   ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM ${PRODUCT_EXE}' $2
-  ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM xray.exe' $2
-  ExecWait '"$SYSDIR\taskkill.exe" /F /T /IM sing-box.exe' $2
   Sleep 1500
 
 done:
@@ -230,20 +226,12 @@ Section "Ant Browser (required)" SecMain
   CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\${PRODUCT_ICON}"
 SectionEnd
 
-Section "Proxy Runtime (xray / sing-box)" SecRuntime
-  SectionIn RO
-  SetOutPath "$INSTDIR\bin"
-  File "${STAGINGDIR}\bin\xray.exe"
-  File "${STAGINGDIR}\bin\sing-box.exe"
-SectionEnd
-
 Section /o "Desktop Shortcut" SecDesktop
   CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\${PRODUCT_EXE}" "" "$INSTDIR\${PRODUCT_ICON}"
 SectionEnd
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecMain}    "Ant Browser main program and default config (required)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecRuntime} "xray and sing-box proxy tools (vless/vmess/hysteria2)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Create a shortcut on the desktop"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 

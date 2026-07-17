@@ -52,7 +52,6 @@ param(
     [switch]$PublishTag,
     [switch]$SkipTag,
     [switch]$AllowDirtyWorkingTree,
-    [switch]$SkipRuntimeCheck,
     [switch]$DryRun,
     [switch]$KeepTempDir,
     [switch]$NonInteractive,
@@ -794,26 +793,6 @@ try {
 
     Write-Step "Applying sanitized public config"
     Apply-PublicConfigTemplate -SnapshotDir $snapshotDir
-
-    if (-not $SkipRuntimeCheck) {
-        Write-Step "Checking required runtime files in snapshot"
-        $requiredFiles = @(
-            "bin/xray.exe",
-            "bin/sing-box.exe",
-            "bin/linux-amd64/xray",
-            "bin/linux-amd64/sing-box",
-            "bin/linux-arm64/xray",
-            "bin/linux-arm64/sing-box",
-            "publish/runtime-manifest.json",
-            "publish/runtime-sources.json"
-        )
-        foreach ($file in $requiredFiles) {
-            $path = Join-Path $snapshotDir $file
-            if (-not (Test-Path -LiteralPath $path)) {
-                throw "Required runtime file missing in source snapshot: $file. Add it before publishing, or use -SkipRuntimeCheck."
-            }
-        }
-    }
 
     Write-Step "Preparing temporary publish repository"
     Push-Location $workRepoDir

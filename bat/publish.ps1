@@ -324,58 +324,6 @@ function Build-WindowsBinary {
     Write-Host ""
 }
 
-function Assert-RuntimeHashes {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Target
-    )
-
-    $manifestPath = Join-Path $repoRoot "publish/runtime-manifest.json"
-    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
-        throw "缺少运行时清单: publish\runtime-manifest.json"
-    }
-
-    Write-Host "[Windows] 校验运行时哈希..."
-    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-    $entries = @($manifest.files | Where-Object { $_.targets -contains $Target })
-    if ($entries.Count -eq 0) {
-        throw "运行时清单中不存在目标平台: $Target"
-    }
-
-    $errors = New-Object System.Collections.Generic.List[string]
-    foreach ($entry in $entries) {
-        $relativePath = Get-TrimmedText ([string]$entry.path)
-        $expectedHash = (Get-TrimmedText ([string]$entry.sha256)).ToLowerInvariant()
-
-        if ($relativePath -eq "") {
-            $errors.Add("manifest entry has empty path")
-            continue
-        }
-        if ($expectedHash -eq "" -or $expectedHash.Contains("todo_replace_with_sha256")) {
-            $errors.Add("${relativePath}: sha256 is not initialized")
-            continue
-        }
-
-        $fullPath = Join-Path $repoRoot ($relativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
-            $errors.Add("${relativePath}: file not found")
-            continue
-        }
-
-        $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $fullPath).Hash.ToLowerInvariant()
-        if ($actualHash -ne $expectedHash) {
-            $errors.Add("${relativePath}: sha256 mismatch (expected $expectedHash, got $actualHash)")
-        }
-    }
-
-    if ($errors.Count -gt 0) {
-        throw "运行时哈希校验失败:`n  - $($errors -join "`n  - ")"
-    }
-
-    Write-Host "✓ 运行时哈希校验通过: $Target"
-    Write-Host ""
-}
-
 function Test-PeExecutable {
     param(
         [Parameter(Mandatory = $true)]
@@ -488,7 +436,6 @@ function New-WindowsStaging {
     $stagingDir = Join-Path $repoRoot "publish/staging"
     $releaseConfig = Join-Path $repoRoot "publish/config.init.yaml"
     $binaryPath = Join-Path $repoRoot "build/bin/ant-chrome.exe"
-    $binDir = Join-Path $repoRoot "bin"
     $chromeRoot = Join-Path $repoRoot "chrome"
 
     if (Test-Path -LiteralPath $stagingDir) {
@@ -507,18 +454,6 @@ function New-WindowsStaging {
     }
     Copy-Item -LiteralPath $releaseConfig -Destination (Join-Path $stagingDir "config.yaml") -Force
     Write-Host "✓ 复制发布配置模板 publish\config.init.yaml -> config.yaml"
-
-    $stagingBinDir = Join-Path $stagingDir "bin"
-    New-Item -ItemType Directory -Path $stagingBinDir -Force | Out-Null
-
-    foreach ($required in @("xray.exe", "sing-box.exe")) {
-        $source = Join-Path $binDir $required
-        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-            throw "缺少运行时文件: bin\$required"
-        }
-        Copy-Item -LiteralPath $source -Destination (Join-Path $stagingBinDir $required) -Force
-    }
-    Write-Host "✓ 复制 bin\（xray.exe, sing-box.exe）"
 
     Copy-WindowsChromePayload -ChromeRoot $chromeRoot -StagingDir $stagingDir
 
@@ -678,7 +613,6 @@ function Publish-Windows {
     if ($Format -in @("INSTALLER", "BOTH")) {
         $makensisPath = Resolve-NsisPath
     }
-    Assert-RuntimeHashes -Target "windows-amd64"
     Build-WindowsBinary
 
     $stagingDir = $null

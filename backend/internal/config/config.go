@@ -90,10 +90,6 @@ type BrowserConfig struct {
 	Cores                  []BrowserCore          `yaml:"cores,omitempty"`
 	Proxies                []BrowserProxy         `yaml:"proxies,omitempty"`
 	Profiles               []BrowserProfileConfig `yaml:"profiles,omitempty"`
-	ChromeBinaryPath       string                 `yaml:"chrome_binary_path,omitempty"`
-	CoreRoot               string                 `yaml:"core_root,omitempty"`
-	DefaultCoreId          string                 `yaml:"default_core_id,omitempty"`
-	Environments           []BrowserEnvironment   `yaml:"environments,omitempty"`
 }
 
 type BrowserCore struct {
@@ -113,14 +109,6 @@ type BrowserProxy struct {
 	LastTestOk       bool   `yaml:"-" json:"lastTestOk"`
 	LastTestedAt     string `yaml:"-" json:"lastTestedAt"`
 	LastIPHealthJSON string `yaml:"-" json:"lastIPHealthJson,omitempty"`
-}
-
-type BrowserEnvironment struct {
-	CoreId      string `yaml:"core_id" json:"coreId"`
-	CoreName    string `yaml:"core_name" json:"coreName"`
-	CorePath    string `yaml:"core_path" json:"corePath"`
-	ProxyConfig string `yaml:"proxy_config" json:"proxyConfig"`
-	IsDefault   bool   `yaml:"is_default" json:"isDefault"`
 }
 
 type BrowserProfileConfig struct {
