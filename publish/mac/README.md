@@ -24,13 +24,13 @@ bash publish/mac/publish-mac.sh --arch arm64
 
 For the first iteration, `arm64` is the recommended target.
 
-If no physical Mac is available, use the manual GitHub Actions workflow:
+If no physical Mac is available, use GitHub Actions:
 
 ```text
-Actions -> Publish macOS Package -> Run workflow
+Actions -> Publish macOS Packages -> Run workflow
 ```
 
-The workflow builds the same `arm64` internal package on a macOS runner and uploads the generated files from `publish/output/` as an artifact. The optional `version` input overrides the package version for that run.
+The same workflow also runs automatically on `v*` tag pushes (aligned with Linux / Windows). It builds `amd64` and `arm64` unsigned packages, uploads CI artifacts, and attaches the `.zip` files to the GitHub Release. The optional `version` input overrides the package version for manual runs.
 
 This is a plan document only. It does not mean macOS packaging is already implemented.
 

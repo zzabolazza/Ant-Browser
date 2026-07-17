@@ -7,12 +7,20 @@ on:
         description: Optional package version override, for example 1.3.0
         required: false
         type: string
+  push:
+    tags:
+      - "v*"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: publish-macos-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
+    name: Build macOS ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +60,7 @@ jobs:
         run: |
           set -euo pipefail
           args=(--arch "${{ matrix.arch }}")
-          if [[ -n "$VERSION" ]]; then
+          if [[ -n "${VERSION:-}" ]]; then
             args+=(--version "$VERSION")
           fi
           bash publish/mac/publish-mac.sh "${args[@]}"
@@ -76,3 +84,31 @@ jobs:
             publish/output/AntBrowser-*-macos-${{ matrix.arch }}.app
             publish/output/AntBrowser-*-macos-${{ matrix.arch }}.zip
           if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG_NAME" >/dev/null 2>&1 || gh release create "$TAG_NAME" --generate-notes
+          # Release assets are the portable zips; .app directories stay as CI artifacts only.
+          mapfile -t zips < <(find release-artifacts -type f -name '*.zip' | sort)
+          if [[ ${#zips[@]} -eq 0 ]]; then
+            echo "[ERROR] no macOS zip artifacts found to upload" >&2
+            exit 1
+          fi
+          gh release upload "$TAG_NAME" "${zips[@]}" --clobber
