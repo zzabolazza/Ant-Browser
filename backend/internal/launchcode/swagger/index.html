@@ -9,6 +9,10 @@
     html { box-sizing: border-box; overflow-y: scroll; }
     *, *:before, *:after { box-sizing: inherit; }
     body { margin: 0; background: #fafafa; }
+    /* Hide Swagger topbar URL explorer and the openapi.yaml download link */
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title small { display: none; }
+    .swagger-ui .info hgroup.main a.link { display: none; }
   </style>
 </head>
 <body>

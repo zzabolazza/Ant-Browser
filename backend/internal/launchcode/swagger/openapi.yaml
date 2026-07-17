@@ -1,40 +1,6 @@
 openapi: 3.0.3
 info:
   title: Ant Browser Launch API
-  description: |
-    本地 LaunchServer HTTP API（仅 `127.0.0.1`）。
-
-    ## 接口索引（共 14 个）
-
-    | 分组 | 方法 | 路径 |
-    |------|------|------|
-    | 健康检查 | GET | `/api/health` |
-    | 实例管理 | GET | `/api/profiles` |
-    | 实例管理 | POST | `/api/profiles` |
-    | 实例管理 | GET | `/api/profiles/{profileId}` |
-    | 实例管理 | PUT | `/api/profiles/{profileId}` |
-    | 实例管理 | DELETE | `/api/profiles/{profileId}` |
-    | 实例管理 | GET | `/api/profiles/{profileId}/status` |
-    | 实例管理 | POST | `/api/profiles/{profileId}/stop` |
-    | 启动 | GET | `/api/launch/{code}` |
-    | 启动 | POST | `/api/launch` |
-    | 启动 | GET | `/api/launch/logs` |
-    | 运行态 | POST | `/api/runtime/session` |
-    | 运行态 | POST | `/api/runtime/status` |
-    | 运行态 | POST | `/api/runtime/stop` |
-
-    ## 认证
-
-    若启用了 API Key，在 Authorize 中填写 header `X-Ant-Api-Key`。
-    `GET /api/health` 不需要鉴权。
-
-    ## 规则速查
-
-    - `PUT /api/profiles/{id}` 是整份更新，不是 patch
-    - 运行中的实例不能直接 `DELETE`，需先 stop
-    - `matchMode=all` 仅 `POST /api/launch` 可用；runtime 接口仅支持 `unique` / `first`
-    - `proxyId` 与 `proxyConfig` 同时传时优先 `proxyId`；`proxyId` 无效且无 `proxyConfig` 时返回 400
-    - 启动/会话响应里的 `cdpUrl` 为实例调试端口直连地址（Launch Server 不转发 CDP）
   version: 1.0.0
 
 servers:
