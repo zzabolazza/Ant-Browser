@@ -162,7 +162,7 @@ Ant Browser 适合以下场景：
 1. 前往 Releases 页面下载最新版本：<https://github.com/black-ant/Ant-Browser/releases>
 2. 安装版直接运行 `AntBrowser-Setup-*.exe`
 3. 便携版解压后运行 `ant-chrome.exe`
-4. Linux 包下载后可直接安装 `ant-browser_<version>_<arch>.deb`，或解压 `tar.gz` 后运行 `ant-chrome`
+4. Linux：推荐用 `sudo apt install ./ant-browser_<version>_<arch>.deb` 安装（会自动拉取 `libwebkit2gtk-4.1-0` 等运行时依赖）；勿仅用 `dpkg -i`（不会从软件源安装依赖）。也可解压 `tar.gz` 后运行 `ant-chrome`，但需自行安装 WebKitGTK 运行时
 5. macOS unsigned 包解压后运行 `AntBrowser-<version>-macos-<arch>.app`；如被 Gatekeeper 拦截，请对本机测试包执行 `xattr -dr com.apple.quarantine <app路径>` 后再打开
 
 ### 从源码运行

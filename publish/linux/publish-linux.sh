@@ -167,9 +167,11 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
   WAILS_BUILD_TAGS=()
   if pkg-config --exists webkit2gtk-4.0; then
     echo "  WebKitGTK pkg-config: webkit2gtk-4.0"
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.0-37"
   elif pkg-config --exists webkit2gtk-4.1; then
     echo "  WebKitGTK pkg-config: webkit2gtk-4.1 (using Wails webkit2_41 tag)"
     WAILS_BUILD_TAGS=(-tags webkit2_41)
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.1-0"
   else
     echo "[ERROR] missing WebKitGTK development package: webkit2gtk-4.0 or webkit2gtk-4.1" >&2
     exit 1
@@ -186,6 +188,26 @@ if [[ ! -f "$APP_BIN" ]]; then
   echo "[ERROR] app binary not found: $APP_BIN" >&2
   exit 1
 fi
+
+# Depends must match the SONAME the binary actually links — never OR 4.0 with 4.1.
+if command -v readelf >/dev/null 2>&1; then
+  if readelf -d "$APP_BIN" | grep -q 'libwebkit2gtk-4\.1\.so'; then
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.1-0"
+  elif readelf -d "$APP_BIN" | grep -q 'libwebkit2gtk-4\.0\.so'; then
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.0-37"
+  fi
+fi
+if [[ -z "${WEBKIT_DEB_DEP:-}" ]]; then
+  if pkg-config --exists webkit2gtk-4.1; then
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.1-0"
+  elif pkg-config --exists webkit2gtk-4.0; then
+    WEBKIT_DEB_DEP="libwebkit2gtk-4.0-37"
+  else
+    echo "[ERROR] cannot determine WebKitGTK runtime package for .deb Depends" >&2
+    exit 1
+  fi
+fi
+echo "  .deb WebKitGTK Depends: $WEBKIT_DEB_DEP"
 
 echo "[4/5] Assembling staging files..."
 APP_STAGE="$STAGING_ROOT/$TARGET/app"
@@ -291,7 +313,7 @@ Architecture: ${ARCH}
 Maintainer: ${APP_MAINTAINER} <${APP_MAINTAINER_EMAIL}>
 Homepage: ${APP_HOMEPAGE}
 Installed-Size: ${INSTALLED_SIZE_KB}
-Depends: libc6 (>= 2.31), libgtk-3-0, libglib2.0-0, libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37
+Depends: libc6 (>= 2.31), libgtk-3-0, libglib2.0-0, ${WEBKIT_DEB_DEP}
 Description: ${APP_NAME} desktop app
  Multi-profile browser launcher with proxy-pool management.
  Ant Browser manages isolated browser profiles, proxy binding, and

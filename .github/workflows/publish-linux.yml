@@ -91,6 +91,20 @@ jobs:
           echo "Validating: $deb_file"
           dpkg-deb -I "$deb_file"
           dpkg-deb -c "$deb_file" >/dev/null
+          control="$(dpkg-deb -f "$deb_file" Depends)"
+          echo "Depends: $control"
+          if [[ "$control" != *"libwebkit2gtk-4.1-0"* ]]; then
+            echo "[ERROR] expected Depends to include libwebkit2gtk-4.1-0 (Actions builds with webkit2_41)" >&2
+            exit 1
+          fi
+          if [[ "$control" == *"|"* ]]; then
+            echo "[ERROR] Depends must not use OR alternatives for WebKitGTK (binary links one SONAME)" >&2
+            exit 1
+          fi
+          if [[ "$control" == *"libwebkit2gtk-4.0"* ]]; then
+            echo "[ERROR] Depends must not list libwebkit2gtk-4.0 when binary is linked to 4.1" >&2
+            exit 1
+          fi
 
       - name: Validate tar package layout
         run: |
