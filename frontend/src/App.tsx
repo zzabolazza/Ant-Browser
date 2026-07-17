@@ -1,6 +1,5 @@
 import { Suspense, useEffect, useState } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
-import { ThemeProvider } from "./shared/theme";
 import { Layout } from "./shared/layout";
 import { ToastContainer, Modal, Button, Loading } from "./shared/components";
 import { AlertCircle } from "lucide-react";
@@ -289,25 +288,23 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <Router>
-        <Layout>
-          <Suspense fallback={routeFallback}>
-            <AppRoutes />
-          </Suspense>
-        </Layout>
-        <ToastContainer />
-        <CloseConfirmModal />
-        <Suspense fallback={null}>
-          {quickLaunchOpen ? (
-            <QuickLaunchModal
-              open={quickLaunchOpen}
-              onClose={() => setQuickLaunchOpen(false)}
-            />
-          ) : null}
+    <Router>
+      <Layout>
+        <Suspense fallback={routeFallback}>
+          <AppRoutes />
         </Suspense>
-      </Router>
-    </ThemeProvider>
+      </Layout>
+      <ToastContainer />
+      <CloseConfirmModal />
+      <Suspense fallback={null}>
+        {quickLaunchOpen ? (
+          <QuickLaunchModal
+            open={quickLaunchOpen}
+            onClose={() => setQuickLaunchOpen(false)}
+          />
+        ) : null}
+      </Suspense>
+    </Router>
   );
 }
 

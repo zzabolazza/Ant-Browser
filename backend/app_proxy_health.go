@@ -152,6 +152,15 @@ func buildProxyIPHealthResult(proxyId string, data map[string]interface{}, err e
 		}
 	}
 
+	country := mapString(data, "country")
+	countryCode := strings.ToUpper(strings.TrimSpace(mapString(data, "countryCode")))
+	if len(countryCode) != 2 {
+		countryCode = normalizeCountryCode(country)
+	}
+	if len(countryCode) != 2 {
+		countryCode = ""
+	}
+
 	return ProxyIPHealthResult{
 		ProxyId:        proxyId,
 		Ok:             true,
@@ -161,7 +170,8 @@ func buildProxyIPHealthResult(proxyId string, data map[string]interface{}, err e
 		FraudScore:     mapInt64(data, "fraudScore"),
 		IsResidential:  mapBool(data, "isResidential"),
 		IsBroadcast:    mapBool(data, "isBroadcast"),
-		Country:        mapString(data, "country"),
+		Country:        country,
+		CountryCode:    countryCode,
 		Region:         mapString(data, "region"),
 		City:           mapString(data, "city"),
 		AsOrganization: mapString(data, "asOrganization"),

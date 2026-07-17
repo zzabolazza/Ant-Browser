@@ -90,10 +90,6 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
   }, [proxies])
 
   const handleTestOne = async (record: ProxyDisplayInfo) => {
-    if (record.proxyConfig === 'direct://') {
-      toast.info('直连模式无需测速')
-      return
-    }
     setLatencyMap(prev => ({ ...prev, [record.proxyId]: -1 }))
     setLatencyEngineMap(prev => {
       const next = { ...prev }
@@ -113,7 +109,7 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
   }
 
   const handleTestAll = async (items: ProxyDisplayInfo[]) => {
-    const testable = items.filter(p => p.proxyConfig !== 'direct://')
+    const testable = items
     if (testable.length === 0) return
     setTestingAll(true)
     const init: Record<string, number> = {}
@@ -168,10 +164,6 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
   }
 
   const handleCheckOneIPHealth = async (record: ProxyDisplayInfo) => {
-    if (record.proxyConfig === 'direct://') {
-      toast.info('直连模式无需检测')
-      return
-    }
     if (checkingIPHealthIds.has(record.proxyId)) return
 
     setCheckingIPHealthIds(prev => new Set(prev).add(record.proxyId))
@@ -189,7 +181,7 @@ export function useProxyChecks({ proxies }: UseProxyChecksOptions) {
   }
 
   const handleCheckAllIPHealth = async (items: ProxyDisplayInfo[]) => {
-    const testable = items.filter(p => p.proxyConfig !== 'direct://')
+    const testable = items
     if (testable.length === 0) return
     setCheckingAllIPHealth(true)
 

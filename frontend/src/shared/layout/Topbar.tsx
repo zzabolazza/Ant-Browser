@@ -1,6 +1,6 @@
 ﻿import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, BookOpen, Check, Trash2, Info, AlertCircle, CheckCircle, Moon, Search } from 'lucide-react'
+import { Bell, BookOpen, Check, Trash2, Info, AlertCircle, CheckCircle, Search } from 'lucide-react'
 import clsx from 'clsx'
 import { useNotificationStore, type Notification } from '../../store/notificationStore'
 import { DocsCenterModal } from './DocsCenterModal'
@@ -206,13 +206,6 @@ export function Topbar() {
         >
           <BookOpen className="w-4 h-4" />
         </button>
-
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-text-muted)]"
-          aria-hidden="true"
-        >
-          <Moon className="h-4 w-4" />
-        </div>
 
         <div className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#7c5cff] to-[#4b6eff] text-xs font-bold text-white">
           AB

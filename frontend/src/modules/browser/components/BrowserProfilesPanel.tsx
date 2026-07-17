@@ -6,8 +6,10 @@ import { Copy, Download, Key, Loader2, MoreHorizontal, Play, Puzzle, Repeat2, Ro
 import { Badge, Button, Table } from '../../../shared/components'
 import type { TableColumn } from '../../../shared/components/Table'
 
-import type { BrowserCore, BrowserProfile, BrowserProxy, ProxySpeedTestResult } from '../types'
+import type { BrowserCore, BrowserProfile, BrowserProxy, ProxyIPHealthResult, ProxySpeedTestResult } from '../types'
 import { browserProxyTestSpeed, testProxyConnectivity } from '../api'
+import { readIPHealthCache } from '../pages/proxyPool/storage'
+import { resolveProfileProxyCountryDisplay } from '../utils/countryFlag'
 import type { BrowserViewMode } from './BrowserListLayout'
 import { CdpUrlCell, KeywordInlineRow, LaunchCodeCell } from './BrowserListWidgets'
 
@@ -75,12 +77,14 @@ function ProxyLatency({ result }: { result?: ProxySpeedTestResult | null }) {
 function ProxyInlineActions({
   profile,
   proxy,
+  countryDisplay,
   isBusy,
   onOpenProxyPicker,
   maxWidthClass = 'max-w-[220px]',
 }: {
   profile: BrowserProfile
   proxy?: BrowserProxy
+  countryDisplay?: { code: string; flag: string } | null
   isBusy: boolean
   onOpenProxyPicker: (profile: BrowserProfile) => void
   maxWidthClass?: string
@@ -97,6 +101,8 @@ function ProxyInlineActions({
     : null
   const displayResult = speedResult || historyResult
   const canTest = !!profile.proxyId || !!profile.proxyConfig.trim()
+  const proxyLabel = formatProxyLabel(profile, proxy)
+  const title = countryDisplay ? `${countryDisplay.flag} ${countryDisplay.code} · ${proxyLabel}` : proxyLabel
 
   const handleTest = async () => {
     if (testing || !canTest) return
@@ -119,8 +125,14 @@ function ProxyInlineActions({
   }
 
   return (
-    <div className={`inline-flex ${maxWidthClass} items-center gap-1.5 text-xs`} title={formatProxyLabel(profile, proxy)}>
-      <span className="min-w-0 truncate text-[var(--color-text-primary)]">{formatProxyLabel(profile, proxy)}</span>
+    <div className={`inline-flex ${maxWidthClass} items-center gap-1.5 text-xs`} title={title}>
+      {countryDisplay && (
+        <span className="shrink-0 whitespace-nowrap text-[var(--color-text-primary)]" title={countryDisplay.code}>
+          {countryDisplay.flag} {countryDisplay.code}
+        </span>
+      )}
+      {countryDisplay && <span className="shrink-0 text-[var(--color-text-muted)]">-</span>}
+      <span className="min-w-0 truncate text-[var(--color-text-primary)]">{proxyLabel}</span>
       <button
         type="button"
         className="shrink-0 rounded p-0.5 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40"
@@ -305,6 +317,7 @@ function EditProfileAction({
 function BrowserProfileCard({
   profile,
   proxy,
+  countryDisplay,
   isSelected,
   status,
   coreLabel,
@@ -324,6 +337,7 @@ function BrowserProfileCard({
 }: {
   profile: BrowserProfile
   proxy: BrowserProxy | undefined
+  countryDisplay: { code: string; flag: string } | null
   isSelected: boolean
   status: ProfileStatus
   coreLabel: string
@@ -410,6 +424,7 @@ function BrowserProfileCard({
           <ProxyInlineActions
             profile={profile}
             proxy={proxy}
+            countryDisplay={countryDisplay}
             isBusy={isBusy}
             onOpenProxyPicker={onOpenProxyPicker}
             maxWidthClass="max-w-full"
@@ -468,6 +483,15 @@ export function BrowserProfilesPanel({
   const allSelected = profiles.length > 0 && selectedIds.size === profiles.length
   const partiallySelected = selectedIds.size > 0 && selectedIds.size < profiles.length
   const [openMoreProfileId, setOpenMoreProfileId] = useState<string | null>(null)
+  const [ipHealthMap, setIPHealthMap] = useState<Record<string, ProxyIPHealthResult>>({})
+
+  useEffect(() => {
+    setIPHealthMap(readIPHealthCache())
+  }, [profiles, proxies])
+
+  const getProfileCountryDisplay = (profile: BrowserProfile, proxy?: BrowserProxy) => (
+    resolveProfileProxyCountryDisplay(profile.proxyId || '', proxy?.lastIPHealthJson, ipHealthMap)
+  )
 
   const columns: TableColumn<BrowserProfile>[] = [
     {
@@ -504,9 +528,9 @@ export function BrowserProfilesPanel({
     {
       key: 'profileName',
       title: '实例名称',
-      width: 320,
+      width: 180,
       render: (value, record) => (
-        <div className="flex min-w-[260px] flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <Link className="block truncate whitespace-nowrap text-sm font-semibold text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-accent)] hover:underline" to={`/browser/detail/${record.profileId}`} title={String(value || '')}>
             {value}
           </Link>
@@ -530,15 +554,25 @@ export function BrowserProfilesPanel({
     {
       key: 'coreId',
       title: '核心',
+      width: 160,
       render: (_, record) => <span className="text-xs">{getProfileCoreLabel(record)}</span>,
     },
     {
       key: 'proxyId',
       title: '代理',
+      width: 260,
       render: (value, record) => {
         const proxy = proxies.find(item => item.proxyId === value)
         const isBusy = isProfileBusy(record.profileId)
-        return <ProxyInlineActions profile={record} proxy={proxy} isBusy={isBusy} onOpenProxyPicker={onOpenProxyPicker} />
+        return (
+          <ProxyInlineActions
+            profile={record}
+            proxy={proxy}
+            countryDisplay={getProfileCountryDisplay(record, proxy)}
+            isBusy={isBusy}
+            onOpenProxyPicker={onOpenProxyPicker}
+          />
+        )
       },
     },
     {
@@ -626,30 +660,34 @@ export function BrowserProfilesPanel({
           />
         ) : (
           <div className="flex flex-wrap gap-4 min-h-[500px] p-4 items-start content-start">
-            {profiles.map((profile) => (
-              <div key={profile.profileId} className="min-w-[360px] max-w-[560px] flex-[1_1_440px]">
-                <BrowserProfileCard
-                  profile={profile}
-                  proxy={proxies.find(item => item.proxyId === profile.proxyId)}
-                  isSelected={selectedIds.has(profile.profileId)}
-                  status={getProfileStatus(profile)}
-                  coreLabel={resolveProfileCore(profile)?.coreName || getProfileCoreLabel(profile)}
-                  isStarting={isProfileStarting(profile.profileId)}
-                  isStopping={isProfileStopping(profile.profileId)}
-                  isBusy={isProfileBusy(profile.profileId)}
-                  onToggleSelect={onToggleSelect}
-                  onRefreshProfiles={onRefreshProfiles}
-                  onStart={onStart}
-                  onStop={onStop}
-                  onRestart={onRestart}
-                  onOpenKeywords={onOpenKeywords}
-                  onOpenExtensions={onOpenExtensions}
-                  onOpenCopy={onOpenCopy}
-                  onOpenProxyPicker={onOpenProxyPicker}
-                  onDelete={onDelete}
-                />
-              </div>
-            ))}
+            {profiles.map((profile) => {
+              const proxy = proxies.find(item => item.proxyId === profile.proxyId)
+              return (
+                <div key={profile.profileId} className="min-w-[360px] max-w-[560px] flex-[1_1_440px]">
+                  <BrowserProfileCard
+                    profile={profile}
+                    proxy={proxy}
+                    countryDisplay={getProfileCountryDisplay(profile, proxy)}
+                    isSelected={selectedIds.has(profile.profileId)}
+                    status={getProfileStatus(profile)}
+                    coreLabel={resolveProfileCore(profile)?.coreName || getProfileCoreLabel(profile)}
+                    isStarting={isProfileStarting(profile.profileId)}
+                    isStopping={isProfileStopping(profile.profileId)}
+                    isBusy={isProfileBusy(profile.profileId)}
+                    onToggleSelect={onToggleSelect}
+                    onRefreshProfiles={onRefreshProfiles}
+                    onStart={onStart}
+                    onStop={onStop}
+                    onRestart={onRestart}
+                    onOpenKeywords={onOpenKeywords}
+                    onOpenExtensions={onOpenExtensions}
+                    onOpenCopy={onOpenCopy}
+                    onOpenProxyPicker={onOpenProxyPicker}
+                    onDelete={onDelete}
+                  />
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

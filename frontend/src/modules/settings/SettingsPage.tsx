@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Save, RotateCcw } from 'lucide-react'
-import { Card, Button, ThemeSwitcher, toast } from '../../shared/components'
+import { Button, toast } from '../../shared/components'
 import {
   fetchSettings,
   saveSettings,
@@ -196,7 +196,7 @@ export function SettingsPage() {
     <div className="space-y-5 w-full animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
-          应用级偏好、主题、功能开关与数据备份。
+          应用级偏好、功能开关与数据备份。
         </p>
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" size="sm" onClick={handleReset}>
@@ -209,10 +209,6 @@ export function SettingsPage() {
           </Button>
         </div>
       </div>
-
-      <Card title="主题" padding="sm">
-        <ThemeSwitcher />
-      </Card>
 
       <SettingsBasicFeatureCards settings={settings} onChange={handleChange} />
 

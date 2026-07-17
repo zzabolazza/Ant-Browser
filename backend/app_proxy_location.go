@@ -184,7 +184,7 @@ func normalizeCountryCode(country string) string {
 	switch strings.ToLower(value) {
 	case "china", "中国", "mainland china":
 		return "CN"
-	case "hong kong", "香港":
+	case "hong kong", "hong kong sar", "hong kong sar china", "hong kong, china", "china hong kong", "香港", "中国香港":
 		return "HK"
 	case "taiwan", "台湾":
 		return "TW"

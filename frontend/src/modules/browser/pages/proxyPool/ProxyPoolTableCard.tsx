@@ -5,6 +5,7 @@ import type { SortOrder, TableColumn } from '../../../../shared/components/Table
 import type { ProxyIPHealthResult } from '../../types'
 
 import { BUILTIN_PROXY_IDS, type ProxyDisplayInfo } from './helpers'
+import { resolveProxyCountryDisplay } from '../../utils/countryFlag'
 
 interface ProxyPoolTableCardProps {
   allFilteredSelected: boolean
@@ -88,9 +89,6 @@ export function ProxyPoolTableCard({
   const hasActiveFilters = filterProtocol !== 'all' || !!filterKeyword || filterGroup !== 'all' || filterAvailableOnly
 
   const renderLatency = (record: ProxyDisplayInfo) => {
-    if (record.proxyConfig === 'direct://') {
-      return <span className="text-[var(--color-text-muted)] text-xs">不适用</span>
-    }
     const value = latencyMap[record.proxyId]
     if (value === undefined) return <span className="text-[var(--color-text-muted)] text-xs">-</span>
     if (value === -1) return <span className="text-[var(--color-text-muted)] text-xs animate-pulse">测试中...</span>
@@ -103,9 +101,6 @@ export function ProxyPoolTableCard({
   }
 
   const renderLatencyEngine = (record: ProxyDisplayInfo) => {
-    if (record.proxyConfig === 'direct://') {
-      return <span className="text-[var(--color-text-muted)] text-xs">不适用</span>
-    }
     const value = latencyMap[record.proxyId]
     if (value === undefined || value === -1) return <span className="text-[var(--color-text-muted)] text-xs">-</span>
     return latencyEngineMap[record.proxyId]
@@ -114,9 +109,6 @@ export function ProxyPoolTableCard({
   }
 
   const renderIPHealth = (record: ProxyDisplayInfo) => {
-    if (record.proxyConfig === 'direct://') {
-      return <span className="text-[var(--color-text-muted)] text-xs">不适用</span>
-    }
     if (checkingIPHealthIds.has(record.proxyId)) {
       return <span className="text-[var(--color-text-muted)] text-xs animate-pulse">检测中...</span>
     }
@@ -146,6 +138,19 @@ export function ProxyPoolTableCard({
     )
   }
 
+  const renderCountry = (record: ProxyDisplayInfo) => {
+    if (checkingIPHealthIds.has(record.proxyId)) {
+      return <span className="text-[var(--color-text-muted)] text-xs animate-pulse">检测中...</span>
+    }
+    const display = resolveProxyCountryDisplay(ipHealthMap[record.proxyId])
+    if (!display) return <span className="text-[var(--color-text-muted)] text-xs">-</span>
+    return (
+      <span className="text-xs text-[var(--color-text-primary)] whitespace-nowrap" title={display.code}>
+        {display.flag} {display.code}
+      </span>
+    )
+  }
+
   const columns = useMemo<TableColumn<ProxyDisplayInfo>[]>(() => [
     {
       key: 'checkbox',
@@ -172,6 +177,12 @@ export function ProxyPoolTableCard({
     },
     { key: 'type', title: '类型', width: '90px', sortable: true },
     { key: 'server', title: '服务器', width: '180px', sortable: true },
+    {
+      key: 'country',
+      title: '国家/地区',
+      width: '100px',
+      render: (_, record) => renderCountry(record),
+    },
     { key: 'port', title: '端口', width: '80px', sortable: true, render: (value) => value || '-' },
     {
       key: 'latency',
@@ -210,7 +221,6 @@ export function ProxyPoolTableCard({
               variant="ghost"
               onClick={(event) => { event.stopPropagation(); onTestOne(record) }}
               loading={latencyMap[record.proxyId] === -1}
-              disabled={record.proxyConfig === 'direct://'}
             >
               测速
             </Button>
@@ -219,7 +229,6 @@ export function ProxyPoolTableCard({
               variant="ghost"
               onClick={(event) => { event.stopPropagation(); onCheckOneIPHealth(record) }}
               loading={checkingIPHealthIds.has(record.proxyId)}
-              disabled={record.proxyConfig === 'direct://'}
             >
               IP健康
             </Button>

@@ -403,6 +403,7 @@ export namespace backend {
 	    isResidential: boolean;
 	    isBroadcast: boolean;
 	    country: string;
+	    countryCode: string;
 	    region: string;
 	    city: string;
 	    asOrganization: string;
@@ -424,6 +425,7 @@ export namespace backend {
 	        this.isResidential = source["isResidential"];
 	        this.isBroadcast = source["isBroadcast"];
 	        this.country = source["country"];
+	        this.countryCode = source["countryCode"];
 	        this.region = source["region"];
 	        this.city = source["city"];
 	        this.asOrganization = source["asOrganization"];

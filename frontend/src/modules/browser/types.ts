@@ -148,6 +148,7 @@ export interface ProxyIPHealthResult {
   isResidential: boolean
   isBroadcast: boolean
   country: string
+  countryCode?: string
   region: string
   city: string
   asOrganization: string

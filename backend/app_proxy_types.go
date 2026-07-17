@@ -38,6 +38,7 @@ type ProxyIPHealthResult struct {
 	IsResidential  bool                   `json:"isResidential"`
 	IsBroadcast    bool                   `json:"isBroadcast"`
 	Country        string                 `json:"country"`
+	CountryCode    string                 `json:"countryCode"`
 	Region         string                 `json:"region"`
 	City           string                 `json:"city"`
 	AsOrganization string                 `json:"asOrganization"`
