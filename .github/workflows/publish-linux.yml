@@ -118,6 +118,9 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
@@ -128,7 +131,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release view "$TAG_NAME" >/dev/null 2>&1 || gh release create "$TAG_NAME" --generate-notes
-          gh release upload "$TAG_NAME" release-artifacts/* --clobber
+          mapfile -t assets < <(find release-artifacts -type f | sort)
+          if [[ ${#assets[@]} -eq 0 ]]; then
+            echo "[ERROR] no Linux artifacts found to upload" >&2
+            exit 1
+          fi
+          gh release upload "$TAG_NAME" "${assets[@]}" --clobber

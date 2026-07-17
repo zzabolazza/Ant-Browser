@@ -192,7 +192,8 @@ if [[ "$SKIP_INSTALLER" -ne 1 ]]; then
     INSTALLER_WIN="$(to_win_path "$INSTALLER_PATH")"
     (
       cd "$ROOT_DIR/publish"
-      makensis "/DVERSION=$VERSION" "/DSTAGINGDIR=$STAGING_WIN" "/DOUTFILE=$INSTALLER_WIN" installer.nsi
+      # Git Bash converts /D... into a filesystem path; use // so makensis receives /D...
+      makensis "//DVERSION=$VERSION" "//DSTAGINGDIR=$STAGING_WIN" "//DOUTFILE=$INSTALLER_WIN" installer.nsi
     )
     echo "  installer    : $INSTALLER_PATH"
   fi
