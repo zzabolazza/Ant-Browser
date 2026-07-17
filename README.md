@@ -177,7 +177,7 @@ Ant Browser 适合以下场景：
 - `./dev.sh live`：启动 Vite watcher，并通过 `-frontenddevserverurl` 接入桌面壳
 - 如需为依赖下载配置代理，可在启动前设置 `DEV_PROXY_URL`、`DEV_NO_PROXY`、`DEV_GOPROXY`
 
-源码开发与打包入口仅提供 macOS / Linux shell 脚本；Windows 请直接使用 Releases 安装包或便携包。
+开发入口（`./dev.sh`）仅提供 macOS / Linux shell 脚本。发布打包支持 macOS / Linux / Windows；Windows 打包脚本同样以 bash 编写，需在原生 Windows（Git Bash / MSYS）或 Windows CI runner 上执行。
 
 ### Linux 发布打包（源码）
 
@@ -200,6 +200,17 @@ bash publish/mac/publish-mac.sh --arch arm64
 ```
 
 脚本会生成 unsigned `.app` 和 `.zip`，适合 PR 验证与内部测试。详细说明见 [publish/mac/README.md](publish/mac/README.md)。
+
+### Windows 发布打包（源码）
+
+Windows 发布脚本位于 `publish/windows/`，需在原生 Windows 主机（Git Bash / MSYS）上执行；安装包步骤依赖 `makensis`（`choco install nsis`）。
+
+```bash
+bash publish/windows/publish-windows.sh --arch amd64
+bash publish/windows/publish-windows.sh --arch arm64
+```
+
+脚本会生成便携版 `.zip`，并在检测到 `makensis` 时额外生成 NSIS 安装包 `.exe`。详细说明见 [publish/windows/README.md](publish/windows/README.md)。
 
 ### 其他源码工具
 

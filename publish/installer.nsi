@@ -9,6 +9,9 @@ Unicode True
 !ifndef STAGINGDIR
   !define STAGINGDIR "..\publish\staging"
 !endif
+!ifndef OUTFILE
+  !define OUTFILE "..\publish\output\AntBrowser-Setup-${VERSION}.exe"
+!endif
 
 !define PRODUCT_NAME    "Ant Browser"
 !define PRODUCT_EXE     "ant-chrome.exe"
@@ -164,7 +167,7 @@ cancel_install:
 FunctionEnd
 
 Name "${PRODUCT_NAME} ${VERSION}"
-OutFile "..\publish\output\AntBrowser-Setup-${VERSION}.exe"
+OutFile "${OUTFILE}"
 InstallDir "${INSTALL_DIR}"
 InstallDirRegKey HKLM "${UNINSTALL_KEY}" "InstallLocation"
 RequestExecutionLevel admin
