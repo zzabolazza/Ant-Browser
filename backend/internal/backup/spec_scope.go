@@ -1,7 +1,7 @@
 package backup
 
 import (
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/config"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -152,7 +152,7 @@ func BuildManifest(scope Scope, appName, appVersion string, createdAt time.Time)
 	}
 	name := strings.TrimSpace(appName)
 	if name == "" {
-		name = "Ant Browser"
+		name = "Facade"
 	}
 	version := strings.TrimSpace(appVersion)
 	if version == "" {

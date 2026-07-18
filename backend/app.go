@@ -1,11 +1,11 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/database"
-	"ant-chrome/backend/internal/launchcode"
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
+	"facade/backend/internal/database"
+	"facade/backend/internal/launchcode"
+	"facade/backend/internal/logger"
 	"context"
 	"strings"
 	"sync"
@@ -59,7 +59,7 @@ func (a *App) appName() string {
 			return name
 		}
 	}
-	return "Ant Browser"
+	return "Facade"
 }
 
 func (a *App) appVersion() string {

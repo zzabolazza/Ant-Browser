@@ -51,6 +51,6 @@ export const useNotificationStore = create<NotificationState>()(persist((set) =>
 
     clearNotifications: () => set({ notifications: [] }),
 }), {
-    name: 'ant-browser-notifications',
+    name: 'facade-notifications',
     partialize: (state) => ({ notifications: state.notifications }),
 }))

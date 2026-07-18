@@ -1,9 +1,9 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/logger"
-	"ant-chrome/backend/internal/proxy"
+	"facade/backend/internal/config"
+	"facade/backend/internal/logger"
+	"facade/backend/internal/proxy"
 )
 
 func (a *App) SaveBrowserProxies(proxies []BrowserProxy) error {

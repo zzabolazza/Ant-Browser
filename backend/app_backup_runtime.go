@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 	"os/exec"
 	"time"
 )

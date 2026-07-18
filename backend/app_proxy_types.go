@@ -1,6 +1,6 @@
 package backend
 
-import "ant-chrome/backend/internal/proxy"
+import "facade/backend/internal/proxy"
 
 // ProxyValidationResult 代理验证结果
 type ProxyValidationResult struct {

@@ -64,16 +64,18 @@ export function Sidebar() {
           sidebarCollapsed ? "justify-center" : "px-2 max-sm:justify-center max-sm:px-0",
         )}
       >
-        <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#4b6eff] to-[#7c5cff] text-[13px] font-bold text-white shadow-[inset_0_0_0_1px_rgb(255_255_255_/_0.14)]">
-          AB
-        </div>
+        <img
+          src="/appicon.png"
+          alt="Facade"
+          className="h-[30px] w-[30px] shrink-0 rounded-lg object-cover shadow-[inset_0_0_0_1px_rgb(255_255_255_/_0.14)]"
+        />
         {!sidebarCollapsed && (
-          <div className="min-w-0">
+          <div className="min-w-0 text-center">
             <div className="truncate text-[15px] font-extrabold tracking-tight text-white max-sm:hidden">
               {projectConfig.name}
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#6d7186] max-sm:hidden">
-              Fleet Console
+            <div className="font-mono text-[10px] tracking-[0.08em] text-[#6d7186] max-sm:hidden">
+              Endless Faces
             </div>
           </div>
         )}

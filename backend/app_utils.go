@@ -1,10 +1,10 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/apppath"
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/apppath"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
+	"facade/backend/internal/logger"
 	"fmt"
 	"net"
 	"time"

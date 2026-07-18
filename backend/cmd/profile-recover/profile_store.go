@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/database"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/database"
 	"database/sql"
 	"fmt"
 	"os"

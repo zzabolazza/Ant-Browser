@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/logger"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )

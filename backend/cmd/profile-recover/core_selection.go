@@ -1,9 +1,9 @@
 package main
 
 import (
-	"ant-chrome/backend/internal/apppath"
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/apppath"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
 	"fmt"
 	"os"
 	"path/filepath"

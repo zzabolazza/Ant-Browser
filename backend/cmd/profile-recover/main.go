@@ -1,9 +1,9 @@
 package main
 
 import (
-	"ant-chrome/backend/internal/apppath"
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/apppath"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
 	"flag"
 	"fmt"
 	"os"
@@ -109,7 +109,7 @@ func main() {
 
 func parseFlags() options {
 	var (
-		appRoot        = flag.String("app-root", ".", "Ant Browser app root, for example E:\\software\\Ant Browser")
+		appRoot        = flag.String("app-root", ".", "Facade app root, for example E:\\software\\Facade")
 		configPath     = flag.String("config", "", "Optional config.yaml path override")
 		apply          = flag.Bool("apply", false, "Write restored profiles into app.db")
 		repairStrategy = flag.String("repair-strategy", "none", "Repair strategy for risky directories: none or risky")

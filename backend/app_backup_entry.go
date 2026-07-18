@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/backup"
+	"facade/backend/internal/backup"
 	"fmt"
 	"strings"
 	"time"
@@ -27,7 +27,7 @@ func (a *App) BackupExportPackage() (map[string]interface{}, error) {
 	}
 	a.backupEmitExportProgress("starting", 0, "等待选择导出路径...")
 
-	defaultName := fmt.Sprintf("ant-chrome-backup-%s.zip", time.Now().Format("20060102-150405"))
+	defaultName := fmt.Sprintf("facade-backup-%s.zip", time.Now().Format("20060102-150405"))
 	savePath, err := wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
 		Title:           "导出配置",
 		DefaultFilename: defaultName,

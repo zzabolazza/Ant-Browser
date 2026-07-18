@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/proxy"
+	"facade/backend/internal/config"
+	"facade/backend/internal/proxy"
 )
 
 type ProxyCheckSettings = config.ProxyCheckConfig

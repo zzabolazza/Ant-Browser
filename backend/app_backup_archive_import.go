@@ -1,9 +1,9 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/backup"
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/snapshot"
+	"facade/backend/internal/backup"
+	"facade/backend/internal/config"
+	"facade/backend/internal/snapshot"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -12,7 +12,7 @@ import (
 )
 
 func backupExtractAndValidate(zipPath string) (string, backup.Manifest, error) {
-	tmpDir, err := os.MkdirTemp("", "ant-chrome-import-*")
+	tmpDir, err := os.MkdirTemp("", "facade-import-*")
 	if err != nil {
 		return "", backup.Manifest{}, err
 	}

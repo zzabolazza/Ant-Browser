@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"ant-chrome/backend/internal/config"
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/config"
+	"facade/backend/internal/logger"
 )
 
 const DefaultSpeedTestURL = "http://www.gstatic.com/generate_204"

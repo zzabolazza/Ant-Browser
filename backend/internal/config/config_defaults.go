@@ -176,7 +176,7 @@ func DefaultConfig() *Config {
 			},
 		},
 		App: AppConfig{
-			Name: "Ant Browser",
+			Name: "Facade",
 			Window: WindowConfig{
 				Width:     1750,
 				Height:    1000,

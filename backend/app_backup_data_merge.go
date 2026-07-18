@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/config"
 	"fmt"
 	"os"
 	"path/filepath"

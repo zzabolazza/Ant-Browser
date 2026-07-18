@@ -30,7 +30,7 @@ export function CoreSettingsModal({ open, form, saving, setForm, onClose, onSave
           <Input
             value={form.userDataRoot}
             onChange={e => setForm(prev => ({ ...prev, userDataRoot: e.target.value }))}
-            placeholder="例如：/Users/you/Library/Application Support/ant-browser/data"
+            placeholder="例如：/Users/you/Library/Application Support/facade/data"
             className="font-mono text-[12.5px]"
           />
         </FormItem>

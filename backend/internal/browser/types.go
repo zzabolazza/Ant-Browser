@@ -1,8 +1,8 @@
 package browser
 
 import (
-	"ant-chrome/backend/internal/apppath"
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/apppath"
+	"facade/backend/internal/config"
 	"os/exec"
 	"sync"
 )

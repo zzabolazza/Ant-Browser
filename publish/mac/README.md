@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the macOS packaging plan for Ant Browser.
+This document defines the macOS packaging plan for Facade.
 
 The goal is to turn the current codebase into a macOS build that can:
 
@@ -11,7 +11,7 @@ The goal is to turn the current codebase into a macOS build that can:
 - keep user-writable state outside the `.app` bundle
 - avoid breaking existing Windows and Linux packaging flows
 
-Ant Browser only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
+Facade only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
 so packages do **not** bundle any external proxy engine binaries.
 
 ## Current Entry Command
@@ -50,7 +50,7 @@ The repository does not yet have:
 The repository now includes writable-state handling for all platforms:
 
 - development and packaged runs always use a home state root
-- macOS state root: `~/Library/Application Support/ant-browser`
+- macOS state root: `~/Library/Application Support/facade`
 - config and `data/` live under the user state root
 - browser cores are user-registered; packages do not ship a `chrome/` placeholder
 
@@ -58,7 +58,7 @@ The repository now includes writable-state handling for all platforms:
 
 The current macOS packaging scaffold places seed config under:
 
-- `Ant Browser.app/Contents/MacOS/config.yaml`
+- `Facade.app/Contents/MacOS/config.yaml`
 
 This matches runtime path resolution for the install root seed file, while writable state is redirected to Application Support.
 
@@ -105,14 +105,14 @@ Why:
 
 Recommended structure inside the built app:
 
-- `Ant Browser.app/Contents/MacOS/ant-chrome`
-- `Ant Browser.app/Contents/MacOS/config.yaml` (seed only; copied to state root on first launch if missing)
+- `Facade.app/Contents/MacOS/facade`
+- `Facade.app/Contents/MacOS/config.yaml` (seed only; copied to state root on first launch if missing)
 
 ### User-Writable State
 
 Recommended macOS state root:
 
-- `~/Library/Application Support/ant-browser`
+- `~/Library/Application Support/facade`
 
 Recommended contents under the state root:
 
@@ -207,7 +207,7 @@ The macOS work should not be considered complete until all items below are verif
 
 - app launches from Finder
 - app launches after copying to `/Applications`
-- first launch creates `~/Library/Application Support/ant-browser`
+- first launch creates `~/Library/Application Support/facade`
 - `config.yaml` is seeded correctly
 - database and `data/` are created under the user state root
 
@@ -258,7 +258,7 @@ The safest first milestone is:
 - native build on a real Mac
 - unsigned `.app`
 - zipped artifact for internal testing
-- detached writable state under `~/Library/Application Support/ant-browser`
+- detached writable state under `~/Library/Application Support/facade`
 
 Do not start with:
 

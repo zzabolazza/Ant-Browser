@@ -3,7 +3,7 @@ package proxy
 import (
 	"testing"
 
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/config"
 )
 
 func TestParseNativeProxyURL(t *testing.T) {

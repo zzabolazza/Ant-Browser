@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/snapshot"
+	"facade/backend/internal/snapshot"
 	"encoding/json"
 	"fmt"
 	"os"

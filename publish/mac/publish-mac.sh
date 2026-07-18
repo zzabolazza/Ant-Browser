@@ -115,10 +115,10 @@ fi
 TARGET="darwin-$ARCH"
 APP_BIN_DIR="$ROOT_DIR/build/bin"
 CONFIG_INIT_SRC="$ROOT_DIR/publish/config.init.mac.yaml"
-ZIP_NAME="AntBrowser-${VERSION}-macos-${ARCH}.zip"
-APP_EXPORT="$OUTPUT_DIR/AntBrowser-${VERSION}-macos-${ARCH}.app"
+ZIP_NAME="Facade-${VERSION}-macos-${ARCH}.zip"
+APP_EXPORT="$OUTPUT_DIR/Facade-${VERSION}-macos-${ARCH}.app"
 STAGE_DIR="$STAGING_ROOT/$TARGET"
-APP_STAGE="$STAGE_DIR/Ant Browser.app"
+APP_STAGE="$STAGE_DIR/Facade.app"
 
 find_built_app_bundle() {
   python3 - "$APP_BIN_DIR" <<'PY'
@@ -139,7 +139,7 @@ PY
 }
 
 echo "========================================"
-echo "  Ant Browser macOS Publish"
+echo "  Facade macOS Publish"
 echo "========================================"
 echo "Target : $TARGET"
 echo "Version: $VERSION"
@@ -161,7 +161,7 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
   echo "[3/4] Building macOS app bundle with Wails..."
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "darwin/$ARCH" -o ant-chrome
+    wails build -s -platform "darwin/$ARCH" -o facade
   )
 else
   echo "[WARN] skipping build step"

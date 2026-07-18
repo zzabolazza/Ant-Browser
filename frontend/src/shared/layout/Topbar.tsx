@@ -123,7 +123,7 @@ function getRouteMeta(pathname: string) {
   if (pathname.startsWith('/browser/detail/')) return { title: '实例详情', path: pathname }
   if (pathname.startsWith('/browser/edit/')) return { title: '编辑实例', path: pathname }
   if (pathname.startsWith('/browser/copy/')) return { title: '复制实例', path: pathname }
-  return { title: 'Ant Browser', path: pathname || '/' }
+  return { title: 'Facade', path: pathname || '/' }
 }
 
 export function Topbar() {

@@ -7,16 +7,16 @@
 
 Output artifacts (in `publish/output/`):
 
-- `AntBrowser-<version>-windows-<arch>.zip` — portable build (`ant-chrome.exe` + `config.yaml`)
-- `AntBrowser-Setup-<version>-<arch>.exe` — NSIS installer (only when `makensis` is available)
+- `Facade-<version>-windows-<arch>.zip` — portable build (`facade.exe` + `config.yaml`)
+- `Facade-Setup-<version>-<arch>.exe` — NSIS installer (only when `makensis` is available)
 
 ## Runtime policy
 
-Ant Browser only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
+Facade only uses Chromium-native proxy links (`direct://` / `http://` / `https://` / `socks5://`),
 so Windows packages do **not** bundle browser cores or any external proxy engine binaries.
 
 Writable app state (config, database, profiles, logs) is stored under
-`%LOCALAPPDATA%\ant-browser`, not inside the install directory.
+`%LOCALAPPDATA%\facade`, not inside the install directory.
 
 ## Commands
 
@@ -30,7 +30,7 @@ bash publish/windows/publish-windows.sh --arch arm64
 Options:
 
 - `--version <ver>` override the version (default reads `wails.json`)
-- `--skip-build` reuse an existing `build/bin/ant-chrome.exe`
+- `--skip-build` reuse an existing `build/bin/facade.exe`
 - `--skip-installer` produce only the portable zip
 - `--keep-staging` keep the staging directory
 

@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/config"
 	"strings"
 )
 

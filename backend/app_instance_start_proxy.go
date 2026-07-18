@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/logger"
-	"ant-chrome/backend/internal/proxy"
+	"facade/backend/internal/logger"
+	"facade/backend/internal/proxy"
 	"fmt"
 	"strings"
 )

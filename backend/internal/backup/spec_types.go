@@ -1,10 +1,10 @@
 package backup
 
-import "ant-chrome/backend/internal/config"
+import "facade/backend/internal/config"
 
 const (
 	// PackageFormat 标识导出包格式类型。
-	PackageFormat = "ant-chrome-full-backup"
+	PackageFormat = "facade-full-backup"
 	// ManifestVersion 标识 manifest.json 的结构版本。
 	ManifestVersion = 1
 )

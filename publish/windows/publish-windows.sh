@@ -112,14 +112,14 @@ fi
 
 TARGET="windows-$ARCH"
 APP_ICON_SRC="$ROOT_DIR/build/appicon.png"
-APP_BIN="$ROOT_DIR/build/bin/ant-chrome.exe"
+APP_BIN="$ROOT_DIR/build/bin/facade.exe"
 WAILS_CONFIG="$ROOT_DIR/wails.json"
 WINDOWS_ICON="$ROOT_DIR/build/windows/icon.ico"
 INSTALLER_NSI="$ROOT_DIR/publish/installer.nsi"
 CONFIG_INIT_SRC="$ROOT_DIR/publish/config.init.yaml"
 
 echo "========================================"
-echo "  Ant Browser Windows Publish"
+echo "  Facade Windows Publish"
 echo "========================================"
 echo "Target : $TARGET"
 echo "Version: $VERSION"
@@ -148,7 +148,7 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
   rm -f "$APP_BIN"
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "windows/$ARCH" -o ant-chrome.exe
+    wails build -s -platform "windows/$ARCH" -o facade.exe
   )
 else
   echo "[WARN] skipping build step"
@@ -164,10 +164,10 @@ APP_STAGE="$STAGING_ROOT/$TARGET/app"
 rm -rf "$APP_STAGE"
 mkdir -p "$APP_STAGE" "$OUTPUT_DIR"
 
-cp "$APP_BIN" "$APP_STAGE/ant-chrome.exe"
+cp "$APP_BIN" "$APP_STAGE/facade.exe"
 cp "$CONFIG_INIT_SRC" "$APP_STAGE/config.yaml"
 
-ZIP_NAME="AntBrowser-${VERSION}-windows-${ARCH}.zip"
+ZIP_NAME="Facade-${VERSION}-windows-${ARCH}.zip"
 ZIP_PATH="$OUTPUT_DIR/$ZIP_NAME"
 rm -f "$ZIP_PATH"
 ZIP_PATH_WIN="$(to_win_path "$ZIP_PATH")"
@@ -185,7 +185,7 @@ if [[ "$SKIP_INSTALLER" -ne 1 ]]; then
     echo "[WARN] windows icon missing: $WINDOWS_ICON; skipping installer." >&2
     echo "       Run a full 'wails build' so it can generate build/windows/icon.ico from build/appicon.png." >&2
   else
-    INSTALLER_NAME="AntBrowser-Setup-${VERSION}-${ARCH}.exe"
+    INSTALLER_NAME="Facade-Setup-${VERSION}-${ARCH}.exe"
     INSTALLER_PATH="$OUTPUT_DIR/$INSTALLER_NAME"
     rm -f "$INSTALLER_PATH"
     STAGING_WIN="$(to_win_path "$APP_STAGE")"

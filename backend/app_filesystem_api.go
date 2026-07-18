@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/fsutil"
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/fsutil"
+	"facade/backend/internal/logger"
 	"fmt"
 	"os"
 	"os/exec"

@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 
 	"github.com/google/uuid"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const profilePackageFormat = "ant-chrome-profile-package"
+const profilePackageFormat = "facade-profile-package"
 
 type ProfilePackageManifest struct {
 	Format       string `json:"format"`
@@ -69,7 +69,7 @@ func (a *App) BrowserProfilePackageExport(profileIds []string) (ProfilePackageEx
 		return ProfilePackageExportResult{}, err
 	}
 
-	defaultName := fmt.Sprintf("ant-chrome-profile-package-%s.zip", time.Now().Format("20060102-150405"))
+	defaultName := fmt.Sprintf("facade-profile-package-%s.zip", time.Now().Format("20060102-150405"))
 	savePath, err := wailsruntime.SaveFileDialog(a.ctx, wailsruntime.SaveDialogOptions{
 		Title:           "导出实例",
 		DefaultFilename: defaultName,

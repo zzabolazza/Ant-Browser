@@ -1,7 +1,7 @@
 package launchcode
 
 import (
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 	"fmt"
 	"strings"
 )

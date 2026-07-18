@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 )
 
 // localhostMiddleware 只允许 127.0.0.1 访问

@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"ant-chrome/backend/internal/proxy"
+	"facade/backend/internal/proxy"
 	"encoding/json"
 	"strconv"
 	"strings"

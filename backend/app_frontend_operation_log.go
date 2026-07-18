@@ -1,6 +1,6 @@
 package backend
 
-import "ant-chrome/backend/internal/logger"
+import "facade/backend/internal/logger"
 
 // FrontendOperationLog records frontend-triggered Wails operation results into the app log.
 func (a *App) FrontendOperationLog(level string, method string, success bool, durationMs int64, message string) {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 )
 
 func decodeProfileWriteRequest(r *http.Request) (ProfileWriteRequest, int, string) {

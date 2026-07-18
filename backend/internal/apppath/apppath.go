@@ -1,7 +1,7 @@
 package apppath
 
 import (
-	"ant-chrome/backend/internal/fsutil"
+	"facade/backend/internal/fsutil"
 	"os"
 	"path/filepath"
 	goruntime "runtime"
@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const appStateDirName = "ant-browser"
+const appStateDirName = "facade"
 
 type roots struct {
 	installRoot string

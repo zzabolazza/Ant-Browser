@@ -1,7 +1,7 @@
 package browser
 
 import (
-	"ant-chrome/backend/internal/logger"
+	"facade/backend/internal/logger"
 	"fmt"
 	"strings"
 	"time"

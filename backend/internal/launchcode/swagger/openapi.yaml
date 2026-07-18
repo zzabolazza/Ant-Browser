@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Ant Browser Launch API
+  title: Facade Launch API
   version: 1.0.0
 
 servers:

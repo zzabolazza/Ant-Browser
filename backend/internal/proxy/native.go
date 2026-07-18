@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/config"
 )
 
 const (

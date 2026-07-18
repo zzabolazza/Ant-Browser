@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"ant-chrome/backend/internal/browser"
-	"ant-chrome/backend/internal/config"
+	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
 )
 
 func TestProfilePackageImportSkipsMissingUserDataWithWarning(t *testing.T) {

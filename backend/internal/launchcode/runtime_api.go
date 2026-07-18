@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"ant-chrome/backend/internal/browser"
+	"facade/backend/internal/browser"
 )
 
 type RuntimeRequest struct {

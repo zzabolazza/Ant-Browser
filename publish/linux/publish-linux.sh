@@ -121,23 +121,22 @@ fi
 
 TARGET="linux-$ARCH"
 APP_ICON_SRC="$ROOT_DIR/build/appicon.png"
-APP_BIN="$ROOT_DIR/build/bin/ant-chrome"
+APP_BIN="$ROOT_DIR/build/bin/facade"
 WAILS_CONFIG="$ROOT_DIR/wails.json"
-APP_PACKAGE_NAME="ant-browser"
-APP_BINARY_NAME="ant-chrome"
-APP_ICON_NAME="ant-browser"
-APP_DESKTOP_ID="ant-browser.desktop"
-APPSTREAM_ID="ant-browser"
-APP_NAME="Ant Browser"
+APP_PACKAGE_NAME="facade"
+APP_BINARY_NAME="facade"
+APP_ICON_NAME="facade"
+APP_DESKTOP_ID="facade.desktop"
+APPSTREAM_ID="facade"
+APP_NAME="Facade"
 APP_SUMMARY="Multi-profile browser launcher with proxy-pool management"
-APP_MAINTAINER="Ant Chrome Team"
-APP_MAINTAINER_EMAIL="contact@antblack.dev"
+APP_MAINTAINER="Facade Team"
 APP_HOMEPAGE="https://github.com/black-ant/Ant-Browser"
 BUILD_DATE_UTC="$(date -u +%F)"
 ICON_SIZES=(16 24 32 48 64 128 256 512)
 
 echo "========================================"
-echo "  Ant Browser Linux Publish"
+echo "  Facade Linux Publish"
 echo "========================================"
 echo "Target : $TARGET"
 echo "Version: $VERSION"
@@ -178,7 +177,7 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
   fi
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "linux/$ARCH" "${WAILS_BUILD_TAGS[@]}" -o ant-chrome
+    wails build -s -platform "linux/$ARCH" "${WAILS_BUILD_TAGS[@]}" -o facade
   )
 else
   echo "[WARN] skipping build step"
@@ -215,16 +214,16 @@ DEB_STAGE="$STAGING_ROOT/$TARGET/deb"
 rm -rf "$APP_STAGE" "$DEB_STAGE"
 mkdir -p "$APP_STAGE" "$DEB_STAGE"
 
-cp "$APP_BIN" "$APP_STAGE/ant-chrome"
+cp "$APP_BIN" "$APP_STAGE/facade"
 cp "$ROOT_DIR/publish/config.init.linux.yaml" "$APP_STAGE/config.yaml"
-chmod +x "$APP_STAGE/ant-chrome"
+chmod +x "$APP_STAGE/facade"
 
 mkdir -p "$OUTPUT_DIR"
-TAR_NAME="AntBrowser-${VERSION}-linux-${ARCH}.tar.gz"
+TAR_NAME="Facade-${VERSION}-linux-${ARCH}.tar.gz"
 tar -C "$APP_STAGE" -czf "$OUTPUT_DIR/$TAR_NAME" .
 
 PKG_ROOT="$DEB_STAGE/${APP_PACKAGE_NAME}_${VERSION}_${ARCH}"
-INSTALL_ROOT="$PKG_ROOT/opt/ant-browser"
+INSTALL_ROOT="$PKG_ROOT/opt/facade"
 DESKTOP_ROOT="$PKG_ROOT/usr/share/applications"
 ICON_THEME_ROOT="$PKG_ROOT/usr/share/icons/hicolor"
 PIXMAPS_ROOT="$PKG_ROOT/usr/share/pixmaps"
@@ -235,7 +234,7 @@ for size in "${ICON_SIZES[@]}"; do
   mkdir -p "$ICON_THEME_ROOT/${size}x${size}/apps"
 done
 
-cp "$APP_STAGE/ant-chrome" "$INSTALL_ROOT/ant-chrome"
+cp "$APP_STAGE/facade" "$INSTALL_ROOT/facade"
 cp "$APP_STAGE/config.yaml" "$INSTALL_ROOT/config.yaml"
 cp "$APP_ICON_SRC" "$ICON_THEME_ROOT/512x512/apps/${APP_ICON_NAME}.png"
 for size in "${ICON_SIZES[@]}"; do
@@ -244,15 +243,15 @@ for size in "${ICON_SIZES[@]}"; do
   fi
 done
 ln -sf "../icons/hicolor/512x512/apps/${APP_ICON_NAME}.png" "$PIXMAPS_ROOT/${APP_ICON_NAME}.png"
-chmod +x "$INSTALL_ROOT/ant-chrome"
+chmod +x "$INSTALL_ROOT/facade"
 
 cat > "$DESKTOP_ROOT/$APP_DESKTOP_ID" <<EOF
 [Desktop Entry]
 Version=1.0
 Name=${APP_NAME}
 Comment=${APP_SUMMARY}
-Exec=/opt/ant-browser/${APP_BINARY_NAME}
-TryExec=/opt/ant-browser/${APP_BINARY_NAME}
+Exec=/opt/facade/${APP_BINARY_NAME}
+TryExec=/opt/facade/${APP_BINARY_NAME}
 Icon=${APP_ICON_NAME}
 StartupWMClass=Ant-chrome
 Terminal=false
@@ -277,7 +276,7 @@ cat > "$METAINFO_ROOT/${APP_PACKAGE_NAME}.metainfo.xml" <<EOF
     <binary>${APP_BINARY_NAME}</binary>
   </provides>
   <description>
-    <p>Ant Browser manages isolated browser profiles, proxy binding, and local environment configuration for multi-account workflows.</p>
+    <p>Facade manages isolated browser profiles, proxy binding, and local environment configuration for multi-account workflows.</p>
     <p>The Debian package installs a launcher and theme icons for standard Linux desktop environments.</p>
   </description>
   <categories>
@@ -310,21 +309,21 @@ Version: ${VERSION}
 Section: utils
 Priority: optional
 Architecture: ${ARCH}
-Maintainer: ${APP_MAINTAINER} <${APP_MAINTAINER_EMAIL}>
+Maintainer: ${APP_MAINTAINER}
 Homepage: ${APP_HOMEPAGE}
 Installed-Size: ${INSTALLED_SIZE_KB}
 Depends: libc6 (>= 2.31), libgtk-3-0, libglib2.0-0, ${WEBKIT_DEB_DEP}
 Description: ${APP_NAME} desktop app
  Multi-profile browser launcher with proxy-pool management.
- Ant Browser manages isolated browser profiles, proxy binding, and
+ Facade manages isolated browser profiles, proxy binding, and
  local environment configuration for multi-account workflows.
 EOF
 
 cat > "$PKG_ROOT/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
-ln -sf /opt/ant-browser/ant-chrome /usr/bin/ant-chrome
-chmod +x /opt/ant-browser/ant-chrome || true
+ln -sf /opt/facade/facade /usr/bin/facade
+chmod +x /opt/facade/facade || true
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
@@ -344,7 +343,7 @@ cat > "$PKG_ROOT/DEBIAN/postrm" <<'EOF'
 #!/bin/sh
 set -e
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-  rm -f /usr/bin/ant-chrome
+  rm -f /usr/bin/facade
 fi
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
