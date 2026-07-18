@@ -2,9 +2,9 @@
 
 > 面向多账号隔离、代理绑定和本地环境管理的桌面浏览器工具（Windows / Linux / macOS unsigned）。
 
-[![Release](https://img.shields.io/github/v/release/black-ant/Ant-Browser?sort=semver)](https://github.com/black-ant/Ant-Browser/releases)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)](https://github.com/black-ant/Ant-Browser/releases)
-[![Issues](https://img.shields.io/github/issues/black-ant/Ant-Browser)](https://github.com/black-ant/Ant-Browser/issues)
+[![Release](https://img.shields.io/github/v/release/zzabolazza/Facade?sort=semver)](https://github.com/zzabolazza/Facade/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)](https://github.com/zzabolazza/Facade/releases)
+[![Issues](https://img.shields.io/github/issues/zzabolazza/Facade)](https://github.com/zzabolazza/Facade/issues)
 
 ## 推荐内核项目
 
@@ -159,7 +159,7 @@ Facade 适合以下场景：
 
 ### 下载与运行
 
-1. 前往 Releases 页面下载最新版本：<https://github.com/black-ant/Ant-Browser/releases>
+1. 前往 Releases 页面下载最新版本：<https://github.com/zzabolazza/Facade/releases>
 2. 安装版直接运行 `Facade-Setup-*.exe`
 3. 便携版解压后运行 `facade.exe`
 4. Linux：推荐用 `sudo apt install ./facade_<version>_<arch>.deb` 安装（会自动拉取 `libwebkit2gtk-4.1-0` 等运行时依赖）；勿仅用 `dpkg -i`（不会从软件源安装依赖）。也可解压 `tar.gz` 后运行 `facade`，但需自行安装 WebKitGTK 运行时
@@ -292,8 +292,8 @@ wails generate module
 
 ## 支持与反馈
 
-- Releases：<https://github.com/black-ant/Ant-Browser/releases>
-- Issues：<https://github.com/black-ant/Ant-Browser/issues>
+- Releases：<https://github.com/zzabolazza/Facade/releases>
+- Issues：<https://github.com/zzabolazza/Facade/issues>
 - 感谢以下社区的支持：<https://linux.do/>
 
 ## License

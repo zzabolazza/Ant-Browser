@@ -131,7 +131,7 @@ APPSTREAM_ID="facade"
 APP_NAME="Facade"
 APP_SUMMARY="Multi-profile browser launcher with proxy-pool management"
 APP_MAINTAINER="Facade Team"
-APP_HOMEPAGE="https://github.com/black-ant/Ant-Browser"
+APP_HOMEPAGE="https://github.com/zzabolazza/Facade"
 BUILD_DATE_UTC="$(date -u +%F)"
 ICON_SIZES=(16 24 32 48 64 128 256 512)
 
@@ -253,7 +253,7 @@ Comment=${APP_SUMMARY}
 Exec=/opt/facade/${APP_BINARY_NAME}
 TryExec=/opt/facade/${APP_BINARY_NAME}
 Icon=${APP_ICON_NAME}
-StartupWMClass=Ant-chrome
+StartupWMClass=Facade
 Terminal=false
 Type=Application
 StartupNotify=true
