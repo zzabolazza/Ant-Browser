@@ -170,91 +170,111 @@ function CloseConfirmModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={importInProgress ? "关闭应用确认" : undefined}
-      width={importInProgress ? "360px" : "420px"}
+      title={importInProgress ? "关闭应用确认" : "退出确认"}
+      width="400px"
       closable={!quitting}
     >
-      <div className="flex flex-col items-center pt-2 pb-6 px-4">
-        <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
-            importInProgress
-              ? "bg-amber-50 text-amber-500"
-              : "bg-red-50 text-red-500"
-          }`}
-        >
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        {importInProgress && (
-          <h3 className="text-lg font-medium text-[var(--color-text-primary)] mb-2">
-            正在加载中，是否关闭？
-          </h3>
-        )}
-        {importInProgress ? (
+      {importInProgress ? (
+        <div className="flex flex-col items-center py-2">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-4">
+            <AlertCircle className="w-6 h-6" />
+          </div>
           <p className="text-sm text-[var(--color-text-secondary)] text-center mb-6">
             当前正在加载配置
-            {importProgress > 0 ? `（${importProgress}%）` : ""}。
+            {importProgress > 0 ? `（${importProgress}%）` : ""}，
             <br />
             {importMessage || "强制关闭会中断本次加载，是否仍要关闭应用？"}
           </p>
-        ) : (
-          <p className="mb-6 text-sm text-center text-[var(--color-text-secondary)]">
-            可仅退出应用，或连同浏览器一起关闭。
-          </p>
-        )}
-
-        <div
-          className={`w-full ${importInProgress ? "flex gap-3" : "flex flex-col gap-2"}`}
-        >
-          {importInProgress ? (
-            <>
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={closeModal}
-                disabled={quitting}
-              >
-                继续加载
-              </Button>
-              <Button
-                variant="danger"
-                className="flex-1"
-                onClick={handleQuitAppAndBrowsers}
-                loading={quittingAction === "app-and-browser"}
-              >
-                仍要关闭
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                className="w-full !bg-[#f3f4f6] !border-[#e5e7eb] !text-[var(--color-text-primary)] hover:!bg-[#e5e7eb]"
-                onClick={supportsTray ? handleMinimize : closeModal}
-                disabled={quitting}
-              >
-                {supportsTray ? "最小化到托盘" : "取消"}
-              </Button>
-              <Button
-                className="w-full"
-                onClick={handleQuitAppOnly}
-                loading={quittingAction === "app-only"}
-                disabled={quitting}
-              >
-                仅退出应用
-              </Button>
-              <Button
-                variant="danger"
-                className="w-full"
-                onClick={handleQuitAppAndBrowsers}
-                loading={quittingAction === "app-and-browser"}
-                disabled={quitting}
-              >
-                退出应用与浏览器
-              </Button>
-            </>
-          )}
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={closeModal}
+              disabled={quitting}
+            >
+              继续加载
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleQuitAppAndBrowsers}
+              loading={quittingAction === "app-and-browser"}
+            >
+              仍要关闭
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2 -mt-1">
+          <p className="text-sm text-[var(--color-text-secondary)] mb-2">
+            选择退出方式：
+          </p>
+
+          {supportsTray && (
+            <button
+              onClick={handleMinimize}
+              disabled={quitting}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-muted)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-[var(--color-text-primary)]">最小化至托盘</div>
+                <div className="text-xs text-[var(--color-text-muted)] mt-0.5">隐藏窗口，应用在后台继续运行</div>
+              </div>
+            </button>
+          )}
+
+          <button
+            onClick={handleQuitAppOnly}
+            disabled={quitting}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-muted)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-[var(--color-text-primary)]">仅退出客户端</div>
+              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">关闭客户端，保留已打开的浏览器</div>
+            </div>
+            {quittingAction === "app-only" && (
+              <svg className="w-4 h-4 text-[var(--color-accent)] animate-spin ml-auto shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+          </button>
+
+          <button
+            onClick={handleQuitAppAndBrowsers}
+            disabled={quitting}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-red-200 bg-red-50/50 hover:bg-red-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="w-8 h-8 rounded-md bg-red-100 text-red-500 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-red-600">退出全部进程</div>
+              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">关闭客户端，终止所有浏览器实例</div>
+            </div>
+            {quittingAction === "app-and-browser" && (
+              <svg className="w-4 h-4 text-red-500 animate-spin ml-auto shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
     </Modal>
   );
 }
