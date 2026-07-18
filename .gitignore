@@ -55,6 +55,7 @@ profiles.yaml
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/src/wailsjs/
 
 # Swagger UI is loaded from CDN; keep only index.html and openapi.yaml.
 backend/internal/launchcode/swagger/swagger-ui-bundle.js
