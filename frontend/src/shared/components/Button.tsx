@@ -2,7 +2,7 @@ import { ButtonHTMLAttributes, ReactNode } from 'react'
 import clsx from 'clsx'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'ghost'
   size?: 'sm' | 'md' | 'lg' | 'icon'
   loading?: boolean
   children: ReactNode
@@ -22,6 +22,7 @@ export function Button({
   const variants = {
     primary: 'bg-[var(--color-accent)] text-[var(--color-text-inverse)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] focus-visible:ring-[var(--color-accent)]',
     secondary: 'bg-[var(--color-bg-surface)] text-[var(--color-text-primary)] border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-subtle)] focus-visible:ring-[var(--color-border-strong)]',
+    success: 'bg-[var(--color-success)] text-white shadow-[var(--shadow-sm)] hover:brightness-95 focus-visible:ring-[var(--color-success)]',
     danger: 'bg-[var(--color-error)] text-white hover:opacity-90 focus-visible:ring-[var(--color-error)]',
     ghost: 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)]',
   }

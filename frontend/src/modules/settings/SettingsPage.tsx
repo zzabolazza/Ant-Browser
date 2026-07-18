@@ -1,28 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
-import { Save, RotateCcw } from 'lucide-react'
-import { Button, ConfirmModal, toast } from '../../shared/components'
+import { useRef, useState } from 'react'
+import { ConfirmModal, toast } from '../../shared/components'
 import {
-  fetchSettings,
-  saveSettings,
-  resetSettings,
   initializeSystemData,
   exportSystemConfig,
   importSystemConfig,
 } from './api'
-import type { AppSettings } from './types'
-import { defaultSettings } from './types'
 import { BackupImportModal, BackupSettingsCard } from './components/BackupSettingsCard'
-import { SettingsAdvancedCard, SettingsBasicFeatureCards } from './components/SettingsGeneralCards'
+import { ThemeSettingsCard } from './components/ThemeSettingsCard'
 import type { BackupExportLogItem, BackupExportProgress } from './progress'
 import { useSettingsProgressEffects } from './hooks/useSettingsProgressEffects'
+import { getStoredTheme, setThemeMode, type ThemeMode } from '../../shared/theme/theme'
 
 export function SettingsPage() {
-  const [settings, setSettings] = useState<AppSettings>(defaultSettings)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
+  const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme())
   const [importModalOpen, setImportModalOpen] = useState(false)
-  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
   const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState<'none' | 'init' | 'export' | 'import-reset' | 'import-merge'>('none')
   const [exportProgress, setExportProgress] = useState<BackupExportProgress | null>(null)
@@ -30,9 +21,10 @@ export function SettingsPage() {
   const [exportLogs, setExportLogs] = useState<BackupExportLogItem[]>([])
   const exportLogsRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+  const handleThemeChange = (nextTheme: ThemeMode) => {
+    setTheme(nextTheme)
+    setThemeMode(nextTheme)
+  }
 
   useSettingsProgressEffects({
     actionLoading,
@@ -43,43 +35,6 @@ export function SettingsPage() {
     setExportProgress,
     setImportProgress,
   })
-
-  const loadSettings = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchSettings()
-      setSettings(data)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChange = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      const success = await saveSettings(settings)
-      if (success) {
-        setHasChanges(false)
-        toast.success('设置已保存')
-      }
-    } catch (error: any) {
-      toast.error(error?.message || '保存失败，请检查配置')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleReset = async () => {
-    const data = await resetSettings()
-    setSettings(data)
-    setHasChanges(false)
-    toast.success('设置已重置')
-  }
 
   const handleInitializeSystem = async () => {
     setActionLoading('init')
@@ -182,35 +137,13 @@ export function SettingsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-[var(--color-border-default)] border-t-[var(--color-accent)] rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-5 w-full animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
-          应用级偏好、功能开关与数据备份。
-        </p>
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setResetConfirmOpen(true)}>
-            <RotateCcw className="w-4 h-4" />
-            重置
-          </Button>
-          <Button size="sm" onClick={handleSave} loading={saving} disabled={!hasChanges}>
-            <Save className="w-4 h-4" />
-            保存设置
-          </Button>
-        </div>
-      </div>
+    <div className="w-full space-y-5 animate-fade-in">
+      <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+        管理界面主题与本机数据。执行恢复操作前，建议先创建一份完整备份。
+      </p>
 
-      <SettingsBasicFeatureCards settings={settings} onChange={handleChange} />
-
-      <SettingsAdvancedCard settings={settings} onChange={handleChange} />
+      <ThemeSettingsCard value={theme} onChange={handleThemeChange} />
 
       <BackupSettingsCard
         actionLoading={actionLoading}
@@ -234,15 +167,6 @@ export function SettingsPage() {
           setImportProgress(null)
         }}
         onImport={(resetFirst) => { void handleImportSystem(resetFirst) }}
-      />
-
-      <ConfirmModal
-        open={resetConfirmOpen}
-        onClose={() => setResetConfirmOpen(false)}
-        onConfirm={() => { void handleReset() }}
-        title="重置设置"
-        content="确定要将所有应用设置恢复为默认值吗？"
-        confirmText="重置设置"
       />
 
       <ConfirmModal

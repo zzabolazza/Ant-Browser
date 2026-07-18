@@ -92,40 +92,37 @@ export function BackupSettingsCard({
   onExport,
   onOpenImport,
 }: BackupSettingsCardProps) {
+  const actionRunning = actionLoading !== 'none'
+
   return (
-    <Card title="系统备份" padding="sm">
-      <div className="space-y-3">
-        <p className="text-xs text-[var(--color-text-muted)]">
-          加载配置时可选择清空现有数据后完整恢复，或在现有数据上按规则判重合并。
-        </p>
-        <div className="flex flex-wrap gap-2">
+    <Card
+      title="系统备份"
+      subtitle="备份包含应用配置、实例、代理及相关本机数据"
+      padding="md"
+    >
+      <div className="space-y-4">
+        <section className="flex flex-col gap-3 rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-muted)] text-[var(--color-accent)]">
+              <Download className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">导出完整备份</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">将当前系统数据打包为 ZIP 文件，便于迁移或留存。</p>
+            </div>
+          </div>
           <Button
-            variant="secondary"
-            size="sm"
-            onClick={onInitialize}
-            loading={actionLoading === 'init'}
-          >
-            <RotateCcw className="w-4 h-4" />
-            恢复出厂设置
-          </Button>
-          <Button
-            variant="secondary"
+            className="w-full sm:w-auto sm:min-w-[112px]"
+            variant="primary"
             size="sm"
             onClick={onExport}
             loading={actionLoading === 'export'}
+            disabled={actionRunning && actionLoading !== 'export'}
           >
-            <Download className="w-4 h-4" />
-            导出配置
+            导出
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onOpenImport}
-          >
-            <Upload className="w-4 h-4" />
-            加载配置
-          </Button>
-        </div>
+        </section>
+
         {exportProgress && (
           <BackupProgressPanel
             progress={exportProgress}
@@ -134,6 +131,49 @@ export function BackupSettingsCard({
             logsRef={exportLogsRef}
           />
         )}
+
+        <section className="flex flex-col gap-3 rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgb(22_199_132_/_0.1)] text-[var(--color-success)]">
+              <Upload className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">导入系统备份</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">从 ZIP 文件恢复数据，可选择合并导入或清空后恢复。</p>
+            </div>
+          </div>
+          <Button
+            className="w-full sm:w-auto sm:min-w-[112px]"
+            variant="success"
+            size="sm"
+            onClick={onOpenImport}
+            disabled={actionRunning}
+          >
+            导入
+          </Button>
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-[10px] border border-[rgb(239_71_87_/_0.18)] bg-[rgb(239_71_87_/_0.025)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgb(239_71_87_/_0.1)] text-[var(--color-error)]">
+              <RotateCcw className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">恢复出厂设置</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">清空所有业务数据并恢复默认配置，此操作无法撤销。</p>
+            </div>
+          </div>
+          <Button
+            className="w-full sm:w-auto sm:min-w-[112px] sm:self-center"
+            variant="danger"
+            size="sm"
+            onClick={onInitialize}
+            loading={actionLoading === 'init'}
+            disabled={actionRunning && actionLoading !== 'init'}
+          >
+            恢复
+          </Button>
+        </section>
       </div>
     </Card>
   )
@@ -160,36 +200,48 @@ export function BackupImportModal({
       title="加载配置"
       width="520px"
       closable={!importRunning}
-      footer={(
-        <>
-          {!importRunning && (
-            <Button variant="secondary" onClick={onClose}>
-              取消
-            </Button>
-          )}
-          <Button
-            variant="danger"
-            onClick={() => onImport(true)}
-            loading={actionLoading === 'import-reset'}
-            disabled={actionLoading !== 'none' && actionLoading !== 'import-reset'}
-          >
-            清空现有数据后加载
-          </Button>
-          <Button
-            onClick={() => onImport(false)}
-            loading={actionLoading === 'import-merge'}
-            disabled={actionLoading !== 'none' && actionLoading !== 'import-merge'}
-          >
-            否，直接加载并判重
-          </Button>
-        </>
-      )}
+      footer={!importRunning ? (
+        <Button variant="secondary" onClick={onClose}>取消</Button>
+      ) : undefined}
     >
-      <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-        <p>是否清空现有数据后再加载 ZIP 配置？</p>
-        <p className="text-xs text-[var(--color-text-muted)]">
-          选择清空后加载会完整恢复备份；直接加载则会保留现有数据并判重合并。
-        </p>
+      <div className="space-y-4 text-sm text-[var(--color-text-secondary)]">
+        {!importRunning && (
+          <>
+            <p className="text-[13px] leading-5 text-[var(--color-text-muted)]">选择备份文件的导入方式：</p>
+            <div className="space-y-3">
+              <section className="flex items-center gap-3 rounded-[10px] border border-[var(--color-border-default)] p-3.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-muted)] text-[var(--color-accent)]">
+                  <Upload className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">合并导入</h3>
+                    <span className="rounded bg-[var(--color-accent-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">推荐</span>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">保留现有数据，对备份内容判重后合并。</p>
+                </div>
+                <Button className="min-w-[104px]" size="sm" variant="success" onClick={() => onImport(false)}>
+                  <Upload className="h-4 w-4" />
+                  合并导入
+                </Button>
+              </section>
+
+              <section className="flex items-center gap-3 rounded-[10px] border border-[rgb(239_71_87_/_0.2)] bg-[rgb(239_71_87_/_0.035)] p-3.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgb(239_71_87_/_0.1)] text-[var(--color-error)]">
+                  <RotateCcw className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">清空后恢复</h3>
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">删除当前数据，以备份内容完整恢复系统。</p>
+                </div>
+                <Button className="min-w-[104px]" size="sm" variant="danger" onClick={() => onImport(true)}>
+                  <Upload className="h-4 w-4" />
+                  清空恢复
+                </Button>
+              </section>
+            </div>
+          </>
+        )}
         {importProgress && (
           <BackupProgressPanel progress={importProgress} loadingLabel="加载中" />
         )}

@@ -2,7 +2,14 @@ import { Suspense, useEffect, useState } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Layout } from "./shared/layout";
 import { ToastContainer, Modal, Button, Loading } from "./shared/components";
-import { AlertCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronRight,
+  Loader2,
+  LogOut,
+  Minimize2,
+  Power,
+} from "lucide-react";
 import { AppRoutes } from "./routes/AppRoutes";
 import { lazyNamed } from "./routes/lazyNamed";
 import { useNotificationStore } from "./store/notificationStore";
@@ -170,22 +177,26 @@ function CloseConfirmModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={importInProgress ? "关闭应用确认" : "退出确认"}
-      width="400px"
+      title={importInProgress ? "关闭应用" : "退出 Facade"}
+      width="440px"
       closable={!quitting}
     >
       {importInProgress ? (
-        <div className="flex flex-col items-center py-2">
-          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-4">
-            <AlertCircle className="w-6 h-6" />
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-[10px] border border-[rgb(245_165_36_/_0.22)] bg-[rgb(245_165_36_/_0.07)] p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgb(245_165_36_/_0.12)] text-[var(--color-warning)]">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">
+                配置正在加载{importProgress > 0 ? `（${importProgress}%）` : ""}
+              </h4>
+              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                {importMessage || "此时关闭会中断本次加载，并可能导致部分配置未完成写入。"}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-[var(--color-text-secondary)] text-center mb-6">
-            当前正在加载配置
-            {importProgress > 0 ? `（${importProgress}%）` : ""}，
-            <br />
-            {importMessage || "强制关闭会中断本次加载，是否仍要关闭应用？"}
-          </p>
-          <div className="flex gap-3 w-full">
+          <div className="flex w-full gap-2.5">
             <Button
               variant="secondary"
               className="flex-1"
@@ -205,72 +216,62 @@ function CloseConfirmModal() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 -mt-1">
-          <p className="text-sm text-[var(--color-text-secondary)] mb-2">
-            选择退出方式：
-          </p>
-
+        <div className="space-y-2.5">
           {supportsTray && (
             <button
+              type="button"
               onClick={handleMinimize}
               disabled={quitting}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-muted)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group flex min-h-[68px] w-full items-center gap-3 rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3.5 py-3 text-left transition-all hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-muted)] text-[var(--color-accent)]">
+                <Minimize2 className="h-[18px] w-[18px]" />
               </div>
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-[var(--color-text-primary)]">最小化至托盘</div>
-                <div className="text-xs text-[var(--color-text-muted)] mt-0.5">隐藏窗口，应用在后台继续运行</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">最小化至托盘</div>
+                <div className="mt-1 text-xs text-[var(--color-text-muted)]">隐藏窗口，应用在后台继续运行</div>
               </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-muted)] transition-transform group-hover:translate-x-0.5" />
             </button>
           )}
 
           <button
+            type="button"
             onClick={handleQuitAppOnly}
             disabled={quitting}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-muted)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group flex min-h-[68px] w-full items-center gap-3 rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] px-3.5 py-3 text-left transition-all hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgb(245_165_36_/_0.1)] text-[var(--color-warning)]">
+              <LogOut className="h-[18px] w-[18px]" />
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-[var(--color-text-primary)]">仅退出客户端</div>
-              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">关闭客户端，保留已打开的浏览器</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">仅退出客户端</div>
+              <div className="mt-1 text-xs text-[var(--color-text-muted)]">关闭客户端，保留已打开的浏览器</div>
             </div>
-            {quittingAction === "app-only" && (
-              <svg className="w-4 h-4 text-[var(--color-accent)] animate-spin ml-auto shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+            {quittingAction === "app-only" ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--color-accent)]" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-text-muted)] transition-transform group-hover:translate-x-0.5" />
             )}
           </button>
 
           <button
+            type="button"
             onClick={handleQuitAppAndBrowsers}
             disabled={quitting}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-red-200 bg-red-50/50 hover:bg-red-50 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group flex min-h-[68px] w-full items-center gap-3 rounded-[10px] border border-[rgb(239_71_87_/_0.2)] bg-[rgb(239_71_87_/_0.045)] px-3.5 py-3 text-left transition-all hover:border-[rgb(239_71_87_/_0.34)] hover:bg-[rgb(239_71_87_/_0.075)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="w-8 h-8 rounded-md bg-red-100 text-red-500 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgb(239_71_87_/_0.12)] text-[var(--color-error)]">
+              <Power className="h-[18px] w-[18px]" />
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-red-600">退出全部进程</div>
-              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">关闭客户端，终止所有浏览器实例</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13.5px] font-semibold text-[var(--color-error)]">退出全部进程</div>
+              <div className="mt-1 text-xs text-[var(--color-text-muted)]">关闭客户端，终止所有浏览器实例</div>
             </div>
-            {quittingAction === "app-and-browser" && (
-              <svg className="w-4 h-4 text-red-500 animate-spin ml-auto shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+            {quittingAction === "app-and-browser" ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--color-error)]" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-error)] opacity-60 transition-transform group-hover:translate-x-0.5" />
             )}
           </button>
         </div>

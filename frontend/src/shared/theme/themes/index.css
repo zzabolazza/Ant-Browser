@@ -1,2 +1,7 @@
 /* 主题样式汇总 */
 @import './base.css';
+@import './light.css';
+@import './dark.css';
+@import './cream.css';
+@import './mint.css';
+@import './ocean.css';

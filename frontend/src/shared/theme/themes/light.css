@@ -1,0 +1,27 @@
+[data-theme='light'] {
+  --color-bg-base: #f5f6fa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #f5f6fa;
+  --color-bg-subtle: #fafbfd;
+  --color-border-default: #e6e8f0;
+  --color-border-muted: #f0f1f6;
+  --color-border-strong: #c7cbe0;
+  --color-text-primary: #14151f;
+  --color-text-secondary: #6b7080;
+  --color-text-muted: #9297a8;
+  --color-text-inverse: #ffffff;
+  --color-accent: #4b6eff;
+  --color-accent-hover: #3d5ce8;
+  --color-accent-muted: rgb(75 110 255 / 0.12);
+  --color-success: #16c784;
+  --color-warning: #f5a524;
+  --color-error: #ef4757;
+  --color-info: #4b6eff;
+  --shadow-xs: 0 1px 2px 0 rgb(20 21 31 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(20 21 31 / 0.06);
+  --shadow-md: 0 8px 18px -12px rgb(20 21 31 / 0.22);
+  --shadow-lg: 0 18px 36px -24px rgb(20 21 31 / 0.28);
+  --shadow-overlay: 0 24px 64px -24px rgb(20 21 31 / 0.32), 0 8px 20px -12px rgb(20 21 31 / 0.18);
+  --color-overlay: rgb(20 21 31 / 0.38);
+}

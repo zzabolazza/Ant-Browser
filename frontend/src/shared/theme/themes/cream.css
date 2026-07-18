@@ -1,0 +1,27 @@
+[data-theme='cream'] {
+  --color-bg-base: #faf7f2;
+  --color-bg-surface: #fffdf8;
+  --color-bg-elevated: #fffdf8;
+  --color-bg-muted: #f3ede4;
+  --color-bg-subtle: #faf7f2;
+  --color-border-default: #e6ddd0;
+  --color-border-muted: #f0e9df;
+  --color-border-strong: #d4c7b5;
+  --color-text-primary: #44392c;
+  --color-text-secondary: #6b5c4a;
+  --color-text-muted: #a69780;
+  --color-text-inverse: #fffdf8;
+  --color-accent: #8b7355;
+  --color-accent-hover: #7a6349;
+  --color-accent-muted: #f3ede4;
+  --color-success: #6b9b5a;
+  --color-warning: #c9a227;
+  --color-error: #c45c4a;
+  --color-info: #5a8ab0;
+  --shadow-xs: 0 1px 2px 0 rgb(107 92 74 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(107 92 74 / 0.05);
+  --shadow-md: 0 8px 18px -12px rgb(107 92 74 / 0.18);
+  --shadow-lg: 0 18px 36px -24px rgb(107 92 74 / 0.22);
+  --shadow-overlay: 0 24px 64px -24px rgb(68 57 44 / 0.32), 0 8px 20px -12px rgb(68 57 44 / 0.16);
+  --color-overlay: rgb(68 57 44 / 0.38);
+}
