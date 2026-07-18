@@ -1,0 +1,64 @@
+---
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'Facade - 多账号浏览器隔离管理工具',
+  description = '面向多账号隔离、代理绑定和本地环境管理的桌面浏览器工具。为每个账号分配独立浏览器实例与代理出口。',
+} = Astro.props
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${import.meta.env.BASE_URL}appicon.png`} />
+    <link rel="icon" type="image/png" href={`${import.meta.env.BASE_URL}appicon.png`} />
+    <title>{title}</title>
+  </head>
+  <body class="bg-surface text-text antialiased">
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+      "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #4b6eff, #7c5cff);
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #4b6eff, #7c5cff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+</style>

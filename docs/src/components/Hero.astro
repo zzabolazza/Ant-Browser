@@ -1,0 +1,74 @@
+---
+const BASE = import.meta.env.BASE_URL
+---
+<section class="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-24">
+  <!-- 背景光晕 -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div class="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-accent-from/10 blur-[120px]"></div>
+  </div>
+
+  <div class="relative mx-auto max-w-5xl px-6 text-center">
+    <!-- Logo -->
+    <img
+      src={`${BASE}appicon.png`}
+      alt="Facade"
+      class="mx-auto mb-8 h-16 w-16 rounded-2xl shadow-lg"
+    />
+
+    <!-- 标题 -->
+    <h1 class="mb-4 text-5xl font-extrabold tracking-tight md:text-7xl">
+      <span class="gradient-text">FACADE</span>
+    </h1>
+
+    <!-- Slogan -->
+    <p class="mb-6 font-mono text-lg tracking-widest text-muted">
+      One Facade. Endless Faces.
+    </p>
+
+    <!-- 定位 -->
+    <p class="mx-auto mb-10 max-w-2xl text-lg text-text/80 md:text-xl">
+      面向多账号隔离、代理绑定和本地环境管理的桌面浏览器工具。<br class="hidden md:block" />
+      为每个账号分配独立浏览器实例与代理出口，在一台设备上稳定运行多个隔离环境。
+    </p>
+
+    <!-- CTA -->
+    <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+      <a
+        href="https://github.com/zzabolazza/Facade/releases"
+        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-from to-accent-to px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-from/25 transition hover:shadow-accent-from/40"
+      >
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        下载最新版
+      </a>
+      <a
+        href="https://github.com/zzabolazza/Facade"
+        class="inline-flex items-center gap-2 rounded-xl border border-surface-border px-6 py-3 text-sm font-medium text-text/70 transition hover:border-white/15 hover:text-text"
+      >
+        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+
+    <!-- 截图占位 -->
+    <div class="mx-auto mt-16 max-w-4xl overflow-hidden rounded-2xl border border-surface-border bg-surface-card/50 shadow-2xl shadow-black/30">
+      <div class="flex items-center gap-2 border-b border-surface-border px-4 py-3">
+        <div class="h-3 w-3 rounded-full bg-red-500/70"></div>
+        <div class="h-3 w-3 rounded-full bg-yellow-500/70"></div>
+        <div class="h-3 w-3 rounded-full bg-green-500/70"></div>
+        <span class="ml-3 text-xs text-muted">Facade</span>
+      </div>
+      <div class="flex aspect-[16/9] items-center justify-center bg-surface-card">
+        <div class="text-center text-muted">
+          <svg class="mx-auto mb-3 h-12 w-12 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p class="text-sm">应用截图</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
