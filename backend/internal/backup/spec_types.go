@@ -36,6 +36,8 @@ type ScopeEntry struct {
 	ArchivePath string    `json:"archivePath"`
 	Exists      bool      `json:"exists"`
 	Description string    `json:"description,omitempty"`
+	// ExcludeSourcePaths 是仅供导出阶段使用的本机路径，不写入清单。
+	ExcludeSourcePaths []string `json:"-"`
 }
 
 // Scope 为导出范围定义。

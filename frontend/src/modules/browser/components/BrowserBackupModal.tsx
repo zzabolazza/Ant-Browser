@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import { AlertTriangle, DatabaseBackup, Download, Upload } from 'lucide-react'
 
-import { Button, Modal } from '../../../shared/components'
+import { Button, FormItem, Input, Modal } from '../../../shared/components'
 
 type BackupMode = 'export' | 'import-merge' | 'import-reset' | 'none'
 
@@ -12,9 +13,9 @@ interface BrowserBackupModalProps {
   loadingMode: BackupMode
   onClose: () => void
   onExportSelected: () => void
-  onExportFull: () => void
-  onImportMerge: () => void
-  onImportReset: () => void
+  onExportFull: (password: string) => void
+  onImportMerge: (password: string) => void
+  onImportReset: (password: string) => void
 }
 
 export function BrowserBackupModal({
@@ -30,6 +31,11 @@ export function BrowserBackupModal({
   onImportReset,
 }: BrowserBackupModalProps) {
   const busy = loadingMode !== 'none' || selectedExporting
+  const [password, setPassword] = useState('')
+  const passwordValid = password.length >= 8
+  useEffect(() => {
+    if (!open) setPassword('')
+  }, [open])
 
   return (
     <Modal
@@ -43,22 +49,25 @@ export function BrowserBackupModal({
       footer={(
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>关闭</Button>
-          <Button variant="secondary" onClick={onImportMerge} loading={loadingMode === 'import-merge'} disabled={busy && loadingMode !== 'import-merge'}>
+          <Button variant="secondary" onClick={() => onImportMerge(password)} loading={loadingMode === 'import-merge'} disabled={!passwordValid || (busy && loadingMode !== 'import-merge')}>
             <Upload className="w-4 h-4" />合并导入
           </Button>
-          <Button variant="danger" onClick={onImportReset} loading={loadingMode === 'import-reset'} disabled={busy && loadingMode !== 'import-reset'}>
-            清空恢复
+          <Button variant="danger" onClick={() => onImportReset(password)} loading={loadingMode === 'import-reset'} disabled={!passwordValid || (busy && loadingMode !== 'import-reset')}>
+            完整恢复
           </Button>
           <Button variant="secondary" onClick={onExportSelected} loading={selectedExporting} disabled={selectedCount === 0 || (busy && !selectedExporting)}>
             <Download className="w-4 h-4" />备份选中
           </Button>
-          <Button onClick={onExportFull} loading={loadingMode === 'export'} disabled={busy && loadingMode !== 'export'}>
+          <Button onClick={() => onExportFull(password)} loading={loadingMode === 'export'} disabled={!passwordValid || (busy && loadingMode !== 'export')}>
             <Download className="w-4 h-4" />全量备份
           </Button>
         </>
       )}
     >
       <div className="space-y-4 text-sm text-[var(--color-text-secondary)]">
+        <FormItem label="全量备份密码" required hint="至少 8 个字符；导出和导入均必填">
+          <Input type="password" value={password} autoComplete="current-password" onChange={event => setPassword(event.target.value)} />
+        </FormItem>
         <div className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] p-3">
           <div className="flex items-center gap-2 font-medium text-[var(--color-text-primary)]">
             <DatabaseBackup className="w-4 h-4" />
@@ -92,9 +101,9 @@ export function BrowserBackupModal({
         </div>
 
         <div className="grid grid-cols-1 gap-2 text-xs text-[var(--color-text-muted)]">
-          <p><span className="font-medium text-[var(--color-text-secondary)]">全量备份：</span>导出配置、数据库、代理、内核、实例浏览器数据。</p>
+          <p><span className="font-medium text-[var(--color-text-secondary)]">全量备份：</span>使用密码加密配置、数据库、代理、内核和实例浏览器数据。</p>
           <p><span className="font-medium text-[var(--color-text-secondary)]">合并导入：</span>保留当前数据，按 ID、路径、URL 等规则跳过重复项。</p>
-          <p><span className="font-medium text-[var(--color-text-secondary)]">清空恢复：</span>先初始化当前数据，再从备份包完整恢复。</p>
+          <p><span className="font-medium text-[var(--color-text-secondary)]">完整恢复：</span>以备份内容完整替换当前数据，已有内容不会保留。</p>
         </div>
       </div>
     </Modal>

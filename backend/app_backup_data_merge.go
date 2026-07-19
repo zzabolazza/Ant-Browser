@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"facade/backend/internal/config"
 	"fmt"
 	"os"
@@ -39,15 +40,21 @@ func (a *App) backupMergeProxiesFile(payloadRoot string, resetFirst bool, stats 
 	existingID := make(map[string]struct{}, len(current))
 	existingCfg := make(map[string]struct{}, len(current))
 	for _, p := range current {
-		existingID[strings.ToLower(strings.TrimSpace(p.ProxyId))] = struct{}{}
-		existingCfg[strings.ToLower(strings.TrimSpace(p.ProxyConfig))] = struct{}{}
+		if key := strings.ToLower(strings.TrimSpace(p.ProxyId)); key != "" {
+			existingID[key] = struct{}{}
+		}
+		if key := strings.ToLower(strings.TrimSpace(p.ProxyConfig)); key != "" {
+			existingCfg[key] = struct{}{}
+		}
 	}
 	for _, p := range incoming {
 		idKey := strings.ToLower(strings.TrimSpace(p.ProxyId))
 		cfgKey := strings.ToLower(strings.TrimSpace(p.ProxyConfig))
-		if _, ok := existingID[idKey]; ok {
-			stats.Skipped++
-			continue
+		if idKey != "" {
+			if _, ok := existingID[idKey]; ok {
+				stats.Skipped++
+				continue
+			}
 		}
 		if cfgKey != "" {
 			if _, ok := existingCfg[cfgKey]; ok {
@@ -56,7 +63,9 @@ func (a *App) backupMergeProxiesFile(payloadRoot string, resetFirst bool, stats 
 			}
 		}
 		merged = append(merged, p)
-		existingID[idKey] = struct{}{}
+		if idKey != "" {
+			existingID[idKey] = struct{}{}
+		}
 		if cfgKey != "" {
 			existingCfg[cfgKey] = struct{}{}
 		}
@@ -83,16 +92,23 @@ func (a *App) backupMergeDatabaseFromSource(srcDBPath string, resetFirst bool, s
 	if a.db == nil || a.db.GetConn() == nil {
 		return fmt.Errorf("数据库未初始化")
 	}
-	tx, err := a.db.GetConn().Begin()
+	ctx := context.Background()
+	conn, err := a.db.GetConn().Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	if _, err := conn.ExecContext(ctx, `ATTACH DATABASE ? AS src`, srcDBPath); err != nil {
+		return fmt.Errorf("挂载备份数据库失败: %w", err)
+	}
+	defer conn.ExecContext(ctx, `DETACH DATABASE src`)
+
+	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-
-	if _, err := tx.Exec(`ATTACH DATABASE ? AS src`, srcDBPath); err != nil {
-		return fmt.Errorf("挂载备份数据库失败: %w", err)
-	}
-	defer tx.Exec(`DETACH DATABASE src`)
 
 	mergeTables := []struct {
 		name       string
@@ -109,6 +125,11 @@ FROM src.browser_groups s
 WHERE NOT EXISTS (
   SELECT 1 FROM browser_groups t
   WHERE t.group_id = s.group_id OR (t.parent_id = s.parent_id AND lower(t.group_name) = lower(s.group_name))
+)
+AND NOT EXISTS (
+  SELECT 1 FROM src.browser_groups earlier
+  WHERE earlier.rowid < s.rowid
+    AND (earlier.group_id = s.group_id OR (earlier.parent_id = s.parent_id AND lower(earlier.group_name) = lower(s.group_name)))
 )`,
 		},
 		{
@@ -121,6 +142,11 @@ FROM src.browser_cores s
 WHERE NOT EXISTS (
   SELECT 1 FROM browser_cores t
   WHERE t.core_id = s.core_id OR lower(t.core_path) = lower(s.core_path)
+)
+AND NOT EXISTS (
+  SELECT 1 FROM src.browser_cores earlier
+  WHERE earlier.rowid < s.rowid
+    AND (earlier.core_id = s.core_id OR lower(earlier.core_path) = lower(s.core_path))
 )`,
 		},
 		{
@@ -180,7 +206,8 @@ SELECT s.profile_id, s.configured, s.updated_at
 FROM src.browser_profile_extension_settings s
 WHERE NOT EXISTS (
   SELECT 1 FROM browser_profile_extension_settings t WHERE t.profile_id = s.profile_id
-)`,
+)
+AND EXISTS (SELECT 1 FROM browser_profiles p WHERE p.profile_id = s.profile_id)`,
 		},
 		{
 			name: "browser_profile_extensions",
@@ -191,7 +218,9 @@ SELECT s.profile_id, s.extension_id, s.enabled, s.created_at, s.updated_at
 FROM src.browser_profile_extensions s
 WHERE NOT EXISTS (
   SELECT 1 FROM browser_profile_extensions t WHERE t.profile_id = s.profile_id AND t.extension_id = s.extension_id
-)`,
+)
+AND EXISTS (SELECT 1 FROM browser_profiles p WHERE p.profile_id = s.profile_id)
+AND EXISTS (SELECT 1 FROM browser_extensions e WHERE e.extension_id = s.extension_id)`,
 		},
 		{
 			name: "launch_codes",
@@ -203,7 +232,8 @@ FROM src.launch_codes s
 WHERE NOT EXISTS (
   SELECT 1 FROM launch_codes t
   WHERE t.profile_id = s.profile_id OR t.code = s.code
-)`,
+)
+AND EXISTS (SELECT 1 FROM browser_profiles p WHERE p.profile_id = s.profile_id)`,
 		},
 	}
 
@@ -227,6 +257,11 @@ WHERE NOT EXISTS (
 		sqlText := item.insertAll
 		if !resetFirst {
 			sqlText = item.insertSafe
+		}
+		if compatibleSQL, handled, err := backupBuildCompatibleMergeSQL(tx, item.name, resetFirst); err != nil {
+			return err
+		} else if handled {
+			sqlText = compatibleSQL
 		}
 		if item.name == "browser_bookmarks" {
 			hasOpenOnStart, err := backupSrcColumnExists(tx, item.name, "open_on_start")

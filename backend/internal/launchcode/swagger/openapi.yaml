@@ -103,11 +103,9 @@ components:
           type: string
         createdAt:
           type: string
-        updatedAt:
-          type: string
-        deletedAt:
-          type: string
-        lastStartAt:
+		updatedAt:
+		  type: string
+		lastStartAt:
           type: string
         lastStopAt:
           type: string

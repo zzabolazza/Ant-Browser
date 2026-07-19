@@ -292,7 +292,6 @@ func (a *App) importProfilePackageFromPath(zipPath string) (ProfilePackageImport
 		source.LaunchCode = ""
 		source.CreatedAt = now
 		source.UpdatedAt = now
-		source.DeletedAt = ""
 		if warning := a.applyImportedProfileProxyByName(&source); warning != "" {
 			warnings = append(warnings, fmt.Sprintf("实例「%s」%s", source.ProfileName, warning))
 		}

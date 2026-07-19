@@ -24,7 +24,7 @@ func (a *App) backupStopRuntimeForMaintenance() {
 	}
 }
 
-func (a *App) backupReloadAfterMutation() error {
+func (a *App) backupReloadAfterMutation(migrateLegacy bool) error {
 	if err := a.ReloadConfig(); err != nil {
 		return err
 	}
@@ -37,7 +37,9 @@ func (a *App) backupReloadAfterMutation() error {
 		a.browserMgr.Mutex.Unlock()
 	}
 
-	a.migrateToSQLite()
+	if migrateLegacy {
+		a.migrateToSQLite()
+	}
 	if a.browserMgr != nil {
 		a.browserMgr.InitData()
 	}

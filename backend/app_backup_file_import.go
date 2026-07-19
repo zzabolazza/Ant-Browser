@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Config, resetFirst bool, stats *backupMergeStats, onIssue func(componentID, componentName string, err error)) {
+func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Config, resetFirst bool, stats *backupMergeStats, preservePaths []string, onIssue func(componentID, componentName string, err error)) {
 	report := func(componentID, componentName string, err error) {
 		if onIssue != nil && err != nil {
 			onIssue(componentID, componentName, err)
@@ -19,21 +19,39 @@ func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Conf
 	appDataSrc := filepath.Join(payloadRoot, "app", "data")
 	appDataDst := a.resolveAppPath("data")
 	dbPath := a.backupResolveDBPath(a.config)
+	skipDBFiles := backupDBFileSkipMatcher(appDataDst, dbPath)
+	skipOperationalFiles := func(rel string) bool {
+		if skipDBFiles(rel) {
+			return true
+		}
+		target := filepath.Join(appDataDst, filepath.FromSlash(rel))
+		for _, path := range preservePaths {
+			if strings.TrimSpace(path) != "" && backupPathWithin(target, path) {
+				return true
+			}
+		}
+		return false
+	}
 	keepDB := map[string]struct{}{
 		backupNormalizePath(dbPath):          {},
 		backupNormalizePath(dbPath + "-wal"): {},
 		backupNormalizePath(dbPath + "-shm"): {},
+	}
+	for _, path := range preservePaths {
+		if backupPathWithin(path, appDataDst) {
+			keepDB[backupNormalizePath(path)] = struct{}{}
+		}
 	}
 
 	if backupPathExists(appDataSrc) {
 		if resetFirst {
 			if err := backupRemoveContentsExcept(appDataDst, keepDB); err != nil {
 				report("app_data_root", "应用数据目录（含数据库、快照及默认浏览器数据）", err)
-			} else if err := backupSyncDir(appDataSrc, appDataDst, true, stats, backupShouldSkipAppDBFile); err != nil {
+			} else if err := backupSyncDir(appDataSrc, appDataDst, true, stats, skipOperationalFiles); err != nil {
 				report("app_data_root", "应用数据目录（含数据库、快照及默认浏览器数据）", err)
 			}
 		} else {
-			if err := backupSyncDir(appDataSrc, appDataDst, false, stats, backupShouldSkipAppDBFile); err != nil {
+			if err := backupSyncDir(appDataSrc, appDataDst, false, stats, skipDBFiles); err != nil {
 				report("app_data_root", "应用数据目录（含数据库、快照及默认浏览器数据）", err)
 			}
 		}
@@ -43,8 +61,9 @@ func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Conf
 	userDataDst := a.backupResolveUserDataRoot(a.config)
 	if backupPathExists(userDataSrc) {
 		if resetFirst {
-			_ = os.RemoveAll(userDataDst)
-			if err := os.MkdirAll(userDataDst, 0755); err != nil {
+			if err := os.RemoveAll(userDataDst); err != nil {
+				report("browser_user_data_root", "浏览器用户数据根目录", err)
+			} else if err := os.MkdirAll(userDataDst, 0755); err != nil {
 				report("browser_user_data_root", "浏览器用户数据根目录（若与 data 重合则自动去重）", err)
 			} else if err := backupSyncDir(userDataSrc, userDataDst, true, stats, nil); err != nil {
 				report("browser_user_data_root", "浏览器用户数据根目录（若与 data 重合则自动去重）", err)
@@ -91,7 +110,10 @@ func (a *App) backupImportFileTrees(payloadRoot string, incomingCfg *config.Conf
 			}
 			dst := targetExternal[i]
 			if resetFirst {
-				_ = os.RemoveAll(dst)
+				if err := os.RemoveAll(dst); err != nil {
+					report(componentID, "额外内核目录（来自配置 cores）", err)
+					continue
+				}
 				if err := os.MkdirAll(dst, 0755); err != nil {
 					report(componentID, "额外内核目录（来自配置 cores）", err)
 					continue

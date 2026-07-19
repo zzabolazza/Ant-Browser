@@ -4,8 +4,6 @@ import (
 	"facade/backend/internal/browser"
 	"facade/backend/internal/config"
 	"facade/backend/internal/logger"
-	"strings"
-	"time"
 )
 
 type BrowserProfile = browser.Profile
@@ -51,9 +49,6 @@ func (a *App) BrowserProfileUpdate(profileId string, input BrowserProfileInput) 
 }
 
 func (a *App) BrowserProfileDelete(profileId string) error { return a.browserMgr.Delete(profileId) }
-
-// BrowserProfileTrashCleanup 清理历史回收站遗留的软删除实例
-func (a *App) BrowserProfileTrashCleanup() error { return a.browserMgr.CleanupExpiredTrash() }
 
 // BrowserProfileCopy 复制实例配置（除指纹参数外全部复制）
 func (a *App) BrowserProfileCopy(profileId string, newName string) (*BrowserProfile, error) {
@@ -110,70 +105,14 @@ func (a *App) migrateToSQLite() {
 		}
 	}
 
-	if profiles, err := a.browserMgr.ProfileDAO.List(); err == nil && len(profiles) == 0 {
-		if len(a.config.Browser.Profiles) > 0 {
-			for _, pc := range a.config.Browser.Profiles {
-				coreId := strings.TrimSpace(pc.CoreId)
-				if strings.EqualFold(coreId, "default") {
-					coreId = ""
-				}
-				p := &browser.Profile{
-					ProfileId:          pc.ProfileId,
-					ProfileName:        pc.ProfileName,
-					UserDataDir:        pc.UserDataDir,
-					CoreId:             coreId,
-					FingerprintArgs:    pc.FingerprintArgs,
-					ProxyId:            pc.ProxyId,
-					ProxyConfig:        pc.ProxyConfig,
-					ProxyBindName:      pc.ProxyBindName,
-					ProxyBindUpdatedAt: pc.ProxyBindUpdatedAt,
-					LaunchArgs:         pc.LaunchArgs,
-					Tags:               pc.Tags,
-					Keywords:           pc.Keywords,
-					CreatedAt:          pc.CreatedAt,
-					UpdatedAt:          pc.UpdatedAt,
-				}
-				if err := a.browserMgr.ProfileDAO.Upsert(p); err != nil {
-					log.Error("实例迁移失败", logger.F("profile_id", pc.ProfileId), logger.F("error", err))
-				}
-			}
-			log.Info("实例数据已迁移", logger.F("count", len(a.config.Browser.Profiles)))
-		} else {
-			log.Info("实例表为空，自动创建默认实例")
-			defaultProfile := &browser.Profile{
-				ProfileId:       generateUUID(),
-				ProfileName:     "默认实例",
-				UserDataDir:     "default",
-				CoreId:          "",
-				FingerprintArgs: a.config.Browser.DefaultFingerprintArgs,
-				LaunchArgs:      a.config.Browser.DefaultLaunchArgs,
-				Tags:            []string{"默认"},
-				ProxyId:         "__direct__",
-				ProxyConfig:     "direct://",
-				CreatedAt:       time.Now().Format(time.RFC3339),
-				UpdatedAt:       time.Now().Format(time.RFC3339),
-			}
-			if err := a.browserMgr.ProfileDAO.Upsert(defaultProfile); err != nil {
-				log.Error("自动创建默认实例失败", logger.F("error", err))
-			}
-		}
-	}
-
 	if bookmarks, err := a.browserMgr.BookmarkDAO.List(); err == nil && len(bookmarks) == 0 {
 		src := a.config.Browser.DefaultBookmarks
-		if len(src) == 0 {
-			src = []config.BrowserBookmark{
-				{Name: "Google", URL: "https://www.google.com/"},
-				{Name: "Gmail", URL: "https://mail.google.com/"},
-				{Name: "Claude", URL: "https://claude.ai/"},
-				{Name: "ChatGPT", URL: "https://chatgpt.com/"},
-				{Name: "YouTube", URL: "https://www.youtube.com/"},
+		if len(src) > 0 {
+			if err := a.browserMgr.BookmarkDAO.ReplaceAll(src); err != nil {
+				log.Error("书签迁移失败", logger.F("error", err))
+			} else {
+				log.Info("书签数据已迁移", logger.F("count", len(src)))
 			}
-		}
-		if err := a.browserMgr.BookmarkDAO.ReplaceAll(src); err != nil {
-			log.Error("书签迁移失败", logger.F("error", err))
-		} else {
-			log.Info("书签数据已迁移", logger.F("count", len(src)))
 		}
 	}
 }

@@ -1,13 +1,13 @@
 package backend
 
 import (
+	"context"
 	"facade/backend/internal/apppath"
 	"facade/backend/internal/browser"
 	"facade/backend/internal/config"
 	"facade/backend/internal/database"
 	"facade/backend/internal/launchcode"
 	"facade/backend/internal/logger"
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -129,9 +129,6 @@ func (a *App) startupInitManagers(cfg *config.Config, db *database.DB) {
 	a.migrateToSQLite()
 
 	a.browserMgr.InitData()
-	if err := a.browserMgr.CleanupExpiredTrash(); err != nil {
-		logger.New("Browser").Error("启动清理历史回收站实例失败", logger.F("error", err))
-	}
 	a.loadProxies()
 	a.reconcileProfileProxyBindings()
 }

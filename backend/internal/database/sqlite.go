@@ -204,6 +204,34 @@ var migrations = []migration{
 			`ALTER TABLE browser_proxies ADD COLUMN preferred_kernel TEXT NOT NULL DEFAULT ''`,
 		},
 	},
+	{
+		version: 13,
+		desc:    "清理不再使用的代理订阅、首选内核及旧代理绑定来源字段",
+		stmts: []string{
+			`ALTER TABLE browser_proxies DROP COLUMN dns_servers`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_id`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_url`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_name_prefix`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_auto_refresh`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_refresh_interval_m`,
+			`ALTER TABLE browser_proxies DROP COLUMN source_last_refresh_at`,
+			`ALTER TABLE browser_proxies DROP COLUMN preferred_kernel`,
+			`ALTER TABLE browser_profiles DROP COLUMN proxy_bind_source_id`,
+			`ALTER TABLE browser_profiles DROP COLUMN proxy_bind_source_url`,
+		},
+	},
+	{
+		version: 14,
+		desc:    "移除已废弃的实例回收站",
+		stmts: []string{
+			`DELETE FROM launch_codes WHERE profile_id IN (SELECT profile_id FROM browser_profiles WHERE COALESCE(deleted_at, '') <> '')`,
+			`DELETE FROM browser_profile_extensions WHERE profile_id IN (SELECT profile_id FROM browser_profiles WHERE COALESCE(deleted_at, '') <> '')`,
+			`DELETE FROM browser_profile_extension_settings WHERE profile_id IN (SELECT profile_id FROM browser_profiles WHERE COALESCE(deleted_at, '') <> '')`,
+			`DELETE FROM browser_profiles WHERE COALESCE(deleted_at, '') <> ''`,
+			`DROP INDEX IF EXISTS idx_browser_profiles_deleted_at`,
+			`ALTER TABLE browser_profiles DROP COLUMN deleted_at`,
+		},
+	},
 	// ── 新版本在此追加，格式：
 	// {
 	//     version: 4,

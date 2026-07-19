@@ -17,15 +17,6 @@ func (m *Manager) Delete(profileId string) error {
 	return m.deleteProfilePermanentlyLocked(log, profileId)
 }
 
-// CleanupExpiredTrash 清理历史回收站遗留的软删除实例
-func (m *Manager) CleanupExpiredTrash() error {
-	log := logger.New("Browser")
-	m.InitData()
-	m.Mutex.Lock()
-	defer m.Mutex.Unlock()
-	return m.cleanupLeftoverTrashLocked(log)
-}
-
 func (m *Manager) deleteProfilePermanentlyLocked(log *logger.Logger, profileId string) error {
 	var profile *Profile
 	if existing, ok := m.Profiles[profileId]; ok {
@@ -59,33 +50,6 @@ func (m *Manager) deleteProfilePermanentlyLocked(log *logger.Logger, profileId s
 
 	delete(m.Profiles, profileId)
 	log.Info("浏览器配置已删除", logger.F("profile_id", profileId))
-	return nil
-}
-
-func (m *Manager) cleanupLeftoverTrashLocked(log *logger.Logger) error {
-	if m.ProfileDAO == nil {
-		return nil
-	}
-	profiles, err := m.ProfileDAO.ListDeleted()
-	if err != nil {
-		log.Error("清理历史回收站实例失败", logger.F("error", err))
-		return err
-	}
-	cleaned := 0
-	for _, profile := range profiles {
-		if err := m.deleteProfileRelatedDataLocked(log, profile); err != nil {
-			log.Error("清理历史回收站实例关联数据失败", logger.F("profile_id", profile.ProfileId), logger.F("error", err))
-			continue
-		}
-		if err := m.ProfileDAO.Delete(profile.ProfileId); err != nil {
-			log.Error("删除历史回收站实例记录失败", logger.F("profile_id", profile.ProfileId), logger.F("error", err))
-			continue
-		}
-		cleaned++
-	}
-	if cleaned > 0 {
-		log.Info("历史回收站实例已清理", logger.F("count", cleaned))
-	}
 	return nil
 }
 

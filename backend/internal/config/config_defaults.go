@@ -44,6 +44,9 @@ func normalizeConfig(config *Config) {
 	if config.Runtime.GCPercent <= 0 {
 		config.Runtime.GCPercent = defaultConfig.Runtime.GCPercent
 	}
+	config.Backup.WebDAV.URL = strings.TrimSpace(config.Backup.WebDAV.URL)
+	config.Backup.WebDAV.Username = strings.TrimSpace(config.Backup.WebDAV.Username)
+	config.Backup.WebDAV.RemoteDir = strings.Trim(strings.TrimSpace(config.Backup.WebDAV.RemoteDir), "/\\")
 
 	if strings.TrimSpace(config.Logging.Level) == "" {
 		config.Logging.Level = defaultConfig.Logging.Level
@@ -187,6 +190,9 @@ func DefaultConfig() *Config {
 		Runtime: RuntimeConfig{
 			MaxMemoryMB: 0,
 			GCPercent:   100,
+		},
+		Backup: BackupConfig{
+			WebDAV: WebDAVConfig{},
 		},
 		Browser: BrowserConfig{
 			UserDataRoot:           "data",

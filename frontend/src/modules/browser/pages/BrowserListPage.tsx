@@ -279,14 +279,14 @@ export function BrowserListPage() {
     }
   }
 
-  const handleExportFullBackup = async () => {
+  const handleExportFullBackup = async (password: string) => {
     if (backupLoadingMode !== 'none') return
     if (runningCount > 0) {
       toast.warning(`建议先停止 ${runningCount} 个运行中实例后再备份`)
     }
     setBackupLoadingMode('export')
     try {
-      const result = await exportFullBrowserBackup()
+      const result = await exportFullBrowserBackup(password)
       if (result.cancelled) return
       toast.success(result.zipPath ? `备份已导出：${result.zipPath}` : (result.message || '备份已导出'))
     } catch (error: any) {
@@ -296,12 +296,12 @@ export function BrowserListPage() {
     }
   }
 
-  const handleImportFullBackup = async (resetFirst: boolean) => {
+  const handleImportFullBackup = async (resetFirst: boolean, password: string) => {
     if (backupLoadingMode !== 'none') return
     const mode: BackupLoadingMode = resetFirst ? 'import-reset' : 'import-merge'
     setBackupLoadingMode(mode)
     try {
-      const result = await importFullBrowserBackup(resetFirst)
+      const result = await importFullBrowserBackup(resetFirst, password)
       if (result.cancelled) return
       toast.success(result.message || (resetFirst ? '备份已恢复' : '备份已合并'))
       setSelectedIds(new Set())
@@ -456,9 +456,9 @@ export function BrowserListPage() {
         loadingMode={backupLoadingMode}
         onClose={() => setBackupModalOpen(false)}
         onExportSelected={() => { void handleBatchExport() }}
-        onExportFull={() => { void handleExportFullBackup() }}
-        onImportMerge={() => { void handleImportFullBackup(false) }}
-        onImportReset={() => { void handleImportFullBackup(true) }}
+        onExportFull={(password) => { void handleExportFullBackup(password) }}
+        onImportMerge={(password) => { void handleImportFullBackup(false, password) }}
+        onImportReset={(password) => { void handleImportFullBackup(true, password) }}
       />
 
       <BrowserProfilesPanel

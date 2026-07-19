@@ -1,15 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ConfirmModal, toast } from '../../shared/components'
 import {
   initializeSystemData,
   exportSystemConfig,
+  getBackupWebDAVSettings,
   importSystemConfig,
+  saveBackupWebDAVSettings,
+  type BackupWebDAVSettings,
 } from './api'
 import { BackupImportModal, BackupSettingsCard } from './components/BackupSettingsCard'
 import { ThemeSettingsCard } from './components/ThemeSettingsCard'
 import type { BackupExportLogItem, BackupExportProgress } from './progress'
 import { useSettingsProgressEffects } from './hooks/useSettingsProgressEffects'
-import { getStoredTheme, setThemeMode, type ThemeMode } from '../../shared/theme/theme'
+import { DEFAULT_THEME, getStoredTheme, resetThemeMode, setThemeMode, type ThemeMode } from '../../shared/theme/theme'
 
 export function SettingsPage() {
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme())
@@ -20,6 +23,14 @@ export function SettingsPage() {
   const [importProgress, setImportProgress] = useState<BackupExportProgress | null>(null)
   const [exportLogs, setExportLogs] = useState<BackupExportLogItem[]>([])
   const exportLogsRef = useRef<HTMLDivElement | null>(null)
+  const [webDAVSettings, setWebDAVSettings] = useState<BackupWebDAVSettings>({
+    url: '', username: '', remoteDir: '', hasPassword: false,
+  })
+  const [webDAVSaving, setWebDAVSaving] = useState(false)
+
+  useEffect(() => {
+    void getBackupWebDAVSettings().then(setWebDAVSettings).catch(() => undefined)
+  }, [])
 
   const handleThemeChange = (nextTheme: ThemeMode) => {
     setTheme(nextTheme)
@@ -44,6 +55,8 @@ export function SettingsPage() {
         toast.info('已取消恢复出厂设置')
         return
       }
+      resetThemeMode()
+      setTheme(DEFAULT_THEME)
       toast.success(res.message || '已恢复出厂设置')
     } catch (error: any) {
       toast.error(error?.message || '恢复出厂设置失败')
@@ -52,12 +65,12 @@ export function SettingsPage() {
     }
   }
 
-  const handleExportSystem = async () => {
+  const handleExportSystem = async (target: 'local' | 'webdav', password: string) => {
     setActionLoading('export')
     setExportLogs([])
     setExportProgress({ phase: 'starting', progress: 0, message: '准备导出...' })
     try {
-      const res = await exportSystemConfig()
+      const res = await exportSystemConfig(password, target)
       if (res.cancelled) {
         setExportProgress(null)
         setExportLogs([])
@@ -86,15 +99,29 @@ export function SettingsPage() {
     }
   }
 
-  const handleImportSystem = async (resetFirst: boolean) => {
+  const handleSaveWebDAV = async (settings: BackupWebDAVSettings) => {
+    setWebDAVSaving(true)
+    try {
+      await saveBackupWebDAVSettings(settings)
+      const loaded = await getBackupWebDAVSettings()
+      setWebDAVSettings(loaded)
+      toast.success('WebDAV 设置已保存')
+    } catch (error: any) {
+      toast.error(error?.message || 'WebDAV 设置保存失败')
+    } finally {
+      setWebDAVSaving(false)
+    }
+  }
+
+  const handleImportSystem = async (resetFirst: boolean, password: string) => {
     setActionLoading(resetFirst ? 'import-reset' : 'import-merge')
     setImportProgress({
       phase: 'starting',
       progress: 0,
-      message: resetFirst ? '等待选择 ZIP 配置（清空现有数据后加载）...' : '等待选择 ZIP 配置（判重合并）...',
+      message: resetFirst ? '等待选择加密备份（完整恢复）...' : '等待选择加密备份（合并导入）...',
     })
     try {
-      const res = await importSystemConfig(resetFirst)
+      const res = await importSystemConfig(resetFirst, password)
       if (res.cancelled) {
         setImportProgress(null)
         toast.info('已取消加载')
@@ -150,8 +177,11 @@ export function SettingsPage() {
         exportProgress={exportProgress}
         exportLogs={exportLogs}
         exportLogsRef={exportLogsRef}
+        webDAVSettings={webDAVSettings}
+        webDAVSaving={webDAVSaving}
         onInitialize={() => setInitializeConfirmOpen(true)}
-        onExport={() => { void handleExportSystem() }}
+        onExport={(target, password) => { void handleExportSystem(target, password) }}
+        onSaveWebDAV={handleSaveWebDAV}
         onOpenImport={() => {
           setImportProgress(null)
           setImportModalOpen(true)
@@ -166,7 +196,7 @@ export function SettingsPage() {
           setImportModalOpen(false)
           setImportProgress(null)
         }}
-        onImport={(resetFirst) => { void handleImportSystem(resetFirst) }}
+        onImport={(resetFirst, password) => { void handleImportSystem(resetFirst, password) }}
       />
 
       <ConfirmModal

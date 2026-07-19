@@ -23,9 +23,21 @@ type Config struct {
 	App          AppConfig          `yaml:"app"`
 	Runtime      RuntimeConfig      `yaml:"runtime"`
 	Logging      LoggingConfig      `yaml:"logging"`
+	Backup       BackupConfig       `yaml:"backup"`
 	Browser      BrowserConfig      `yaml:"browser"`
 	ProxyCheck   ProxyCheckConfig   `yaml:"proxy_check"`
 	LaunchServer LaunchServerConfig `yaml:"launch_server"`
+}
+
+type BackupConfig struct {
+	WebDAV WebDAVConfig `yaml:"webdav"`
+}
+
+type WebDAVConfig struct {
+	URL       string `yaml:"url"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	RemoteDir string `yaml:"remote_dir"`
 }
 
 type ProxyCheckConfig struct {

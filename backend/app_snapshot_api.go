@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"facade/backend/internal/snapshot"
 	"encoding/json"
+	"facade/backend/internal/snapshot"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -137,13 +137,48 @@ func (a *App) BrowserSnapshotRestore(profileId, snapshotId string) error {
 	_ = metaPath
 
 	userDataDir := a.browserMgr.ResolveUserDataDir(profile)
-	if err := os.RemoveAll(userDataDir); err != nil {
-		return fmt.Errorf("清空用户数据目录失败: %w", err)
-	}
-	if err := os.MkdirAll(userDataDir, 0o755); err != nil {
+	return restoreSnapshotArchive(zipPath, userDataDir)
+}
+
+func restoreSnapshotArchive(zipPath, userDataDir string) error {
+	parentDir := filepath.Dir(userDataDir)
+	if err := os.MkdirAll(parentDir, 0o755); err != nil {
 		return err
 	}
-	return snapshot.UnzipTo(zipPath, userDataDir)
+	stagingDir, err := os.MkdirTemp(parentDir, ".facade-snapshot-restore-*")
+	if err != nil {
+		return fmt.Errorf("创建快照恢复临时目录失败: %w", err)
+	}
+	defer os.RemoveAll(stagingDir)
+	if err := snapshot.UnzipTo(zipPath, stagingDir); err != nil {
+		return fmt.Errorf("校验并解压快照失败: %w", err)
+	}
+
+	rollbackDir := filepath.Join(parentDir, ".facade-snapshot-rollback-"+uuid.NewString())
+	hadCurrent := false
+	if _, err := os.Stat(userDataDir); err == nil {
+		if err := os.Rename(userDataDir, rollbackDir); err != nil {
+			return fmt.Errorf("备份当前用户数据失败: %w", err)
+		}
+		hadCurrent = true
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err := os.Rename(stagingDir, userDataDir); err != nil {
+		if hadCurrent {
+			if rollbackErr := os.Rename(rollbackDir, userDataDir); rollbackErr != nil {
+				return fmt.Errorf("切换快照失败: %v；回滚当前数据失败: %w", err, rollbackErr)
+			}
+		}
+		return fmt.Errorf("切换快照数据失败: %w", err)
+	}
+	if hadCurrent {
+		if err := os.RemoveAll(rollbackDir); err != nil {
+			return fmt.Errorf("快照已恢复，但清理回滚目录失败: %w", err)
+		}
+	}
+	return nil
 }
 
 // BrowserSnapshotDelete 删除快照

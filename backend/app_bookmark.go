@@ -29,22 +29,16 @@ var defaultBookmarkList = []BrowserBookmark{
 	{Name: "Ping0", URL: "https://ping0.cc/"},
 }
 
-var verificationBookmarkList = []BrowserBookmark{
-	{Name: "IPPure", URL: "https://ippure.com/"},
-	{Name: "IPLark", URL: "https://iplark.com/"},
-	{Name: "Ping0", URL: "https://ping0.cc/"},
-}
-
 // BookmarkList 获取默认书签列表（优先 SQLite，降级 config.yaml）
 func (a *App) BookmarkList() []BrowserBookmark {
 	if a.browserMgr.BookmarkDAO != nil {
 		list, err := a.browserMgr.BookmarkDAO.List()
-		if err == nil && len(list) > 0 {
-			return mergeBookmarksByURL(list, verificationBookmarkList)
+		if err == nil {
+			return list
 		}
 	}
 	if len(a.config.Browser.DefaultBookmarks) > 0 {
-		return mergeBookmarksByURL(a.config.Browser.DefaultBookmarks, verificationBookmarkList)
+		return append([]BrowserBookmark{}, a.config.Browser.DefaultBookmarks...)
 	}
 	return append([]BrowserBookmark{}, defaultBookmarkList...)
 }
@@ -60,8 +54,6 @@ func (a *App) BookmarkSave(items []BrowserBookmark) error {
 			valid = append(valid, BrowserBookmark{Name: name, URL: url, OpenOnStart: item.OpenOnStart})
 		}
 	}
-	valid = mergeBookmarksByURL(valid, verificationBookmarkList)
-
 	if a.browserMgr.BookmarkDAO != nil {
 		if err := a.browserMgr.BookmarkDAO.ReplaceAll(valid); err != nil {
 			log.Error("书签保存到数据库失败", logger.F("error", err.Error()))

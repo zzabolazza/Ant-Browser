@@ -31,7 +31,6 @@ type Profile struct {
 	LastError          string   `json:"lastError"`
 	CreatedAt          string   `json:"createdAt"`
 	UpdatedAt          string   `json:"updatedAt"`
-	DeletedAt          string   `json:"deletedAt"`
 	LastStartAt        string   `json:"lastStartAt"`
 	LastStopAt         string   `json:"lastStopAt"`
 }
@@ -72,8 +71,8 @@ type Settings struct {
 	DefaultStartURLs       []string `json:"defaultStartUrls"`
 	LightStartEnabled      bool     `json:"lightStartEnabled"`
 	RestoreLastSession     bool     `json:"restoreLastSession"`
-	StartReadyTimeoutMs int `json:"startReadyTimeoutMs"`
-	StartStableWindowMs int `json:"startStableWindowMs"`
+	StartReadyTimeoutMs    int      `json:"startReadyTimeoutMs"`
+	StartStableWindowMs    int      `json:"startStableWindowMs"`
 }
 
 // CoreInput 内核配置输入

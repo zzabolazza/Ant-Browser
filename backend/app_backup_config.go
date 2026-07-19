@@ -1,11 +1,23 @@
 package backend
 
 import (
-	"facade/backend/internal/config"
 	"database/sql"
+	"facade/backend/internal/config"
 	"fmt"
+	"path/filepath"
 	"strings"
 )
+
+func (a *App) backupResolveLogDir(cfg *config.Config) string {
+	if cfg == nil {
+		return ""
+	}
+	path := strings.TrimSpace(cfg.Logging.FilePath)
+	if path == "" {
+		return ""
+	}
+	return filepath.Dir(a.resolveAppPath(path))
+}
 
 func (a *App) backupResolveDBPath(cfg *config.Config) string {
 	if cfg == nil {

@@ -15,12 +15,8 @@ func ZipDir(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-
 	w := zip.NewWriter(f)
-	defer w.Close()
-
-	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+	walkErr := filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -44,10 +40,22 @@ func ZipDir(src, dest string) error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-		_, err = io.Copy(fw, file)
-		return err
+		_, copyErr := io.Copy(fw, file)
+		closeErr := file.Close()
+		if copyErr != nil {
+			return copyErr
+		}
+		return closeErr
 	})
+	closeZipErr := w.Close()
+	closeFileErr := f.Close()
+	if walkErr != nil {
+		return walkErr
+	}
+	if closeZipErr != nil {
+		return closeZipErr
+	}
+	return closeFileErr
 }
 
 func UnzipTo(src, dest string) error {

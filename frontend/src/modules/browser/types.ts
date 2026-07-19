@@ -18,10 +18,9 @@ export interface BrowserProfile {
   pid: number
   runtimeWarning: string
   lastError: string
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-  lastStartAt?: string
+	createdAt: string
+	updatedAt: string
+	lastStartAt?: string
   lastStopAt?: string
   launchCode?: string
 }

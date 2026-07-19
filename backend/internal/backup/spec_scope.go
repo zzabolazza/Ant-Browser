@@ -47,15 +47,43 @@ func BuildScope(opts BuildOptions) (Scope, error) {
 		Description: "代理配置文件（存在时导出）",
 	})
 
+	dbType := strings.TrimSpace(cfg.Database.Type)
+	dbAbs := ""
+	if dbType == "" || strings.EqualFold(dbType, "sqlite") {
+		dbPath := strings.TrimSpace(cfg.Database.SQLite.Path)
+		if dbPath == "" {
+			dbPath = "data/app.db"
+		}
+		dbAbs = resolvePath(appRootAbs, dbPath)
+		builder.add(ScopeEntry{
+			ID:          "database_sqlite_main",
+			Category:    CategoryAppData,
+			EntryType:   EntryTypeFile,
+			Required:    true,
+			SourcePath:  dbAbs,
+			ArchivePath: "payload/app/database/app.db",
+			Description: "SQLite 一致性快照",
+		})
+	}
+
 	appDataRoot := resolvePath(appRootAbs, "data")
+	appDataExcludes := []string{}
+	if dbAbs != "" && isPathWithin(dbAbs, appDataRoot) {
+		appDataExcludes = []string{dbAbs, dbAbs + "-wal", dbAbs + "-shm"}
+	}
+	logDir := detectLogDir(appRootAbs, strings.TrimSpace(cfg.Logging.FilePath))
+	if logDir != "" && isPathWithin(logDir, appDataRoot) {
+		appDataExcludes = append(appDataExcludes, logDir)
+	}
 	builder.add(ScopeEntry{
-		ID:          "app_data_root",
-		Category:    CategoryAppData,
-		EntryType:   EntryTypeDir,
-		Required:    true,
-		SourcePath:  appDataRoot,
-		ArchivePath: "payload/app/data/",
-		Description: "应用数据目录（含数据库、快照及默认浏览器数据）",
+		ID:                 "app_data_root",
+		Category:           CategoryAppData,
+		EntryType:          EntryTypeDir,
+		Required:           true,
+		SourcePath:         appDataRoot,
+		ArchivePath:        "payload/app/data/",
+		Description:        "应用数据目录（含快照、扩展及默认浏览器数据）",
+		ExcludeSourcePaths: appDataExcludes,
 	})
 
 	userDataRootSetting := strings.TrimSpace(cfg.Browser.UserDataRoot)
@@ -84,55 +112,6 @@ func BuildScope(opts BuildOptions) (Scope, error) {
 			SourcePath:  corePath,
 			ArchivePath: "payload/browser/cores/external/" + coreID + "/",
 			Description: "已配置的内核目录",
-		})
-	}
-
-	dbType := strings.TrimSpace(cfg.Database.Type)
-	if dbType == "" || strings.EqualFold(dbType, "sqlite") {
-		dbPath := strings.TrimSpace(cfg.Database.SQLite.Path)
-		if dbPath == "" {
-			dbPath = "data/app.db"
-		}
-		dbAbs := resolvePath(appRootAbs, dbPath)
-		builder.add(ScopeEntry{
-			ID:          "database_sqlite_main",
-			Category:    CategoryAppData,
-			EntryType:   EntryTypeFile,
-			Required:    true,
-			SourcePath:  dbAbs,
-			ArchivePath: "payload/app/database/app.db",
-			Description: "SQLite 主数据库（若已被 data 覆盖则自动去重）",
-		})
-		builder.add(ScopeEntry{
-			ID:          "database_sqlite_wal",
-			Category:    CategoryAppData,
-			EntryType:   EntryTypeFile,
-			Required:    false,
-			SourcePath:  dbAbs + "-wal",
-			ArchivePath: "payload/app/database/app.db-wal",
-			Description: "SQLite WAL 文件（存在时导出）",
-		})
-		builder.add(ScopeEntry{
-			ID:          "database_sqlite_shm",
-			Category:    CategoryAppData,
-			EntryType:   EntryTypeFile,
-			Required:    false,
-			SourcePath:  dbAbs + "-shm",
-			ArchivePath: "payload/app/database/app.db-shm",
-			Description: "SQLite SHM 文件（存在时导出）",
-		})
-	}
-
-	logDir := detectLogDir(appRootAbs, strings.TrimSpace(cfg.Logging.FilePath))
-	if logDir != "" {
-		builder.add(ScopeEntry{
-			ID:          "logs_root",
-			Category:    CategoryLogs,
-			EntryType:   EntryTypeDir,
-			Required:    false,
-			SourcePath:  logDir,
-			ArchivePath: "payload/app/logs/",
-			Description: "日志目录（存在时导出）",
 		})
 	}
 

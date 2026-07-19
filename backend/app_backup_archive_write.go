@@ -1,9 +1,9 @@
 package backend
 
 import (
-	"facade/backend/internal/backup"
 	"archive/zip"
 	"encoding/json"
+	"facade/backend/internal/backup"
 	"fmt"
 	"io"
 	"io/fs"
@@ -75,7 +75,7 @@ func backupWritePackageZip(zipPath string, scope backup.Scope, manifest backup.M
 			}
 			entryAddedFiles := 0
 			if info.IsDir() {
-				n, err := backupZipAddDir(w, entry.SourcePath, entry.ArchivePath, zipPath)
+				n, err := backupZipAddDir(w, entry.SourcePath, entry.ArchivePath, zipPath, entry.ExcludeSourcePaths)
 				if err != nil {
 					return fmt.Errorf("写入目录失败(%s): %w", entry.ID, err)
 				}
@@ -127,17 +127,30 @@ func backupWritePackageZip(zipPath string, scope backup.Scope, manifest backup.M
 	return includedEntries, skippedEntries, fileCount, nil
 }
 
-func backupZipAddDir(w *zip.Writer, srcDir, archiveBase, outputZipPath string) (int, error) {
+func backupZipAddDir(w *zip.Writer, srcDir, archiveBase, outputZipPath string, excludePaths []string) (int, error) {
 	base := strings.TrimSuffix(filepath.ToSlash(strings.TrimSpace(archiveBase)), "/")
 	if base == "" {
 		return 0, fmt.Errorf("archive base 不能为空")
 	}
+	if _, err := w.Create(base + "/"); err != nil {
+		return 0, err
+	}
 	fileCount := 0
+	excluded := make(map[string]struct{}, len(excludePaths))
+	for _, path := range excludePaths {
+		excluded[backupNormalizePath(path)] = struct{}{}
+	}
 	err := filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if backupSamePath(path, outputZipPath) {
+		if backupSamePath(path, outputZipPath) || backupSamePath(path, outputZipPath+".tmp") {
+			return nil
+		}
+		if _, skip := excluded[backupNormalizePath(path)]; skip {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if d.Type()&os.ModeSymlink != 0 {

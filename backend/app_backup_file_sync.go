@@ -151,9 +151,20 @@ func backupSHA256File(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func backupShouldSkipAppDBFile(rel string) bool {
-	r := strings.TrimSpace(filepath.ToSlash(rel))
-	return r == "app.db" || r == "app.db-wal" || r == "app.db-shm"
+func backupDBFileSkipMatcher(appDataRoot, dbPath string) func(string) bool {
+	targets := map[string]struct{}{
+		backupNormalizePath(dbPath):          {},
+		backupNormalizePath(dbPath + "-wal"): {},
+		backupNormalizePath(dbPath + "-shm"): {},
+	}
+	return func(rel string) bool {
+		rel = strings.TrimSpace(filepath.FromSlash(rel))
+		if rel == "" {
+			return false
+		}
+		_, ok := targets[backupNormalizePath(filepath.Join(appDataRoot, rel))]
+		return ok
+	}
 }
 
 func backupRemoveContentsExcept(dir string, keep map[string]struct{}) error {
@@ -171,6 +182,19 @@ func backupRemoveContentsExcept(dir string, keep map[string]struct{}) error {
 	for _, entry := range entries {
 		p := filepath.Join(dir, entry.Name())
 		if backupPathInSet(p, keep) {
+			continue
+		}
+		containsKeptPath := false
+		for keptPath := range keep {
+			if backupPathWithin(keptPath, p) && !backupSamePath(keptPath, p) {
+				containsKeptPath = true
+				break
+			}
+		}
+		if containsKeptPath && entry.IsDir() {
+			if err := backupRemoveContentsExcept(p, keep); err != nil {
+				return err
+			}
 			continue
 		}
 		if err := os.RemoveAll(p); err != nil {

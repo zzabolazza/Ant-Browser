@@ -3,6 +3,7 @@ package backend
 import (
 	"facade/backend/internal/apppath"
 	"facade/backend/internal/backup"
+	"facade/backend/internal/config"
 	"time"
 )
 
@@ -11,9 +12,20 @@ type BackupManifest = backup.Manifest
 
 // BackupGetScopeDefinition 返回当前环境下的备份范围定义（第一阶段：范围与包格式）。
 func (a *App) BackupGetScopeDefinition() (BackupScope, error) {
+	cfg := a.config
+	if cfg == nil {
+		cfg = config.DefaultConfig()
+	} else if a.browserMgr != nil && a.browserMgr.CoreDAO != nil {
+		if cores, err := a.browserMgr.CoreDAO.List(); err == nil {
+			cloned := *cfg
+			cloned.Browser = cfg.Browser
+			cloned.Browser.Cores = cores
+			cfg = &cloned
+		}
+	}
 	return backup.BuildScope(backup.BuildOptions{
 		AppRoot: apppath.StateRoot(a.appRoot),
-		Config:  a.config,
+		Config:  cfg,
 	})
 }
 

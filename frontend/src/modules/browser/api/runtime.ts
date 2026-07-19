@@ -1,6 +1,8 @@
 import type { BrowserCore, BrowserProfile, BrowserProxy, BrowserSettings } from '../types'
 
 export async function getBindings() {
+  const direct = getGoApp()
+  if (direct) return direct
   try {
     return await import('../../../wailsjs/go/main/App')
   } catch {
