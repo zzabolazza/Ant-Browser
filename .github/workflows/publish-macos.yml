@@ -54,16 +54,35 @@ jobs:
       - name: Add Go bin to PATH
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Build unsigned macOS package
+      - name: Resolve build version
+        id: version
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION_OVERRIDE: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          args=(--arch "${{ matrix.arch }}")
-          if [[ -n "${VERSION:-}" ]]; then
-            args+=(--version "$VERSION")
+          version="${VERSION_OVERRIDE:-}"
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            if [[ ! "${GITHUB_REF_NAME:-}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              echo "[ERROR] release tag must match vX.Y.Z: ${GITHUB_REF_NAME:-<empty>}" >&2
+              exit 1
+            fi
+            version="${BASH_REMATCH[1]}"
+          elif [[ -z "$version" ]]; then
+            version="$(node -p 'require("./wails.json").info.productVersion')"
           fi
-          bash publish/mac/publish-mac.sh "${args[@]}"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "[ERROR] version must match X.Y.Z: $version" >&2
+            exit 1
+          fi
+
+          node -e 'const fs = require("fs"); const path = "wails.json"; const config = JSON.parse(fs.readFileSync(path, "utf8")); config.info.productVersion = process.argv[1]; fs.writeFileSync(path, JSON.stringify(config, null, 2) + "\n");' "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "Resolved build version: $version"
+
+      - name: Build unsigned macOS package
+        run: bash publish/mac/publish-mac.sh --arch "${{ matrix.arch }}" --version "$VERSION"
 
       - name: Validate app bundle
         run: |
@@ -73,13 +92,15 @@ jobs:
           echo "Validating: $app_path"
           test -x "$app_path/Contents/MacOS/facade"
           plutil -lint "$app_path/Contents/Info.plist"
+          test "$(plutil -extract CFBundleShortVersionString raw "$app_path/Contents/Info.plist")" = "$VERSION"
+          test "$(plutil -extract CFBundleVersion raw "$app_path/Contents/Info.plist")" = "$VERSION"
           ditto -x -k "$zip_path" /tmp/facade-macos-validate
           test -x "/tmp/facade-macos-validate/$(basename "$app_path")/Contents/MacOS/facade"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: facade-macos-${{ matrix.arch }}
+          name: facade-${{ steps.version.outputs.version }}-macos-${{ matrix.arch }}
           path: |
             publish/output/Facade-*-macos-${{ matrix.arch }}.app
             publish/output/Facade-*-macos-${{ matrix.arch }}.zip
