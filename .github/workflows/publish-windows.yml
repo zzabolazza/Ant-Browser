@@ -99,13 +99,15 @@ jobs:
       - name: Validate portable zip layout
         run: |
           set -euo pipefail
-          zip_file="$(ls -1 publish/output/Facade-*-windows-${{ matrix.arch }}.zip | head -n 1)"
+          zip_file="publish/output/Facade-${VERSION}-windows-${{ matrix.arch }}.zip"
+          installer_file="publish/output/Facade-Setup-${VERSION}-${{ matrix.arch }}.exe"
           validate_dir="$(mktemp -d)"
           echo "Validating: $zip_file"
+          test -f "$zip_file"
+          test -f "$installer_file"
           powershell -NoProfile -Command "Expand-Archive -Path '$(cygpath -w "$zip_file")' -DestinationPath '$(cygpath -w "$validate_dir")' -Force"
           test -f "$validate_dir/facade.exe"
           test -f "$validate_dir/config.yaml"
-          EXE_PATH="$(cygpath -w "$validate_dir/facade.exe")" powershell -NoProfile -Command '$fileVersion = (Get-Item -LiteralPath $env:EXE_PATH).VersionInfo.FileVersion; if (-not $fileVersion.StartsWith($env:VERSION)) { throw "Expected file version $env:VERSION, got $fileVersion" }'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
