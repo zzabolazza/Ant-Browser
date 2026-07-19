@@ -105,7 +105,7 @@ jobs:
           powershell -NoProfile -Command "Expand-Archive -Path '$(cygpath -w "$zip_file")' -DestinationPath '$(cygpath -w "$validate_dir")' -Force"
           test -f "$validate_dir/facade.exe"
           test -f "$validate_dir/config.yaml"
-          EXE_PATH="$(cygpath -w "$validate_dir/facade.exe")" powershell -NoProfile -Command '$productVersion = (Get-Item -LiteralPath $env:EXE_PATH).VersionInfo.ProductVersion; if (-not $productVersion.StartsWith($env:VERSION)) { throw "Expected product version $env:VERSION, got $productVersion" }'
+          EXE_PATH="$(cygpath -w "$validate_dir/facade.exe")" powershell -NoProfile -Command '$fileVersion = (Get-Item -LiteralPath $env:EXE_PATH).VersionInfo.FileVersion; if (-not $fileVersion.StartsWith($env:VERSION)) { throw "Expected file version $env:VERSION, got $fileVersion" }'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
