@@ -37,7 +37,7 @@ Options:
 ## Prerequisites
 
 - Go (matching `go.mod`) and Node 20
-- Wails CLI v2 (`go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0`)
+- Wails CLI v2 (`go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0`)
 - NSIS in `PATH` for the installer step (`choco install nsis`); omit or use `--skip-installer` to build the zip only
 
 ## CI

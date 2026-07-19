@@ -138,17 +138,11 @@ if [[ ! -f "$CONFIG_INIT_SRC" ]]; then
 fi
 
 if [[ "$SKIP_BUILD" -ne 1 ]]; then
-  echo "[1/4] Installing frontend dependencies..."
-  (cd "$ROOT_DIR/frontend" && BROWSERSLIST_IGNORE_OLD_DATA=1 npm ci --prefer-offline --no-audit --no-fund)
-
-  echo "[2/4] Building frontend assets..."
-  (cd "$ROOT_DIR/frontend" && BROWSERSLIST_IGNORE_OLD_DATA=1 npm run build:clean)
-
-  echo "[3/4] Building Windows binary with Wails..."
+  echo "[1/2] Building Windows binary and frontend assets with Wails..."
   rm -f "$APP_BIN"
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "windows/$ARCH" -o facade.exe
+    BROWSERSLIST_IGNORE_OLD_DATA=1 wails build -platform "windows/$ARCH" -o facade.exe
   )
 else
   echo "[WARN] skipping build step"
@@ -159,7 +153,7 @@ if [[ ! -f "$APP_BIN" ]]; then
   exit 1
 fi
 
-echo "[4/4] Assembling staging files..."
+echo "[2/2] Assembling staging files..."
 APP_STAGE="$STAGING_ROOT/$TARGET/app"
 rm -rf "$APP_STAGE"
 mkdir -p "$APP_STAGE" "$OUTPUT_DIR"

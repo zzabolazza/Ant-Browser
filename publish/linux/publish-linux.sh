@@ -155,13 +155,7 @@ if [[ ! -f "$WAILS_CONFIG" ]]; then
 fi
 
 if [[ "$SKIP_BUILD" -ne 1 ]]; then
-  echo "[1/5] Installing frontend dependencies..."
-  (cd "$ROOT_DIR/frontend" && BROWSERSLIST_IGNORE_OLD_DATA=1 npm ci --prefer-offline --no-audit --no-fund)
-
-  echo "[2/5] Building frontend assets..."
-  (cd "$ROOT_DIR/frontend" && BROWSERSLIST_IGNORE_OLD_DATA=1 npm run build:clean)
-
-  echo "[3/5] Building app binary with Wails..."
+  echo "[1/3] Building app binary and frontend assets with Wails..."
   rm -f "$APP_BIN"
   WAILS_BUILD_TAGS=()
   if pkg-config --exists webkit2gtk-4.0; then
@@ -177,7 +171,7 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
   fi
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "linux/$ARCH" "${WAILS_BUILD_TAGS[@]}" -o facade
+    BROWSERSLIST_IGNORE_OLD_DATA=1 wails build -platform "linux/$ARCH" "${WAILS_BUILD_TAGS[@]}" -o facade
   )
 else
   echo "[WARN] skipping build step"
@@ -208,7 +202,7 @@ if [[ -z "${WEBKIT_DEB_DEP:-}" ]]; then
 fi
 echo "  .deb WebKitGTK Depends: $WEBKIT_DEB_DEP"
 
-echo "[4/5] Assembling staging files..."
+echo "[2/3] Assembling staging files..."
 APP_STAGE="$STAGING_ROOT/$TARGET/app"
 DEB_STAGE="$STAGING_ROOT/$TARGET/deb"
 rm -rf "$APP_STAGE" "$DEB_STAGE"
@@ -369,7 +363,7 @@ else
   dpkg-deb --build "$PKG_ROOT" "$OUTPUT_DIR/$DEB_NAME" >/dev/null
 fi
 
-echo "[5/5] Artifacts generated:"
+echo "[3/3] Artifacts generated:"
 echo "  - $OUTPUT_DIR/$TAR_NAME"
 echo "  - $OUTPUT_DIR/$DEB_NAME"
 

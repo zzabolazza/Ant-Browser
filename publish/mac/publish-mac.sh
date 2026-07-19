@@ -152,16 +152,10 @@ if [[ ! -f "$CONFIG_INIT_SRC" ]]; then
 fi
 
 if [[ "$SKIP_BUILD" -ne 1 ]]; then
-  echo "[1/4] Installing frontend dependencies..."
-  (cd "$ROOT_DIR/frontend" && npm ci --prefer-offline --no-audit --no-fund)
-
-  echo "[2/4] Building frontend assets..."
-  (cd "$ROOT_DIR/frontend" && npm run build:clean)
-
-  echo "[3/4] Building macOS app bundle with Wails..."
+  echo "[1/2] Building macOS app bundle and frontend assets with Wails..."
   (
     cd "$ROOT_DIR"
-    wails build -s -platform "darwin/$ARCH" -o facade
+    BROWSERSLIST_IGNORE_OLD_DATA=1 wails build -platform "darwin/$ARCH" -o facade
   )
 else
   echo "[WARN] skipping build step"
@@ -173,7 +167,7 @@ if [[ -z "$APP_SOURCE" || ! -d "$APP_SOURCE" ]]; then
   exit 1
 fi
 
-echo "[4/4] Assembling macOS app bundle..."
+echo "[2/2] Assembling macOS app bundle..."
 rm -rf "$APP_STAGE" "$APP_EXPORT"
 mkdir -p "$STAGE_DIR" "$OUTPUT_DIR"
 ditto "$APP_SOURCE" "$APP_STAGE"
