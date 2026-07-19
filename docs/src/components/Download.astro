@@ -2,63 +2,94 @@
 const platforms = [
   {
     name: 'Windows',
-    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" />`,
-    file: 'Facade-Setup-*.exe',
-    note: '安装版 / 便携版',
-    url: 'https://github.com/zzabolazza/Facade/releases',
-  },
-  {
-    name: 'Linux',
-    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />`,
-    file: 'facade_*.deb',
-    note: '推荐 apt install',
-    url: 'https://github.com/zzabolazza/Facade/releases',
+    eyebrow: 'RECOMMENDED',
+    note: '安装程序与便携包',
+    file: 'Facade-Setup-1.3.6.exe',
+    meta: 'Windows 10 / 11 · x64 / arm64',
+    primary: true,
+    icon: `<path d="M3 5.5 11 4v7H3V5.5Zm9-1.7L21 2v9h-9V3.8ZM3 12h8v7l-8-1.5V12Zm9 0h9v9l-9-1.7V12Z"/>`,
   },
   {
     name: 'macOS',
-    icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 7.41A2.25 2.25 0 012.25 5.495V5.25" />`,
-    file: 'Facade-*.app',
-    note: 'unsigned 内测包',
-    url: 'https://github.com/zzabolazza/Facade/releases',
+    eyebrow: 'APPLE SILICON + INTEL',
+    note: '应用程序压缩包',
+    file: 'Facade-1.3.6-macos.zip',
+    meta: 'macOS · arm64 / amd64',
+    icon: `<path d="M16.7 12.9c0-2.2 1.8-3.3 1.9-3.4a4 4 0 0 0-3.2-1.7c-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.7 2.9-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.3-.8 1.5 0 2 .8 3.3.8 1.4 0 2.2-1.2 3-2.4.9-1.3 1.3-2.6 1.3-2.7-.1 0-3.6-1.4-3.6-4.2ZM14.5 6.4A4 4 0 0 0 15.4 3a4 4 0 0 0-2.7 1.4 3.7 3.7 0 0 0-.9 2.8c1 .1 2-.4 2.7-.8Z"/>`,
+  },
+  {
+    name: 'Linux',
+    eyebrow: 'DEB + PORTABLE',
+    note: 'Debian 包与便携包',
+    file: 'facade_1.3.6_amd64.deb',
+    meta: 'Ubuntu / Debian · amd64 / arm64',
+    icon: `<path d="M12 2.5c-3 0-5 2.4-5 5.6 0 1-.2 1.8-.7 2.7-.7 1.1-1.7 2.6-1.3 4.3.3 1.2 1.3 1.8 2.3 1.8.3 2 2 3.6 4.1 3.6h1.2c2.1 0 3.8-1.6 4.1-3.6 1 0 2-.6 2.3-1.8.4-1.7-.6-3.2-1.3-4.3-.5-.9-.7-1.7-.7-2.7 0-3.2-2-5.6-5-5.6Z"/><circle cx="10" cy="8" r=".7" fill="currentColor" stroke="none"/><circle cx="14" cy="8" r=".7" fill="currentColor" stroke="none"/><path d="M10 11.5c.7.5 1.3.7 2 .7s1.3-.2 2-.7M8.5 16.5c2.3.7 4.7.7 7 0"/>`,
   },
 ]
----
-<section class="bg-surface-card/30 py-20 md:py-28">
-  <div class="mx-auto max-w-5xl px-6">
-    <h2 class="mb-4 text-center text-3xl font-bold md:text-4xl">
-      下载 Facade
-    </h2>
-    <p class="mx-auto mb-14 max-w-xl text-center text-muted">
-      支持 Windows、Linux、macOS，选择对应平台即可下载。
-    </p>
 
-    <div class="grid gap-6 sm:grid-cols-3">
-      {platforms.map((p) => (
+const releaseUrl = 'https://github.com/zzabolazza/Facade/releases/tag/v1.3.6'
+---
+
+<section id="download" class="relative overflow-hidden border-t border-white/[0.06] py-24 sm:py-32">
+  <div class="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-[520px] max-w-5xl rounded-full bg-gradient-to-r from-indigo-600/10 via-blue-500/5 to-cyan-400/10 blur-[100px]"></div>
+  <div class="relative mx-auto max-w-7xl px-6">
+    <div class="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-300">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+          最新稳定版 v1.3.6
+        </div>
+        <h2 class="text-3xl font-bold tracking-[-0.035em] text-white sm:text-5xl">选择你的平台</h2>
+        <p class="mt-4 max-w-xl text-sm leading-7 text-muted sm:text-base">所有版本均通过 GitHub Releases 分发。下载后即可在本地创建隔离浏览器环境。</p>
+      </div>
+      <a href={releaseUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-indigo-300 transition hover:text-indigo-200">
+        查看全部发布文件
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5" /></svg>
+      </a>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      {platforms.map((platform) => (
         <a
-          href={p.url}
+          href={releaseUrl}
           target="_blank"
           rel="noopener noreferrer"
-          class="group flex flex-col items-center rounded-2xl border border-surface-border bg-surface-card p-8 text-center transition hover:border-accent-from/30 hover:shadow-lg hover:shadow-accent-from/5"
+          class:list={[
+            'group relative flex min-h-[290px] flex-col overflow-hidden rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-7',
+            platform.primary
+              ? 'border-indigo-400/25 bg-gradient-to-br from-indigo-500/[0.13] via-[#101522] to-[#0c111c] shadow-[0_20px_60px_rgba(79,70,229,.10)]'
+              : 'border-white/[0.08] bg-[#0e1320] hover:border-white/[0.16]',
+          ]}
         >
-          <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-from/15 to-accent-to/15 text-accent-from transition group-hover:scale-105">
-            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" set:html={p.icon} />
+          <div class="flex items-start justify-between">
+            <span class:list={['flex h-12 w-12 items-center justify-center rounded-2xl', platform.primary ? 'bg-indigo-400 text-white' : 'bg-white/[0.055] text-[#b4bdd3]']}>
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={platform.icon} />
+            </span>
+            <span class:list={['text-[9px] font-semibold tracking-[0.14em]', platform.primary ? 'text-indigo-300' : 'text-[#68738b]']}>{platform.eyebrow}</span>
           </div>
-          <h3 class="mb-1 text-lg font-semibold">{p.name}</h3>
-          <p class="mb-4 text-xs text-muted">{p.note}</p>
-          <span class="mt-auto inline-flex items-center gap-1 text-sm font-medium text-accent-from transition group-hover:gap-2">
-            下载
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </span>
+
+          <div class="mt-8">
+            <h3 class="text-xl font-semibold text-white">{platform.name}</h3>
+            <p class="mt-1.5 text-sm text-muted">{platform.note}</p>
+          </div>
+          <div class="mt-7 rounded-xl border border-white/[0.07] bg-black/15 px-3.5 py-3">
+            <p class="truncate font-mono text-[10px] text-[#c1c9dc]">{platform.file}</p>
+            <p class="mt-1.5 text-[10px] text-[#626d84]">{platform.meta}</p>
+          </div>
+
+          <div class:list={['mt-auto flex items-center justify-between pt-6 text-sm font-semibold', platform.primary ? 'text-indigo-200' : 'text-[#aab4ca]']}>
+            <span>前往下载</span>
+            <span class:list={['flex h-8 w-8 items-center justify-center rounded-lg transition group-hover:translate-x-1', platform.primary ? 'bg-indigo-400/20' : 'bg-white/[0.05]']}>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5" /></svg>
+            </span>
+          </div>
         </a>
       ))}
     </div>
 
-    <p class="mt-8 text-center text-sm text-muted">
-      当前版本：<span class="font-mono text-text/70">v1.3.2</span>
-      &nbsp;·&nbsp;
-      <a href="https://github.com/zzabolazza/Facade/blob/master/CHANGELOG.md" class="text-accent-from/80 hover:text-accent-from">更新日志</a>
-    </p>
+    <div class="mt-6 flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-5 py-4 text-xs text-muted sm:flex-row sm:items-center">
+      <span>下载前请阅读对应平台说明；macOS 当前为未签名内测包。</span>
+      <a href="https://github.com/zzabolazza/Facade/blob/master/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="shrink-0 font-medium text-[#b1bad0] transition hover:text-white">查看更新日志</a>
+    </div>
   </div>
 </section>

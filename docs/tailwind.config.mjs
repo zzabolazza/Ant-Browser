@@ -5,16 +5,18 @@ export default {
     extend: {
       colors: {
         surface: {
-          DEFAULT: '#0f1117',
-          card: '#1a1d27',
-          border: 'rgba(255,255,255,0.06)',
+          DEFAULT: '#070912',
+          card: '#0f1421',
+          elevated: '#151b2b',
+          border: 'rgba(163,177,221,0.12)',
         },
         accent: {
-          from: '#4b6eff',
-          to: '#7c5cff',
+          from: '#6d5dfc',
+          to: '#25c9e8',
+          blue: '#4f8cff',
         },
-        muted: '#6d7186',
-        text: '#e7e8f2',
+        muted: '#8992aa',
+        text: '#f4f7ff',
       },
     },
   },
