@@ -148,7 +148,7 @@ export function ExtensionInstallCard({
             {lookup.storeUrl ? (
               <Button type="button" size="sm" variant="secondary" onClick={() => BrowserOpenURL(lookup.storeUrl)}>
                 <ExternalLink className="h-4 w-4" />
-                商店页
+                商店
               </Button>
             ) : null}
             <Button
