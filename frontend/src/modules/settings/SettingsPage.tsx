@@ -5,6 +5,7 @@ import {
   exportSystemConfig,
   getBackupWebDAVSettings,
   importSystemConfig,
+  pickImportBackupFile,
   saveBackupWebDAVSettings,
   type BackupWebDAVSettings,
 } from './api'
@@ -12,11 +13,20 @@ import { BackupImportModal, BackupSettingsCard } from './components/BackupSettin
 import { ThemeSettingsCard } from './components/ThemeSettingsCard'
 import type { BackupExportLogItem, BackupExportProgress } from './progress'
 import { useSettingsProgressEffects } from './hooks/useSettingsProgressEffects'
-import { DEFAULT_THEME, getStoredTheme, resetThemeMode, setThemeMode, type ThemeMode } from '../../shared/theme/theme'
+import {
+  DEFAULT_THEME,
+  flushThemeForBackup,
+  getStoredTheme,
+  hydrateThemeFromBackend,
+  resetThemeMode,
+  setThemeMode,
+  type ThemeMode,
+} from '../../shared/theme/theme'
 
 export function SettingsPage() {
   const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme())
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importFilePath, setImportFilePath] = useState('')
   const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState<'none' | 'init' | 'export' | 'import-reset' | 'import-merge'>('none')
   const [exportProgress, setExportProgress] = useState<BackupExportProgress | null>(null)
@@ -30,6 +40,10 @@ export function SettingsPage() {
 
   useEffect(() => {
     void getBackupWebDAVSettings().then(setWebDAVSettings).catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    void hydrateThemeFromBackend().then(setTheme).catch(() => undefined)
   }, [])
 
   const handleThemeChange = (nextTheme: ThemeMode) => {
@@ -70,6 +84,7 @@ export function SettingsPage() {
     setExportLogs([])
     setExportProgress({ phase: 'starting', progress: 0, message: '准备导出...' })
     try {
+      await flushThemeForBackup()
       const res = await exportSystemConfig(password, target)
       if (res.cancelled) {
         setExportProgress(null)
@@ -113,15 +128,35 @@ export function SettingsPage() {
     }
   }
 
+  const handleOpenImport = async () => {
+    if (actionLoading !== 'none') return
+    try {
+      const picked = await pickImportBackupFile()
+      if (picked.cancelled || !picked.path) {
+        toast.info('已取消选择备份文件')
+        return
+      }
+      setImportFilePath(picked.path)
+      setImportProgress(null)
+      setImportModalOpen(true)
+    } catch (error: any) {
+      toast.error(error?.message || '选择备份文件失败')
+    }
+  }
+
   const handleImportSystem = async (resetFirst: boolean, password: string) => {
+    if (!importFilePath) {
+      toast.error('请先选择备份文件')
+      return
+    }
     setActionLoading(resetFirst ? 'import-reset' : 'import-merge')
     setImportProgress({
       phase: 'starting',
       progress: 0,
-      message: resetFirst ? '等待选择加密备份（完整恢复）...' : '等待选择加密备份（合并导入）...',
+      message: resetFirst ? '正在完整恢复...' : '正在合并导入...',
     })
     try {
-      const res = await importSystemConfig(resetFirst, password)
+      const res = await importSystemConfig(resetFirst, password, importFilePath)
       if (res.cancelled) {
         setImportProgress(null)
         toast.info('已取消加载')
@@ -150,7 +185,10 @@ export function SettingsPage() {
       } else {
         toast.success(`加载完成：导入 ${imported}，跳过 ${skipped}，冲突 ${conflicts}`)
       }
+      const restoredTheme = await hydrateThemeFromBackend()
+      setTheme(restoredTheme)
       setImportModalOpen(false)
+      setImportFilePath('')
       setImportProgress(null)
     } catch (error: any) {
       setImportProgress(prev => ({
@@ -182,18 +220,17 @@ export function SettingsPage() {
         onInitialize={() => setInitializeConfirmOpen(true)}
         onExport={(target, password) => { void handleExportSystem(target, password) }}
         onSaveWebDAV={handleSaveWebDAV}
-        onOpenImport={() => {
-          setImportProgress(null)
-          setImportModalOpen(true)
-        }}
+        onOpenImport={() => { void handleOpenImport() }}
       />
 
       <BackupImportModal
         open={importModalOpen}
+        filePath={importFilePath}
         actionLoading={actionLoading}
         importProgress={importProgress}
         onClose={() => {
           setImportModalOpen(false)
+          setImportFilePath('')
           setImportProgress(null)
         }}
         onImport={(resetFirst, password) => { void handleImportSystem(resetFirst, password) }}

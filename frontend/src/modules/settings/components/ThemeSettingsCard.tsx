@@ -27,7 +27,7 @@ const THEME_PREVIEWS: Record<ThemeMode, { background: string; surface: string; a
 
 export function ThemeSettingsCard({ value, onChange }: ThemeSettingsCardProps) {
   return (
-    <Card title="主题" subtitle="选择界面配色，主题偏好会保存在本机" padding="md">
+    <Card title="主题" subtitle="选择界面配色，主题偏好会保存在本机并随系统备份一起导出" padding="md">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {THEME_OPTIONS.map((option) => {

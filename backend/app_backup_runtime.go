@@ -14,7 +14,9 @@ func (a *App) backupStopRuntimeForMaintenance() {
 				_ = a.stopProcessCmd(cmd)
 			}
 		}
+		// 清空内存实例，避免后续 ReloadConfig/绑定修复把恢复前的实例写回数据库。
 		a.browserMgr.BrowserProcesses = make(map[string]*exec.Cmd)
+		a.browserMgr.Profiles = make(map[string]*browser.Profile)
 		a.browserMgr.Mutex.Unlock()
 	}
 
@@ -25,16 +27,21 @@ func (a *App) backupStopRuntimeForMaintenance() {
 }
 
 func (a *App) backupReloadAfterMutation(migrateLegacy bool) error {
+	// 必须先清空内存实例，再 ReloadConfig。否则 reconcileProfileProxyBindings
+	// 会把恢复前残留在内存中的「默认实例」等 upsert 回已替换的数据库。
+	if a.browserMgr != nil {
+		a.browserMgr.Mutex.Lock()
+		a.browserMgr.Profiles = make(map[string]*browser.Profile)
+		a.browserMgr.BrowserProcesses = make(map[string]*exec.Cmd)
+		a.browserMgr.Mutex.Unlock()
+	}
+
 	if err := a.ReloadConfig(); err != nil {
 		return err
 	}
 
 	if a.browserMgr != nil {
 		a.browserMgr.Config = a.config
-		a.browserMgr.Mutex.Lock()
-		a.browserMgr.Profiles = make(map[string]*browser.Profile)
-		a.browserMgr.BrowserProcesses = make(map[string]*exec.Cmd)
-		a.browserMgr.Mutex.Unlock()
 	}
 
 	if migrateLegacy {
@@ -44,6 +51,7 @@ func (a *App) backupReloadAfterMutation(migrateLegacy bool) error {
 		a.browserMgr.InitData()
 	}
 	a.loadProxies()
+	a.reconcileProfileProxyBindings()
 
 	if a.launchCodeSvc != nil {
 		_ = a.launchCodeSvc.LoadAll()

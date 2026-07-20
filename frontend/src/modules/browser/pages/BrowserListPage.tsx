@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from '../../../shared/components'
+import { flushThemeForBackup } from '../../../shared/theme/theme'
 import type { BrowserProfile, BrowserProfileCopyOptions, BrowserProxy } from '../types'
 import { BrowserListHeader } from '../components/BrowserListLayout'
 import { BatchToolbar } from '../components/BrowserListWidgets'
@@ -24,6 +25,7 @@ import {
   updateBrowserProfile,
   exportFullBrowserBackup,
   importFullBrowserBackup,
+  pickFullBrowserBackupFile,
 } from '../api'
 
 type BackupLoadingMode = 'none' | 'export' | 'import-merge' | 'import-reset'
@@ -286,6 +288,7 @@ export function BrowserListPage() {
     }
     setBackupLoadingMode('export')
     try {
+      await flushThemeForBackup()
       const result = await exportFullBrowserBackup(password)
       if (result.cancelled) return
       toast.success(result.zipPath ? `备份已导出：${result.zipPath}` : (result.message || '备份已导出'))
@@ -299,9 +302,14 @@ export function BrowserListPage() {
   const handleImportFullBackup = async (resetFirst: boolean, password: string) => {
     if (backupLoadingMode !== 'none') return
     const mode: BackupLoadingMode = resetFirst ? 'import-reset' : 'import-merge'
-    setBackupLoadingMode(mode)
     try {
-      const result = await importFullBrowserBackup(resetFirst, password)
+      const picked = await pickFullBrowserBackupFile()
+      if (picked.cancelled || !picked.path) {
+        toast.info('已取消选择备份文件')
+        return
+      }
+      setBackupLoadingMode(mode)
+      const result = await importFullBrowserBackup(resetFirst, password, picked.path)
       if (result.cancelled) return
       toast.success(result.message || (resetFirst ? '备份已恢复' : '备份已合并'))
       setSelectedIds(new Set())

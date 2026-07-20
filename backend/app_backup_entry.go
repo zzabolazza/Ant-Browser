@@ -114,10 +114,36 @@ func (a *App) BackupExportPackageToWebDAV(password string) (map[string]interface
 	return result, nil
 }
 
-// BackupImportPackage 从加密备份加载配置与数据。
+// BackupPickImportFile 打开文件选择对话框，返回待导入的加密备份路径。
+func (a *App) BackupPickImportFile() (map[string]interface{}, error) {
+	if a.ctx == nil {
+		return nil, fmt.Errorf("应用上下文未初始化")
+	}
+	zipPath, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title: "选择加密备份",
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "Facade 加密备份 (*.facade)", Pattern: "*.facade"},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("打开文件对话框失败: %w", err)
+	}
+	if strings.TrimSpace(zipPath) == "" {
+		return map[string]interface{}{
+			"cancelled": true,
+			"message":   "已取消选择",
+		}, nil
+	}
+	return map[string]interface{}{
+		"cancelled": false,
+		"path":      zipPath,
+	}, nil
+}
+
+// BackupImportPackage 从已选择的加密备份加载配置与数据。
 // resetFirst=true: 按备份内容执行完整恢复。
 // resetFirst=false: 保留现有数据并执行判重合并。
-func (a *App) BackupImportPackage(resetFirst bool, password string) (map[string]interface{}, error) {
+func (a *App) BackupImportPackage(resetFirst bool, password string, zipPath string) (map[string]interface{}, error) {
 	a.maintenanceMu.Lock()
 	defer a.maintenanceMu.Unlock()
 
@@ -127,24 +153,9 @@ func (a *App) BackupImportPackage(resetFirst bool, password string) (map[string]
 	if err := backupValidateEncryptionPassword(password); err != nil {
 		return nil, err
 	}
-	a.backupEmitImportProgress("starting", 0, "等待选择加密备份文件...")
-
-	zipPath, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
-		Title: "加载加密备份",
-		Filters: []wailsruntime.FileFilter{
-			{DisplayName: "Facade 加密备份 (*.facade)", Pattern: "*.facade"},
-		},
-	})
-	if err != nil {
-		a.backupEmitImportProgress("error", 100, fmt.Sprintf("打开文件对话框失败: %v", err))
-		return nil, fmt.Errorf("打开文件对话框失败: %w", err)
-	}
-	if strings.TrimSpace(zipPath) == "" {
-		a.backupEmitImportProgress("cancelled", 0, "已取消加载")
-		return map[string]interface{}{
-			"cancelled": true,
-			"message":   "已取消加载",
-		}, nil
+	zipPath = strings.TrimSpace(zipPath)
+	if zipPath == "" {
+		return nil, fmt.Errorf("请先选择备份文件")
 	}
 	a.backupEmitImportProgress("preparing", 5, "正在解密并校验备份包...")
 	tmpDir, err := os.MkdirTemp("", "facade-backup-decrypt-*")

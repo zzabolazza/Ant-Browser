@@ -12,6 +12,7 @@ export interface BackupActionResult {
   cancelled?: boolean
   message?: string
   zipPath?: string
+  path?: string
   remotePath?: string
   resetFirst?: boolean
   imported?: number
@@ -58,12 +59,24 @@ export async function exportSystemConfig(password: string, target: 'local' | 'we
   return (await bindings.BackupExportPackage(password)) || {}
 }
 
-export async function importSystemConfig(resetFirst: boolean, password: string): Promise<BackupActionResult> {
+export async function pickImportBackupFile(): Promise<BackupActionResult> {
+  const bindings: any = await getBindings()
+  if (!bindings?.BackupPickImportFile) {
+    return { cancelled: true, message: '当前环境不支持选择备份文件' }
+  }
+  return (await bindings.BackupPickImportFile()) || { cancelled: true }
+}
+
+export async function importSystemConfig(
+  resetFirst: boolean,
+  password: string,
+  zipPath: string,
+): Promise<BackupActionResult> {
   const bindings: any = await getBindings()
   if (!bindings?.BackupImportPackage) {
     return { cancelled: false, message: '当前环境不支持后端加载接口' }
   }
-  return (await bindings.BackupImportPackage(resetFirst, password)) || {}
+  return (await bindings.BackupImportPackage(resetFirst, password, zipPath)) || {}
 }
 
 export async function getBackupWebDAVSettings(): Promise<BackupWebDAVSettings> {

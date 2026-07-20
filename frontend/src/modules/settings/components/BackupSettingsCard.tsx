@@ -30,6 +30,7 @@ interface BackupSettingsCardProps {
 
 interface BackupImportModalProps {
   open: boolean
+  filePath: string
   actionLoading: BackupActionLoading
   importProgress: BackupExportProgress | null
   onClose: () => void
@@ -124,6 +125,19 @@ export function BackupSettingsCard({
     setExportPasswordConfirm('')
     setExportPasswordOpen(true)
   }
+
+  const selectExportTarget = (target: 'local' | 'webdav') => {
+    setExportTarget(target)
+    setExportMenuOpen(false)
+    if (target === 'local') {
+      openExportPassword('local')
+      return
+    }
+    if (webDAVSettings.url) {
+      openExportPassword('webdav')
+    }
+  }
+
   const passwordValid = exportPassword.length >= 8
     && exportPassword === exportPasswordConfirm
     && (exportTarget === 'local' || Boolean(webDAVSettings.url))
@@ -146,34 +160,26 @@ export function BackupSettingsCard({
               <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">将当前系统数据打包为强制密码保护的加密备份。</p>
             </div>
           </div>
-          <div ref={menuRef} className="relative flex w-full sm:w-auto">
+          <div ref={menuRef} className="relative w-full sm:w-auto">
             <Button
-              className="min-w-0 flex-1 rounded-r-none sm:min-w-[118px]"
+              className="w-full sm:w-auto sm:min-w-[112px]"
               variant="primary"
               size="sm"
-              onClick={() => openExportPassword(exportTarget)}
+              onClick={() => setExportMenuOpen(value => !value)}
               loading={actionLoading === 'export'}
               disabled={actionRunning && actionLoading !== 'export'}
+              aria-haspopup="menu"
+              aria-expanded={exportMenuOpen}
             >
-              {exportTarget === 'webdav' ? <Cloud className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-              {exportTarget === 'webdav' ? '上传 WebDAV' : '保存到本地'}
-            </Button>
-            <Button
-              className="rounded-l-none border-l border-l-white/30 px-2"
-              variant="primary"
-              size="sm"
-              aria-label="选择导出位置"
-              onClick={() => setExportMenuOpen(value => !value)}
-              disabled={actionRunning}
-            >
+              导出
               <ChevronDown className="h-4 w-4" />
             </Button>
             {exportMenuOpen && (
-              <div className="absolute right-0 top-9 z-20 min-w-[168px] overflow-hidden rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] py-1 shadow-lg">
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-muted)]" onClick={() => openExportPassword('local')}>
+              <div className="absolute right-0 top-9 z-20 min-w-[168px] overflow-hidden rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-surface)] py-1 shadow-lg" role="menu">
+                <button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-muted)]" onClick={() => selectExportTarget('local')}>
                   <Download className="h-4 w-4" />保存到本地
                 </button>
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-muted)]" onClick={() => openExportPassword('webdav')}>
+                <button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-muted)]" onClick={() => selectExportTarget('webdav')}>
                   <Cloud className="h-4 w-4" />上传到 WebDAV
                 </button>
               </div>
@@ -181,34 +187,36 @@ export function BackupSettingsCard({
           </div>
         </section>
 
-        <section className="rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-[var(--color-accent)]" />
-            <div>
-              <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">WebDAV 设置</h3>
-              <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">连接密码保存在本机配置中，读取设置时不会回传到界面。</p>
+        {exportTarget === 'webdav' && (
+          <section className="rounded-[10px] border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Cloud className="h-4 w-4 text-[var(--color-accent)]" />
+              <div>
+                <h3 className="text-[13.5px] font-semibold text-[var(--color-text-primary)]">WebDAV 设置</h3>
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">连接密码保存在本机配置中，读取设置时不会回传到界面。</p>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FormItem label="服务器地址" required className="sm:col-span-2">
-              <Input value={webDAVForm.url} placeholder="https://dav.example.com/remote.php/dav/files/user" onChange={event => setWebDAVForm(value => ({ ...value, url: event.target.value }))} />
-            </FormItem>
-            <FormItem label="用户名">
-              <Input value={webDAVForm.username} autoComplete="username" onChange={event => setWebDAVForm(value => ({ ...value, username: event.target.value }))} />
-            </FormItem>
-            <FormItem label="连接密码" hint={webDAVForm.hasPassword ? '留空则保留已保存密码' : undefined}>
-              <Input type="password" value={webDAVForm.password || ''} autoComplete="new-password" onChange={event => setWebDAVForm(value => ({ ...value, password: event.target.value }))} />
-            </FormItem>
-            <FormItem label="远程目录" hint="可选" className="sm:col-span-2">
-              <Input value={webDAVForm.remoteDir} placeholder="Facade/Backups" onChange={event => setWebDAVForm(value => ({ ...value, remoteDir: event.target.value }))} />
-            </FormItem>
-          </div>
-          <div className="mt-3 flex justify-end">
-            <Button size="sm" variant="secondary" loading={webDAVSaving} disabled={!webDAVForm.url.trim()} onClick={() => { void onSaveWebDAV(webDAVForm) }}>
-              <Save className="h-4 w-4" />保存 WebDAV 设置
-            </Button>
-          </div>
-        </section>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormItem label="服务器地址" required className="sm:col-span-2">
+                <Input value={webDAVForm.url} placeholder="https://dav.example.com/remote.php/dav/files/user" onChange={event => setWebDAVForm(value => ({ ...value, url: event.target.value }))} />
+              </FormItem>
+              <FormItem label="用户名">
+                <Input value={webDAVForm.username} autoComplete="username" onChange={event => setWebDAVForm(value => ({ ...value, username: event.target.value }))} />
+              </FormItem>
+              <FormItem label="连接密码" hint={webDAVForm.hasPassword ? '留空则保留已保存密码' : undefined}>
+                <Input type="password" value={webDAVForm.password || ''} autoComplete="new-password" onChange={event => setWebDAVForm(value => ({ ...value, password: event.target.value }))} />
+              </FormItem>
+              <FormItem label="远程目录" hint="可选" className="sm:col-span-2">
+                <Input value={webDAVForm.remoteDir} placeholder="Facade/Backups" onChange={event => setWebDAVForm(value => ({ ...value, remoteDir: event.target.value }))} />
+              </FormItem>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button size="sm" variant="secondary" loading={webDAVSaving} disabled={!webDAVForm.url.trim()} onClick={() => { void onSaveWebDAV(webDAVForm) }}>
+                <Save className="h-4 w-4" />保存 WebDAV 设置
+              </Button>
+            </div>
+          </section>
+        )}
 
         {exportProgress && (
           <BackupProgressPanel
@@ -301,6 +309,7 @@ export function BackupSettingsCard({
 
 export function BackupImportModal({
   open,
+  filePath,
   actionLoading,
   importProgress,
   onClose,
@@ -308,6 +317,7 @@ export function BackupImportModal({
 }: BackupImportModalProps) {
   const importRunning = actionLoading === 'import-reset' || actionLoading === 'import-merge'
   const [password, setPassword] = useState('')
+  const fileName = filePath.split(/[/\\]/).pop() || filePath
 
   useEffect(() => {
     if (!open) setPassword('')
@@ -332,10 +342,13 @@ export function BackupImportModal({
       <div className="space-y-4 text-sm text-[var(--color-text-secondary)]">
         {!importRunning && (
           <>
-            <p className="text-[13px] leading-5 text-[var(--color-text-muted)]">选择备份文件的导入方式：</p>
+            <FormItem label="备份文件">
+              <Input value={fileName} readOnly title={filePath} />
+            </FormItem>
             <FormItem label="备份密码" required hint="仅支持加密备份">
               <Input type="password" autoFocus value={password} autoComplete="current-password" onChange={event => setPassword(event.target.value)} />
             </FormItem>
+            <p className="text-[13px] leading-5 text-[var(--color-text-muted)]">选择备份文件的导入方式：</p>
             <div className="space-y-3">
               <section className="flex items-center gap-3 rounded-[10px] border border-[var(--color-border-default)] p-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-accent-muted)] text-[var(--color-accent)]">

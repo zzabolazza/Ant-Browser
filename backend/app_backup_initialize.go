@@ -1,11 +1,13 @@
 package backend
 
 import (
+	"facade/backend/internal/browser"
 	"facade/backend/internal/config"
 	"facade/backend/internal/logger"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func (a *App) backupInitializeLocked(applyReload bool) (map[string]interface{}, error) {
@@ -41,6 +43,9 @@ func (a *App) backupInitializeLocked(applyReload bool) (map[string]interface{}, 
 	if applyReload {
 		if err := a.backupSeedFactoryBookmarks(); err != nil {
 			return nil, fmt.Errorf("恢复出厂书签失败: %w", err)
+		}
+		if err := a.backupSeedFactoryProfiles(); err != nil {
+			return nil, fmt.Errorf("恢复出厂默认实例失败: %w", err)
 		}
 	}
 
@@ -90,4 +95,37 @@ func (a *App) backupSeedFactoryBookmarks() error {
 	}
 	a.config.Browser.DefaultBookmarks = items
 	return a.config.Save(a.resolveAppPath("config.yaml"))
+}
+
+func (a *App) backupSeedFactoryProfiles() error {
+	if a.browserMgr == nil || a.browserMgr.ProfileDAO == nil {
+		return nil
+	}
+	existing, err := a.browserMgr.ProfileDAO.List()
+	if err != nil {
+		return err
+	}
+	if len(existing) > 0 {
+		return nil
+	}
+
+	cfg := a.config
+	if cfg == nil {
+		cfg = config.DefaultConfig()
+	}
+	now := time.Now().Format(time.RFC3339)
+	profile := &browser.Profile{
+		ProfileId:       generateUUID(),
+		ProfileName:     "默认实例",
+		UserDataDir:     "default",
+		CoreId:          "",
+		FingerprintArgs: append([]string{}, cfg.Browser.DefaultFingerprintArgs...),
+		LaunchArgs:      append([]string{}, cfg.Browser.DefaultLaunchArgs...),
+		Tags:            []string{"默认"},
+		ProxyId:         "__direct__",
+		ProxyConfig:     "direct://",
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	return a.browserMgr.ProfileDAO.Upsert(profile)
 }

@@ -207,6 +207,52 @@ func TestFactoryResetSeedsBookmarksExplicitly(t *testing.T) {
 	}
 }
 
+func TestFactoryResetSeedsDefaultProfile(t *testing.T) {
+	db := openMigratedTestDB(t, "factory-profiles.db")
+	cfg := config.DefaultConfig()
+	mgr := &browser.Manager{
+		Config:     cfg,
+		ProfileDAO: browser.NewSQLiteProfileDAO(db.GetConn()),
+	}
+	app := &App{config: cfg, browserMgr: mgr}
+
+	if err := app.backupSeedFactoryProfiles(); err != nil {
+		t.Fatal(err)
+	}
+	profiles, err := mgr.ProfileDAO.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(profiles) != 1 {
+		t.Fatalf("expected 1 factory profile, got %d", len(profiles))
+	}
+	got := profiles[0]
+	if got.ProfileName != "默认实例" {
+		t.Fatalf("expected profile name 默认实例, got %q", got.ProfileName)
+	}
+	if got.UserDataDir != "default" {
+		t.Fatalf("expected user data dir default, got %q", got.UserDataDir)
+	}
+	if got.ProxyId != "__direct__" || got.ProxyConfig != "direct://" {
+		t.Fatalf("expected direct proxy binding, got proxyId=%q proxyConfig=%q", got.ProxyId, got.ProxyConfig)
+	}
+	if len(got.Tags) != 1 || got.Tags[0] != "默认" {
+		t.Fatalf("expected tag [默认], got %v", got.Tags)
+	}
+
+	// Idempotent: do not create a second default when profiles already exist.
+	if err := app.backupSeedFactoryProfiles(); err != nil {
+		t.Fatal(err)
+	}
+	profiles, err = mgr.ProfileDAO.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(profiles) != 1 {
+		t.Fatalf("expected seeding to stay idempotent, got %d profiles", len(profiles))
+	}
+}
+
 func sourcePath(t *testing.T, db *database.DB) string {
 	t.Helper()
 	var path string
