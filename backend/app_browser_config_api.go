@@ -100,7 +100,8 @@ func (a *App) BrowserCoreExtendedInfo() []BrowserCoreExtendedInfo {
 	return a.browserMgr.GetCoresExtendedInfo()
 }
 
-// BrowserCorePickDirectory 弹框选择已解压内核目录，校验可执行文件后返回路径（不自动保存）。
+// BrowserCorePickDirectory 弹框选择已解压内核目录或 macOS .app，校验可执行文件后返回路径（不自动保存）。
+// macOS 上开启 TreatPackagesAsDirectories，以便直接选中 Chromium.app / Google Chrome.app。
 func (a *App) BrowserCorePickDirectory() (*BrowserCorePickResult, error) {
 	if a.ctx == nil {
 		return nil, fmt.Errorf("app context is nil")
@@ -110,7 +111,8 @@ func (a *App) BrowserCorePickDirectory() (*BrowserCorePickResult, error) {
 	}
 
 	selectedDir, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
-		Title: "选择已解压的 Chrome 内核目录",
+		Title:                       "选择 Chrome/Chromium 内核目录或 .app",
+		TreatPackagesAsDirectories: true,
 	})
 	if err != nil {
 		return nil, err
@@ -130,6 +132,9 @@ func (a *App) BrowserCorePickDirectory() (*BrowserCorePickResult, error) {
 
 	corePath := filepath.Clean(absDir)
 	coreName := strings.TrimSpace(filepath.Base(absDir))
+	if strings.HasSuffix(strings.ToLower(coreName), ".app") {
+		coreName = strings.TrimSpace(coreName[:len(coreName)-len(".app")])
+	}
 	if coreName == "" || coreName == "." || coreName == string(filepath.Separator) {
 		coreName = "本地内核"
 	}

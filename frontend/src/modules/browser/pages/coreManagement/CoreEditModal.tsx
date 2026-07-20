@@ -63,7 +63,7 @@ export function CoreEditModal({
               <Input
                 value={form.corePath}
                 readOnly
-                placeholder="请点击右侧按钮选择内核目录"
+                placeholder="选择内核目录或 macOS 的 .app"
                 className="flex-1"
               />
               <Button variant="secondary" onClick={onPickDirectory} loading={pickingPath}>
