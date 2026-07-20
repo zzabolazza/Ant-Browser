@@ -183,6 +183,15 @@ func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL str
 	if len(data) > extensionMaxPackageBytes {
 		return Extension{}, fmt.Errorf("插件包超过限制")
 	}
+	publicKey, err := extractCRXPublicKey(data)
+	if err != nil {
+		return Extension{}, err
+	}
+	keyDerivedID := extensionIDFromPublicKey(publicKey)
+	if keyDerivedID == "" {
+		return Extension{}, fmt.Errorf("无法从 CRX 公钥计算扩展 ID")
+	}
+
 	zipData, err := normalizeExtensionArchiveData(data)
 	if err != nil {
 		return Extension{}, err
@@ -196,12 +205,9 @@ func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL str
 		return Extension{}, err
 	}
 
-	resolvedID := NormalizeExtensionID(extensionID)
-	if resolvedID == "" {
-		resolvedID = extensionIDFromManifest(manifestData)
-	}
-	if resolvedID == "" {
-		return Extension{}, fmt.Errorf("无法识别插件 ID")
+	resolvedID := keyDerivedID
+	if requestedID := NormalizeExtensionID(extensionID); requestedID != "" && requestedID != resolvedID {
+		return Extension{}, fmt.Errorf("插件包公钥对应的扩展 ID 为 %s，与请求的 %s 不一致", resolvedID, requestedID)
 	}
 
 	installed, err := m.extensionInstalled(resolvedID)
@@ -216,16 +222,20 @@ func (m *Manager) InstallExtensionPackageBytes(extensionID string, sourceURL str
 	if err := replaceExtensionDirFromZip(zipData, installDir); err != nil {
 		return Extension{}, err
 	}
+	manifestJSONBytes, err := writeManifestPublicKey(installDir, publicKey)
+	if err != nil {
+		_ = os.RemoveAll(installDir)
+		return Extension{}, err
+	}
 
 	localeMessages := readExtensionLocaleMessagesFromZip(zipData, manifest)
-	manifestJSON := string(manifestData)
 	extension := Extension{
 		ExtensionID:  resolvedID,
 		Name:         resolveExtensionMessage(resolveExtensionName(manifest, resolvedID), localeMessages),
 		Version:      strings.TrimSpace(manifest.Version),
 		Description:  resolveExtensionDescription(manifest, localeMessages),
 		IconDataURL:  readExtensionIconDataURLFromZip(zipData, manifest),
-		ManifestJSON: manifestJSON,
+		ManifestJSON: string(manifestJSONBytes),
 		SourceURL:    strings.TrimSpace(sourceURL),
 		InstallDir:   installDir,
 		Enabled:      true,

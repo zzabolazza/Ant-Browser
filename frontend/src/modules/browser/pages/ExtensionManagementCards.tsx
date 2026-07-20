@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Download, ExternalLink, History, LayoutGrid, List, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
+import { AlertTriangle, Download, ExternalLink, History, LayoutGrid, List, Power, Puzzle, RefreshCw, RotateCw, Search, Settings, Trash2, Users } from 'lucide-react'
 import { Button, Card, Input } from '../../../shared/components'
 import type { BrowserExtension, BrowserExtensionLookupResult, BrowserProxy } from '../types'
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime'
@@ -46,36 +46,47 @@ export function ExtensionManagementHeader({
   onRefresh,
 }: ExtensionManagementHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
-        统一管理扩展包，按需挂载到指定实例范围，支持
-        <button
-          type="button"
-          onClick={() => BrowserOpenURL(CHROME_WEB_STORE_URL)}
-          className="mx-0.5 inline-flex items-center gap-0.5 font-medium text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
-        >
-          商店
-          <ExternalLink className="h-3 w-3" />
-        </button>
-        链接安装与本地导入。
-      </p>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button size="sm" variant="secondary" onClick={onOpenProxy}>
-          <Settings className="h-4 w-4" />
-          {proxyButtonText}
-        </Button>
-        <Button size="sm" variant="secondary" onClick={onOpenHistory}>
-          <History className="h-4 w-4" />
-          历史
-        </Button>
-        <Button size="sm" variant="secondary" onClick={onImportFile} loading={importing === 'file'}>
-          <Download className="h-4 w-4" />
-          导入
-        </Button>
-        <Button size="sm" variant="secondary" onClick={onRefresh} loading={loading}>
-          <RefreshCw className="h-4 w-4" />
-          刷新
-        </Button>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
+          统一管理扩展包，按需挂载到指定实例范围，支持
+          <button
+            type="button"
+            onClick={() => BrowserOpenURL(CHROME_WEB_STORE_URL)}
+            className="mx-0.5 inline-flex items-center gap-0.5 font-medium text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
+          >
+            商店
+            <ExternalLink className="h-3 w-3" />
+          </button>
+          链接安装与本地导入。
+        </p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button size="sm" variant="secondary" onClick={onOpenProxy}>
+            <Settings className="h-4 w-4" />
+            {proxyButtonText}
+          </Button>
+          <Button size="sm" variant="secondary" onClick={onOpenHistory}>
+            <History className="h-4 w-4" />
+            历史
+          </Button>
+          <Button size="sm" variant="secondary" onClick={onImportFile} loading={importing === 'file'}>
+            <Download className="h-4 w-4" />
+            导入
+          </Button>
+          <Button size="sm" variant="secondary" onClick={onRefresh} loading={loading}>
+            <RefreshCw className="h-4 w-4" />
+            刷新
+          </Button>
+        </div>
+      </div>
+      <div className="flex gap-2 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 p-3 text-xs leading-5 text-[var(--color-warning)]">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <p>
+          <span className="font-medium">Google 登录限制：</span>
+          部分扩展依赖 Chrome Identity API，回调地址为{' '}
+          <code className="rounded bg-black/5 px-1 py-0.5 font-mono text-[11px]">{'https://<扩展ID>.chromiumapp.org/'}</code>
+          。当前使用的 fingerprint-chromium（Ungoogled Chromium）会改写该域名，导致 Google OAuth 校验失败。此类扩展的商店登录可能无法完成，与插件安装是否成功无关。
+        </p>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Edit2, FolderOpen, Plus, Star, Trash2 } from 'lucide-react'
+import { Edit2, ExternalLink, FolderOpen, Plus, Star, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, ConfirmModal, Table, toast } from '../../../shared/components'
 import type { TableColumn } from '../../../shared/components/Table'
 import type { BrowserCore, BrowserCoreInput, BrowserCoreValidateResult, BrowserSettings } from '../types'
@@ -364,12 +364,13 @@ export function CoreManagementPage() {
             <button
               type="button"
               onClick={() => BrowserOpenURL('https://github.com/adryfish/fingerprint-chromium/releases')}
-              className="cursor-pointer font-semibold text-[var(--color-accent)] hover:underline"
+              className="mx-0.5 inline-flex items-center gap-0.5 font-medium text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
             >
               fingerprint-chromium
+              <ExternalLink className="h-3 w-3" />
             </button>
             {' '}
-            / 指纹内核版本，设置默认内核与全局启动参数。
+            ，设置默认内核与全局启动参数。
           </p>
         </div>
         <Button size="sm" onClick={handleAdd}>
