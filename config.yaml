@@ -43,6 +43,16 @@ browser:
         - --disable-sync
         - --no-first-run
     default_start_urls: []
+    secure_dns:
+        enabled: true
+        mode: secure
+        templates:
+            - https://chrome.cloudflare-dns.com/dns-query
+    privacy:
+        hardened_launch_args_enabled: true
+        spoof_speech_voices: true
+        disable_webgpu: true
+        exit_consistency_check: warn
     light_start_enabled: true
     restore_last_session: false
     start_ready_timeout_ms: 3000

@@ -94,6 +94,8 @@ type BrowserConfig struct {
 	DefaultFingerprintArgs []string               `yaml:"default_fingerprint_args"`
 	DefaultLaunchArgs      []string               `yaml:"default_launch_args"`
 	DefaultStartURLs       []string               `yaml:"default_start_urls"`
+	SecureDNS              BrowserSecureDNSConfig `yaml:"secure_dns,omitempty"`
+	Privacy                BrowserPrivacyConfig   `yaml:"privacy,omitempty"`
 	LightStartEnabled      *bool                  `yaml:"light_start_enabled,omitempty"`
 	RestoreLastSession     bool                   `yaml:"restore_last_session"`
 	StartReadyTimeoutMs    int                    `yaml:"start_ready_timeout_ms,omitempty"`
@@ -102,6 +104,19 @@ type BrowserConfig struct {
 	Cores                  []BrowserCore          `yaml:"cores,omitempty"`
 	Proxies                []BrowserProxy         `yaml:"proxies,omitempty"`
 	Profiles               []BrowserProfileConfig `yaml:"profiles,omitempty"`
+}
+
+type BrowserSecureDNSConfig struct {
+	Enabled   *bool    `yaml:"enabled,omitempty" json:"enabled,omitempty"`
+	Mode      string   `yaml:"mode,omitempty" json:"mode,omitempty"`
+	Templates []string `yaml:"templates,omitempty" json:"templates,omitempty"`
+}
+
+type BrowserPrivacyConfig struct {
+	HardenedLaunchArgsEnabled *bool  `yaml:"hardened_launch_args_enabled,omitempty" json:"hardenedLaunchArgsEnabled,omitempty"`
+	SpoofSpeechVoices         *bool  `yaml:"spoof_speech_voices,omitempty" json:"spoofSpeechVoices,omitempty"`
+	DisableWebGPU             *bool  `yaml:"disable_webgpu,omitempty" json:"disableWebgpu,omitempty"`
+	ExitConsistencyCheck      string `yaml:"exit_consistency_check,omitempty" json:"exitConsistencyCheck,omitempty"`
 }
 
 type BrowserCore struct {

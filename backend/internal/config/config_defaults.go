@@ -8,6 +8,8 @@ import (
 
 var defaultBrowserStartURLs = []string{}
 
+const DefaultSecureDNSTemplate = "https://chrome.cloudflare-dns.com/dns-query"
+
 func DefaultBrowserStartURLs() []string {
 	return append([]string{}, defaultBrowserStartURLs...)
 }
@@ -103,6 +105,8 @@ func normalizeConfig(config *Config) {
 	} else if isLegacyVerificationStartURLs(config.Browser.DefaultStartURLs) {
 		config.Browser.DefaultStartURLs = []string{}
 	}
+	normalizeBrowserSecureDNSConfig(&config.Browser.SecureDNS, defaultConfig.Browser.SecureDNS)
+	normalizeBrowserPrivacyConfig(&config.Browser.Privacy, defaultConfig.Browser.Privacy)
 	if config.Browser.LightStartEnabled == nil {
 		config.Browser.LightStartEnabled = defaultConfig.Browser.LightStartEnabled
 	}
@@ -199,10 +203,21 @@ func DefaultConfig() *Config {
 			DefaultFingerprintArgs: defaultFingerprintArgsForOS(goruntime.GOOS),
 			DefaultLaunchArgs:      []string{"--disable-sync", "--no-first-run"},
 			DefaultStartURLs:       DefaultBrowserStartURLs(),
-			LightStartEnabled:      boolPtr(true),
-			RestoreLastSession:     false,
-			StartReadyTimeoutMs:    3000,
-			StartStableWindowMs:    1200,
+			SecureDNS: BrowserSecureDNSConfig{
+				Enabled:   boolPtr(true),
+				Mode:      "secure",
+				Templates: []string{DefaultSecureDNSTemplate},
+			},
+			Privacy: BrowserPrivacyConfig{
+				HardenedLaunchArgsEnabled: boolPtr(true),
+				SpoofSpeechVoices:         boolPtr(true),
+				DisableWebGPU:             boolPtr(true),
+				ExitConsistencyCheck:      "warn",
+			},
+			LightStartEnabled:   boolPtr(true),
+			RestoreLastSession:  false,
+			StartReadyTimeoutMs: 3000,
+			StartStableWindowMs: 1200,
 		},
 		ProxyCheck: ProxyCheckConfig{
 			PrepareTimeoutMs: 15000,
@@ -258,6 +273,76 @@ func DefaultConfig() *Config {
 			},
 		},
 	}
+}
+
+func normalizeBrowserSecureDNSConfig(cfg *BrowserSecureDNSConfig, defaults BrowserSecureDNSConfig) {
+	if cfg == nil {
+		return
+	}
+	if cfg.Enabled == nil {
+		cfg.Enabled = boolPtr(browserSecureDNSEnabled(defaults))
+	}
+	cfg.Mode = strings.TrimSpace(cfg.Mode)
+	if cfg.Mode == "" {
+		cfg.Mode = strings.TrimSpace(defaults.Mode)
+	}
+	if cfg.Mode == "" {
+		cfg.Mode = "secure"
+	}
+	cfg.Templates = normalizeNonEmptyConfigStrings(cfg.Templates)
+	if len(cfg.Templates) == 0 {
+		cfg.Templates = append([]string{}, defaults.Templates...)
+	}
+	if len(cfg.Templates) == 0 {
+		cfg.Templates = []string{DefaultSecureDNSTemplate}
+	}
+}
+
+func normalizeBrowserPrivacyConfig(cfg *BrowserPrivacyConfig, defaults BrowserPrivacyConfig) {
+	if cfg == nil {
+		return
+	}
+	if cfg.HardenedLaunchArgsEnabled == nil {
+		cfg.HardenedLaunchArgsEnabled = boolPtr(browserPrivacyBool(defaults.HardenedLaunchArgsEnabled, true))
+	}
+	if cfg.SpoofSpeechVoices == nil {
+		cfg.SpoofSpeechVoices = boolPtr(browserPrivacyBool(defaults.SpoofSpeechVoices, true))
+	}
+	if cfg.DisableWebGPU == nil {
+		cfg.DisableWebGPU = boolPtr(browserPrivacyBool(defaults.DisableWebGPU, true))
+	}
+	cfg.ExitConsistencyCheck = strings.TrimSpace(cfg.ExitConsistencyCheck)
+	if cfg.ExitConsistencyCheck == "" {
+		cfg.ExitConsistencyCheck = strings.TrimSpace(defaults.ExitConsistencyCheck)
+	}
+	if cfg.ExitConsistencyCheck == "" {
+		cfg.ExitConsistencyCheck = "warn"
+	}
+}
+
+func normalizeNonEmptyConfigStrings(items []string) []string {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		value := strings.TrimSpace(item)
+		if value != "" {
+			out = append(out, value)
+		}
+	}
+	return out
+}
+
+func browserSecureDNSEnabled(cfg BrowserSecureDNSConfig) bool {
+	return browserPrivacyBool(cfg.Enabled, true)
+}
+
+func browserPrivacyBool(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
 }
 
 func defaultFingerprintArgsForOS(goos string) []string {

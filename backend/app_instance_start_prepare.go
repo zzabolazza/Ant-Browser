@@ -2,6 +2,7 @@ package backend
 
 import (
 	"facade/backend/internal/browser"
+	"facade/backend/internal/config"
 	"facade/backend/internal/logger"
 	"fmt"
 	"os"
@@ -34,6 +35,7 @@ type browserStartPlan struct {
 	startStableWindow    time.Duration
 	maxStartAttempts     int
 	totalReadyTimeout    time.Duration
+	runtimeWarning       string
 }
 
 var clearBrowserSessionRestoreData = browser.ClearSessionRestoreData
@@ -114,12 +116,29 @@ func (a *App) prepareBrowserStartPlan(input browserStartInput, profile *BrowserP
 	if err != nil {
 		return nil, err
 	}
+	runtimeWarning := a.browserExitConsistencyWarning(effectiveProxy)
 
 	startReadyTimeout, startStableWindow := a.browserStartTimingSettings()
 	maxStartAttempts := browserStartAttemptCount()
 	totalReadyTimeout := time.Duration(maxStartAttempts) * startReadyTimeout
 	restoreLastSession := browserRestoreLastSession(a.config)
 	extensionDirs := a.browserMgr.EnabledExtensionDirsForProfile(input.ProfileID)
+	if browserPrivacySpoofSpeechVoicesEnabled(a.config) {
+		launchLang := effectiveLaunchLanguage(append(append([]string{}, profile.FingerprintArgs...), append(sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs...)...))
+		privacyExtensionDir, err := browser.EnsureManagedPrivacyExtension(userDataDir, launchLang)
+		if err != nil {
+			startErr := fmt.Errorf("实例启动失败：内置隐私扩展生成失败。原因：%w。", err)
+			logger.New("Browser").Error("内置隐私扩展生成失败",
+				logger.F("profile_id", input.ProfileID),
+				logger.F("user_data_dir", userDataDir),
+				logger.F("error", err.Error()),
+				logger.F("reason", startErr.Error()),
+			)
+			profile.LastError = startErr.Error()
+			return nil, startErr
+		}
+		extensionDirs = append(extensionDirs, privacyExtensionDir)
+	}
 	defaultStartURLs := mergeStartURLs(browserDefaultStartURLs(a.config), bookmarkStartURLs(bookmarks))
 	launchTargets, deferredStartTargets := buildBrowserLaunchTargets(
 		input.StartURLs,
@@ -146,7 +165,7 @@ func (a *App) prepareBrowserStartPlan(input browserStartInput, profile *BrowserP
 		chromeBinaryPath:     chromeBinaryPath,
 		userDataDir:          userDataDir,
 		extensionDirs:        extensionDirs,
-		args:                 buildBrowserLaunchArgs(profile, userDataDir, assignedDebugPort, effectiveProxy, extensionDirs, sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, launchTargets),
+		args:                 buildBrowserLaunchArgsWithPrivacy(profile, userDataDir, assignedDebugPort, effectiveProxy, extensionDirs, sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, launchTargets, a.config),
 		deferredStartTargets: deferredStartTargets,
 		effectiveProxy:       effectiveProxy,
 		assignedDebugPort:    assignedDebugPort,
@@ -154,6 +173,7 @@ func (a *App) prepareBrowserStartPlan(input browserStartInput, profile *BrowserP
 		startStableWindow:    startStableWindow,
 		maxStartAttempts:     maxStartAttempts,
 		totalReadyTimeout:    totalReadyTimeout,
+		runtimeWarning:       runtimeWarning,
 	}, nil
 }
 
@@ -193,6 +213,20 @@ func (a *App) prepareBrowserLaunchContext(input browserStartInput, profile *Brow
 		)
 		profile.LastError = startErr.Error()
 		return nil, nil, "", "", startErr
+	}
+
+	if browserSecureDNSEnabled(a.config) {
+		if err := browser.EnsureSecureDNSWithOptions(userDataDir, browserSecureDNSOptions(a.config)); err != nil {
+			startErr := fmt.Errorf("实例启动失败：安全 DNS 配置写入失败。原因：%w。", err)
+			log.Error("安全 DNS 配置写入失败",
+				logger.F("profile_id", input.ProfileID),
+				logger.F("user_data_dir", userDataDir),
+				logger.F("error", err.Error()),
+				logger.F("reason", startErr.Error()),
+			)
+			profile.LastError = startErr.Error()
+			return nil, nil, "", "", startErr
+		}
 	}
 
 	if err := browser.EnsureDefaultBookmarks(userDataDir, bookmarks); err != nil {
@@ -254,14 +288,19 @@ func (a *App) prepareBrowserLaunchContext(input browserStartInput, profile *Brow
 }
 
 func buildBrowserLaunchArgs(profile *BrowserProfile, userDataDir string, debugPort int, effectiveProxy string, extensionDirs []string, sanitizedProfileLaunchArgs []string, sanitizedExtraLaunchArgs []string, launchTargets []string) []string {
+	return buildBrowserLaunchArgsWithPrivacy(profile, userDataDir, debugPort, effectiveProxy, extensionDirs, sanitizedProfileLaunchArgs, sanitizedExtraLaunchArgs, launchTargets, nil)
+}
+
+func buildBrowserLaunchArgsWithPrivacy(profile *BrowserProfile, userDataDir string, debugPort int, effectiveProxy string, extensionDirs []string, sanitizedProfileLaunchArgs []string, sanitizedExtraLaunchArgs []string, launchTargets []string, cfg *config.Config) []string {
 	args := []string{
 		fmt.Sprintf("--user-data-dir=%s", userDataDir),
 		fmt.Sprintf("--remote-debugging-port=%d", debugPort),
 		"--disable-session-crashed-bubble",
 	}
 
+	fingerprintArgs := normalizeFingerprintArgs(profile.FingerprintArgs)
 	hasFingerprint := false
-	for _, arg := range profile.FingerprintArgs {
+	for _, arg := range fingerprintArgs {
 		if strings.HasPrefix(arg, "--fingerprint=") {
 			hasFingerprint = true
 			break
@@ -289,10 +328,11 @@ func buildBrowserLaunchArgs(profile *BrowserProfile, userDataDir string, debugPo
 		args = append(args, fmt.Sprintf("--load-extension=%s", extensionArg))
 	}
 
-	args = append(args, profile.FingerprintArgs...)
+	args = append(args, fingerprintArgs...)
 	args = append(args, sanitizedProfileLaunchArgs...)
 	args = append(args, sanitizedExtraLaunchArgs...)
 	args = appendDerivedAcceptLanguageArg(args)
+	args = appendPrivacyLaunchArgs(args, cfg)
 	return browser.BuildLaunchArgs(args, launchTargets)
 }
 

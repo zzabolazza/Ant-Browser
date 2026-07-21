@@ -45,7 +45,7 @@ func (a *App) startBrowserProfileWithPlan(input browserStartInput, plan *browser
 	for attempt := 1; attempt <= plan.maxStartAttempts; attempt++ {
 		stableDebugPort, readyErr := waitBrowserDebugPortStable(plan.assignedDebugPort, plan.userDataDir, plan.startReadyTimeout, plan.startStableWindow, monitor)
 		if readyErr == nil {
-			a.markProfileRunningLocked(input.ProfileID, profile, cmd, cmd.Process.Pid, stableDebugPort, true, "")
+			a.markProfileRunningLocked(input.ProfileID, profile, cmd, cmd.Process.Pid, stableDebugPort, true, plan.runtimeWarning)
 			if len(plan.deferredStartTargets) > 0 {
 				if err := openBrowserStartTargets(stableDebugPort, plan.deferredStartTargets); err != nil {
 					warning := deferredStartTargetsWarning(plan.deferredStartTargets, err)
@@ -66,6 +66,7 @@ func (a *App) startBrowserProfileWithPlan(input browserStartInput, plan *browser
 				logger.F("debug_port", stableDebugPort),
 				logger.F("pid", profile.Pid),
 				logger.F("proxy", plan.effectiveProxy),
+				logger.F("runtime_warning", profile.RuntimeWarning),
 				logger.F("attempt", attempt),
 				logger.F("max_attempts", plan.maxStartAttempts),
 				logger.F("args", strings.Join(plan.args, " ")),
@@ -106,6 +107,9 @@ func (a *App) startBrowserProfileWithPlan(input browserStartInput, plan *browser
 	pendingStartNotice := ""
 	if shouldKeepBrowserRunningPendingDebugReady(plan.assignedDebugPort, monitor) {
 		runtimeWarning := browserDebugPendingWarning(plan.totalReadyTimeout)
+		if plan.runtimeWarning != "" {
+			runtimeWarning = plan.runtimeWarning + "；" + runtimeWarning
+		}
 		pendingStartNotice = browserDebugPendingStartNotice(plan.totalReadyTimeout)
 		a.markProfileRunningLocked(input.ProfileID, profile, cmd, cmd.Process.Pid, plan.assignedDebugPort, false, runtimeWarning)
 		if len(plan.deferredStartTargets) > 0 {

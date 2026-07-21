@@ -36,47 +36,6 @@ const RESOLUTION_OPTIONS = [
   { value: 'custom', label: '自定义...' },
 ]
 
-const WEBGL_VENDOR_OPTIONS = [
-  { value: '', label: '不设置' },
-  { value: 'Intel', label: 'Intel' },
-  { value: 'NVIDIA', label: 'NVIDIA' },
-  { value: 'AMD', label: 'AMD' },
-  { value: 'Apple', label: 'Apple' },
-]
-
-const WEBGL_RENDERER_OPTIONS: Record<string, { value: string; label: string }[]> = {
-  Intel: [
-    { value: '', label: '不设置' },
-    { value: 'Intel(R) UHD Graphics 630', label: 'UHD Graphics 630' },
-    { value: 'Intel(R) UHD Graphics 620', label: 'UHD Graphics 620' },
-    { value: 'Intel(R) HD Graphics 520', label: 'HD Graphics 520' },
-    { value: 'Intel(R) Iris(R) Xe Graphics', label: 'Iris Xe Graphics' },
-    { value: 'custom', label: '自定义...' },
-  ],
-  NVIDIA: [
-    { value: '', label: '不设置' },
-    { value: 'NVIDIA GeForce RTX 3080', label: 'GeForce RTX 3080' },
-    { value: 'NVIDIA GeForce RTX 3060', label: 'GeForce RTX 3060' },
-    { value: 'NVIDIA GeForce GTX 1660', label: 'GeForce GTX 1660' },
-    { value: 'NVIDIA GeForce GTX 1080 Ti', label: 'GeForce GTX 1080 Ti' },
-    { value: 'custom', label: '自定义...' },
-  ],
-  AMD: [
-    { value: '', label: '不设置' },
-    { value: 'AMD Radeon RX 6600', label: 'Radeon RX 6600' },
-    { value: 'AMD Radeon RX 580', label: 'Radeon RX 580' },
-    { value: 'AMD Radeon Vega 8', label: 'Radeon Vega 8' },
-    { value: 'custom', label: '自定义...' },
-  ],
-  Apple: [
-    { value: '', label: '不设置' },
-    { value: 'Apple M1', label: 'Apple M1' },
-    { value: 'Apple M2', label: 'Apple M2' },
-    { value: 'Apple M3', label: 'Apple M3' },
-    { value: 'custom', label: '自定义...' },
-  ],
-}
-
 const BOOL_OPTIONS = [
   { value: '', label: '不设置' },
   { value: 'true', label: '启用' },
@@ -133,7 +92,6 @@ const PRESET_OPTIONS = [
 export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
   const [config, setConfig] = useState<FingerprintConfig>(() => deserialize(value))
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [, setCustomRenderer] = useState('')
   const [confirmSeedOpen, setConfirmSeedOpen] = useState(false)
 
   useEffect(() => {
@@ -176,14 +134,6 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
     onChange(serialize(parsed))
   }
 
-  const rendererOptions = config.webglVendor
-    ? (WEBGL_RENDERER_OPTIONS[config.webglVendor] ?? [{ value: '', label: '不设置' }, { value: 'custom', label: '自定义...' }])
-    : [{ value: '', label: '不设置' }]
-
-  const isCustomRenderer = config.webglRenderer
-    ? !rendererOptions.some(o => o.value === config.webglRenderer && o.value !== 'custom')
-    : false
-
   const advancedText = serialize(config).join('\n')
 
   return (
@@ -224,7 +174,7 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
         onClose={() => setConfirmSeedOpen(false)}
         onConfirm={() => update({ seed: randomFingerprintSeed() })}
         title="重新生成指纹种子"
-        content="重新生成后，当前指纹将完全改变，浏览器的 Canvas、WebGL、Audio 等所有噪声特征都会随之变化。确定继续？"
+        content="重新生成后，当前指纹将完全改变，浏览器的 Canvas、Audio 等噪声特征都会随之变化。确定继续？"
         confirmText="确定重新生成"
         danger
       />
@@ -296,36 +246,6 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
       <div>
         <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">渲染指纹</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormItem label="WebGL 供应商">
-            <Select
-              value={config.webglVendor ?? ''}
-              onChange={e => update({ webglVendor: e.target.value || undefined, webglRenderer: undefined })}
-              options={WEBGL_VENDOR_OPTIONS}
-            />
-          </FormItem>
-          <FormItem label="WebGL 渲染器">
-            {isCustomRenderer ? (
-              <Input
-                value={config.webglRenderer ?? ''}
-                onChange={e => update({ webglRenderer: e.target.value || undefined })}
-                placeholder="自定义渲染器名称"
-              />
-            ) : (
-              <Select
-                value={config.webglRenderer ?? ''}
-                onChange={e => {
-                  if (e.target.value === 'custom') {
-                    setCustomRenderer('')
-                    update({ webglRenderer: undefined })
-                  } else {
-                    update({ webglRenderer: e.target.value || undefined })
-                  }
-                }}
-                options={rendererOptions}
-                disabled={!config.webglVendor}
-              />
-            )}
-          </FormItem>
           <FormItem label="Canvas 噪声">
             <Select
               value={config.canvasNoise === undefined ? '' : String(config.canvasNoise)}

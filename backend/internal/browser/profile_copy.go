@@ -334,8 +334,6 @@ func copyAutomationTargetArgPrefixes() map[string][]string {
 		},
 		copyAutomationTargetRender: {
 			"--fingerprint-canvas-noise",
-			"--fingerprint-webgl-vendor",
-			"--fingerprint-webgl-renderer",
 			"--fingerprint-audio-noise",
 		},
 		copyAutomationTargetFonts: {
