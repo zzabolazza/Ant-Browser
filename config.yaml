@@ -50,7 +50,7 @@ browser:
             - https://chrome.cloudflare-dns.com/dns-query
     privacy:
         hardened_launch_args_enabled: true
-        spoof_speech_voices: false
+        spoof_speech_voices: true
         disable_webgpu: true
         exit_consistency_check: warn
     light_start_enabled: true
