@@ -89,16 +89,10 @@ func isAllowedFingerprintArgKey(key string) bool {
 	switch key {
 	case "--fingerprint",
 		"--fingerprint-brand",
+		"--fingerprint-brand-version",
 		"--fingerprint-platform",
-		"--fingerprint-color-depth",
-		"--fingerprint-hardware-concurrency",
-		"--fingerprint-device-memory",
-		"--fingerprint-canvas-noise",
-		"--fingerprint-audio-noise",
-		"--fingerprint-fonts",
-		"--fingerprint-do-not-track",
-		"--fingerprint-media-devices",
-		"--fingerprint-touch-points":
+		"--fingerprint-platform-version",
+		"--fingerprint-hardware-concurrency":
 		return true
 	default:
 		return false

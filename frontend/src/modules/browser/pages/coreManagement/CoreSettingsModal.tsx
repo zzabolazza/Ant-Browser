@@ -39,7 +39,7 @@ export function CoreSettingsModal({ open, form, saving, setForm, onClose, onSave
             value={form.defaultFingerprintArgs}
             onChange={e => setForm(prev => ({ ...prev, defaultFingerprintArgs: e.target.value }))}
             rows={4}
-            placeholder="每行一个参数，如 --fingerprint-brand=Chrome"
+            placeholder={"例如：--fingerprint-brand=Chrome\n--fingerprint-platform=macos"}
           />
         </FormItem>
         <FormItem label="默认启动参数">

@@ -48,7 +48,7 @@ export function CoreEditModal({
           <Input
             value={form.coreName}
             onChange={e => setForm(prev => ({ ...prev, coreName: e.target.value }))}
-            placeholder="例如：Chrome 142"
+            placeholder="例如：fingerprint-chromium 148"
           />
         </FormItem>
         <FormItem label="内核路径" required>

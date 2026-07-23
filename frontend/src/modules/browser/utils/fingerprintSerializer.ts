@@ -1,4 +1,4 @@
-// 指纹参数序列化/反序列化工具
+// 指纹参数序列化/反序列化工具（对齐 fingerprint-chromium 148+）
 
 /**
  * 获取系统当前时区
@@ -21,43 +21,36 @@ export function getSystemLanguage(): string {
   }
 }
 
+/** --disable-spoofing 允许的取值（Chrome 144+ / 148+） */
+export const DISABLE_SPOOFING_VALUES = ['font', 'audio', 'canvas', 'clientrects', 'gpu'] as const
+export type DisableSpoofingValue = (typeof DISABLE_SPOOFING_VALUES)[number]
+
 export interface FingerprintConfig {
   // 指纹种子（核心）
   seed?: string            // --fingerprint=<seed>  控制所有随机噪声的根种子
 
   // 基础身份
-  brand?: string           // --fingerprint-brand=
-  platform?: string        // --fingerprint-platform=
-  lang?: string            // --lang=
-  timezone?: string        // --timezone=
+  brand?: string            // --fingerprint-brand=
+  brandVersion?: string     // --fingerprint-brand-version=
+  platform?: string         // --fingerprint-platform=  windows|linux|macos
+  platformVersion?: string  // --fingerprint-platform-version=
+  lang?: string             // --lang=
+  timezone?: string         // --timezone=
 
   // 屏幕与窗口
-  resolution?: string      // --window-size=（预设值或 'custom'）
+  resolution?: string       // --window-size=（预设值或 'custom'）
   customResolution?: string // 当 resolution === 'custom' 时使用
-  colorDepth?: string      // --fingerprint-color-depth=
 
   // 硬件信息
   hardwareConcurrency?: string  // --fingerprint-hardware-concurrency=
-  deviceMemory?: string         // --fingerprint-device-memory=
 
-  // 渲染指纹
-  canvasNoise?: boolean         // --fingerprint-canvas-noise=
-  audioNoise?: boolean          // --fingerprint-audio-noise=
-
-  // 字体
-  fonts?: string                // --fingerprint-fonts=
+  // 选择性关闭伪装（随 --fingerprint 默认开启的子集）
+  disableSpoofing?: DisableSpoofingValue[]  // --disable-spoofing=
 
   // 网络与隐私
-  webrtcPolicy?: string         // --webrtc-ip-handling-policy=
-  doNotTrack?: boolean          // --fingerprint-do-not-track=
+  webrtcPolicy?: string     // --webrtc-ip-handling-policy=
 
-  // 媒体设备
-  mediaDevices?: string         // --fingerprint-media-devices= (格式: "2,1,0" 摄像头,麦克风,扬声器)
-
-  // 触摸
-  touchPoints?: string          // --fingerprint-touch-points=
-
-  unknownArgs?: string[]        // 无法识别的原始参数，原样保留
+  unknownArgs?: string[]    // 无法识别的原始参数，原样保留
 }
 
 export const PRESET_RESOLUTIONS = ['1920,1080', '1440,900', '1366,768', '2560,1440', '1280,800', '1600,900']
@@ -66,20 +59,28 @@ export const PRESET_RESOLUTIONS = ['1920,1080', '1440,900', '1366,768', '2560,14
 export const KEY_MAP: Record<string, keyof FingerprintConfig> = {
   '--fingerprint': 'seed',
   '--fingerprint-brand': 'brand',
+  '--fingerprint-brand-version': 'brandVersion',
   '--fingerprint-platform': 'platform',
+  '--fingerprint-platform-version': 'platformVersion',
   '--lang': 'lang',
   '--timezone': 'timezone',
   '--window-size': 'resolution',
-  '--fingerprint-color-depth': 'colorDepth',
   '--fingerprint-hardware-concurrency': 'hardwareConcurrency',
-  '--fingerprint-device-memory': 'deviceMemory',
-  '--fingerprint-canvas-noise': 'canvasNoise',
-  '--fingerprint-audio-noise': 'audioNoise',
-  '--fingerprint-fonts': 'fonts',
   '--webrtc-ip-handling-policy': 'webrtcPolicy',
-  '--fingerprint-do-not-track': 'doNotTrack',
-  '--fingerprint-media-devices': 'mediaDevices',
-  '--fingerprint-touch-points': 'touchPoints',
+  '--disable-spoofing': 'disableSpoofing',
+}
+
+function parseDisableSpoofing(value: string): DisableSpoofingValue[] {
+  const allowed = new Set<string>(DISABLE_SPOOFING_VALUES)
+  const out: DisableSpoofingValue[] = []
+  const seen = new Set<string>()
+  for (const part of value.split(',')) {
+    const item = part.trim().toLowerCase()
+    if (!item || !allowed.has(item) || seen.has(item)) continue
+    seen.add(item)
+    out.push(item as DisableSpoofingValue)
+  }
+  return out
 }
 
 // FingerprintConfig → string[]
@@ -87,10 +88,11 @@ export function serialize(config: FingerprintConfig): string[] {
   const args: string[] = []
   if (config.seed) args.push(`--fingerprint=${config.seed}`)
   if (config.brand) args.push(`--fingerprint-brand=${config.brand}`)
+  if (config.brandVersion) args.push(`--fingerprint-brand-version=${config.brandVersion}`)
   if (config.platform) args.push(`--fingerprint-platform=${config.platform}`)
+  if (config.platformVersion) args.push(`--fingerprint-platform-version=${config.platformVersion}`)
   if (config.lang) args.push(`--lang=${config.lang}`)
   if (config.timezone) {
-    // 如果是 system，替换为实际系统时区
     const tz = config.timezone === 'system' ? getSystemTimezone() : config.timezone
     args.push(`--timezone=${tz}`)
   }
@@ -98,19 +100,15 @@ export function serialize(config: FingerprintConfig): string[] {
   const res = config.resolution === 'custom' ? config.customResolution : config.resolution
   if (res) args.push(`--window-size=${res}`)
 
-  if (config.colorDepth) args.push(`--fingerprint-color-depth=${config.colorDepth}`)
-  if (config.hardwareConcurrency) args.push(`--fingerprint-hardware-concurrency=${config.hardwareConcurrency}`)
-  if (config.deviceMemory) args.push(`--fingerprint-device-memory=${config.deviceMemory}`)
+  if (config.hardwareConcurrency) {
+    args.push(`--fingerprint-hardware-concurrency=${config.hardwareConcurrency}`)
+  }
 
-  if (config.canvasNoise !== undefined) args.push(`--fingerprint-canvas-noise=${config.canvasNoise}`)
-  if (config.audioNoise !== undefined) args.push(`--fingerprint-audio-noise=${config.audioNoise}`)
-
-  if (config.fonts) args.push(`--fingerprint-fonts=${config.fonts}`)
+  if (config.disableSpoofing && config.disableSpoofing.length > 0) {
+    args.push(`--disable-spoofing=${config.disableSpoofing.join(',')}`)
+  }
 
   if (config.webrtcPolicy) args.push(`--webrtc-ip-handling-policy=${config.webrtcPolicy}`)
-  if (config.doNotTrack !== undefined) args.push(`--fingerprint-do-not-track=${config.doNotTrack}`)
-  if (config.mediaDevices) args.push(`--fingerprint-media-devices=${config.mediaDevices}`)
-  if (config.touchPoints) args.push(`--fingerprint-touch-points=${config.touchPoints}`)
 
   return [...args, ...(config.unknownArgs ?? [])]
 }
@@ -137,8 +135,8 @@ export function deserialize(args: string[]): FingerprintConfig {
       continue
     }
 
-    if (field === 'canvasNoise' || field === 'audioNoise' || field === 'doNotTrack') {
-      (config as Record<string, unknown>)[field] = val === 'true'
+    if (field === 'disableSpoofing') {
+      config.disableSpoofing = parseDisableSpoofing(val)
     } else if (field === 'resolution') {
       if (PRESET_RESOLUTIONS.includes(val)) {
         config.resolution = val
@@ -179,36 +177,22 @@ export const FINGERPRINT_PRESETS: FingerprintPreset[] = [
       lang: 'zh-CN',
       timezone: 'Asia/Shanghai',
       resolution: '1920,1080',
-      colorDepth: '24',
       hardwareConcurrency: '8',
-      deviceMemory: '8',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Microsoft YaHei,SimSun,SimHei,Helvetica,Times New Roman',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
   {
     id: 'win-chrome-gaming',
     name: 'Windows / Chrome / 游戏主机',
-    description: '模拟高配游戏 PC，NVIDIA 显卡，2560x1440',
+    description: '模拟高配游戏 PC，2560x1440',
     config: {
       brand: 'Chrome',
       platform: 'windows',
       lang: 'en-US',
       timezone: 'America/New_York',
       resolution: '2560,1440',
-      colorDepth: '24',
       hardwareConcurrency: '16',
-      deviceMemory: '16',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,Times New Roman,Courier New,Verdana',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
   {
@@ -217,19 +201,12 @@ export const FINGERPRINT_PRESETS: FingerprintPreset[] = [
     description: '模拟 Mac 设计师用户，Retina 分辨率',
     config: {
       brand: 'Chrome',
-      platform: 'mac',
+      platform: 'macos',
       lang: 'zh-CN',
       timezone: 'Asia/Shanghai',
       resolution: '2560,1440',
-      colorDepth: '30',
       hardwareConcurrency: '10',
-      deviceMemory: '16',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,PingFang SC,Hiragino Sans GB,STHeiti,Times New Roman',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: true,
-      touchPoints: '0',
     },
   },
   {
@@ -242,57 +219,36 @@ export const FINGERPRINT_PRESETS: FingerprintPreset[] = [
       lang: 'zh-CN',
       timezone: 'Asia/Shanghai',
       resolution: '1366,768',
-      colorDepth: '24',
       hardwareConcurrency: '4',
-      deviceMemory: '4',
-      canvasNoise: true,
-      audioNoise: false,
-      fonts: 'Arial,Microsoft YaHei,Calibri,Segoe UI,Times New Roman',
       webrtcPolicy: 'default_public_interface_only',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
   {
     id: 'win-chrome-us-user',
     name: 'Windows / Chrome / 美国用户',
-    description: '模拟美国普通用户，英文环境，AMD 显卡',
+    description: '模拟美国普通用户，英文环境',
     config: {
       brand: 'Chrome',
       platform: 'windows',
       lang: 'en-US',
       timezone: 'America/Los_Angeles',
       resolution: '1920,1080',
-      colorDepth: '24',
       hardwareConcurrency: '8',
-      deviceMemory: '8',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,Times New Roman,Courier New,Georgia',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
   {
-    id: 'mac-safari-jp',
-    name: 'macOS / Safari / 日本用户',
-    description: '模拟日本 Mac 用户，Safari 风格，日语环境',
+    id: 'mac-chrome-jp',
+    name: 'macOS / Chrome / 日本用户',
+    description: '模拟日本 Mac 用户，日语环境',
     config: {
-      brand: 'Safari',
-      platform: 'mac',
+      brand: 'Chrome',
+      platform: 'macos',
       lang: 'ja-JP',
       timezone: 'Asia/Tokyo',
       resolution: '1440,900',
-      colorDepth: '24',
       hardwareConcurrency: '8',
-      deviceMemory: '8',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,Hiragino Kaku Gothic ProN,Yu Gothic,Times New Roman',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: true,
-      touchPoints: '0',
     },
   },
   {
@@ -305,15 +261,8 @@ export const FINGERPRINT_PRESETS: FingerprintPreset[] = [
       lang: 'en-GB',
       timezone: 'Europe/London',
       resolution: '1920,1080',
-      colorDepth: '24',
       hardwareConcurrency: '8',
-      deviceMemory: '8',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,Times New Roman,Courier New,Verdana',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
   {
@@ -322,19 +271,12 @@ export const FINGERPRINT_PRESETS: FingerprintPreset[] = [
     description: '模拟美国大学教育网 Mac 用户，英文环境 (en-US)',
     config: {
       brand: 'Chrome',
-      platform: 'mac',
+      platform: 'macos',
       lang: 'en-US',
       timezone: 'America/New_York',
       resolution: '1440,900',
-      colorDepth: '24',
       hardwareConcurrency: '8',
-      deviceMemory: '8',
-      canvasNoise: true,
-      audioNoise: true,
-      fonts: 'Arial,Helvetica,Times New Roman,Courier New,Georgia',
       webrtcPolicy: 'disable_non_proxied_udp',
-      doNotTrack: false,
-      touchPoints: '0',
     },
   },
 ]

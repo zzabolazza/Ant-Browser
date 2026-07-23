@@ -6,7 +6,7 @@ require (
 	github.com/energye/systray v1.0.3
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/wailsapp/wails/v2 v2.13.0
+	github.com/wailsapp/wails/v2 v2.12.0
 	github.com/yeka/zip v0.0.0-20231116150916-03d6312748a9
 	golang.org/x/net v0.54.0
 	golang.org/x/sys v0.44.0

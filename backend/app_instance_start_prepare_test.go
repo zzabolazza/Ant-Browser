@@ -45,13 +45,47 @@ func TestBuildBrowserLaunchArgsDropsUnsupportedFingerprintArgs(t *testing.T) {
 		FingerprintArgs: []string{
 			"--fingerprint-unsupported-renderer=NVIDIA",
 			"--fingerprint-unsupported-device=NVIDIA GeForce RTX 3080",
+			"--fingerprint-color-depth=24",
+			"--fingerprint-device-memory=8",
+			"--fingerprint-canvas-noise=true",
+			"--fingerprint-audio-noise=false",
+			"--fingerprint-fonts=Arial",
+			"--fingerprint-do-not-track=true",
+			"--fingerprint-media-devices=2,1,0",
+			"--fingerprint-touch-points=0",
+			"--fingerprint-brand-version=148.0.7778.215",
+			"--fingerprint-platform=macos",
+			"--disable-spoofing=canvas,audio",
 		},
 	}
 
 	args := buildBrowserLaunchArgsWithPrivacy(profile, "/tmp/profile-1", 9222, "direct://", nil, nil, nil, nil, config.DefaultConfig())
 
-	if slices.Contains(args, "--fingerprint-unsupported-renderer=NVIDIA") || slices.Contains(args, "--fingerprint-unsupported-device=NVIDIA GeForce RTX 3080") {
-		t.Fatalf("unsupported fingerprint args should be dropped, got %v", args)
+	unsupported := []string{
+		"--fingerprint-unsupported-renderer=NVIDIA",
+		"--fingerprint-unsupported-device=NVIDIA GeForce RTX 3080",
+		"--fingerprint-color-depth=24",
+		"--fingerprint-device-memory=8",
+		"--fingerprint-canvas-noise=true",
+		"--fingerprint-audio-noise=false",
+		"--fingerprint-fonts=Arial",
+		"--fingerprint-do-not-track=true",
+		"--fingerprint-media-devices=2,1,0",
+		"--fingerprint-touch-points=0",
+	}
+	for _, item := range unsupported {
+		if slices.Contains(args, item) {
+			t.Fatalf("unsupported fingerprint arg %q should be dropped, got %v", item, args)
+		}
+	}
+	if !slices.Contains(args, "--fingerprint-brand-version=148.0.7778.215") {
+		t.Fatalf("expected brand-version to be preserved, got %v", args)
+	}
+	if !slices.Contains(args, "--fingerprint-platform=macos") {
+		t.Fatalf("expected platform macos to be preserved, got %v", args)
+	}
+	if !slices.Contains(args, "--disable-spoofing=canvas,audio") {
+		t.Fatalf("expected disable-spoofing to be preserved, got %v", args)
 	}
 }
 

@@ -2,7 +2,9 @@
 import { ChevronDown, ChevronUp, RefreshCw, Wand2 } from 'lucide-react'
 import { ConfirmModal, FormItem, Input, Select, Textarea } from '../../../shared/components'
 import {
+  type DisableSpoofingValue,
   type FingerprintConfig,
+  DISABLE_SPOOFING_VALUES,
   FINGERPRINT_PRESETS,
   PRESET_RESOLUTIONS,
   deserialize,
@@ -19,14 +21,14 @@ const BRAND_OPTIONS = [
   { value: '', label: '不设置' },
   { value: 'Chrome', label: 'Chrome' },
   { value: 'Edge', label: 'Edge' },
-  { value: 'Firefox', label: 'Firefox' },
-  { value: 'Safari', label: 'Safari' },
+  { value: 'Opera', label: 'Opera' },
+  { value: 'Vivaldi', label: 'Vivaldi' },
 ]
 
 const PLATFORM_OPTIONS = [
   { value: '', label: '不设置' },
   { value: 'windows', label: 'Windows' },
-  { value: 'mac', label: 'macOS' },
+  { value: 'macos', label: 'macOS' },
   { value: 'linux', label: 'Linux' },
 ]
 
@@ -36,14 +38,8 @@ const RESOLUTION_OPTIONS = [
   { value: 'custom', label: '自定义...' },
 ]
 
-const BOOL_OPTIONS = [
-  { value: '', label: '不设置' },
-  { value: 'true', label: '启用' },
-  { value: 'false', label: '禁用' },
-]
-
 const HARDWARE_CONCURRENCY_OPTIONS = [
-  { value: '', label: '不设置' },
+  { value: '', label: '不设置（由种子推导）' },
   { value: '2', label: '2 核' },
   { value: '4', label: '4 核' },
   { value: '6', label: '6 核' },
@@ -53,22 +49,6 @@ const HARDWARE_CONCURRENCY_OPTIONS = [
   { value: '16', label: '16 核' },
 ]
 
-const DEVICE_MEMORY_OPTIONS = [
-  { value: '', label: '不设置' },
-  { value: '2', label: '2 GB' },
-  { value: '4', label: '4 GB' },
-  { value: '8', label: '8 GB' },
-  { value: '16', label: '16 GB' },
-  { value: '32', label: '32 GB' },
-]
-
-const COLOR_DEPTH_OPTIONS = [
-  { value: '', label: '不设置' },
-  { value: '24', label: '24 位（标准）' },
-  { value: '30', label: '30 位（HDR）' },
-  { value: '32', label: '32 位' },
-]
-
 const WEBRTC_OPTIONS = [
   { value: '', label: '不设置' },
   { value: 'disable_non_proxied_udp', label: '禁用非代理 UDP（推荐）' },
@@ -76,13 +56,13 @@ const WEBRTC_OPTIONS = [
   { value: 'default_public_and_private_interfaces', label: '公网+私网接口' },
 ]
 
-const TOUCH_POINTS_OPTIONS = [
-  { value: '', label: '不设置' },
-  { value: '0', label: '0（无触摸）' },
-  { value: '1', label: '1 点触摸' },
-  { value: '5', label: '5 点触摸' },
-  { value: '10', label: '10 点触摸' },
-]
+const DISABLE_SPOOFING_LABELS: Record<DisableSpoofingValue, string> = {
+  font: '字体',
+  audio: 'Audio',
+  canvas: 'Canvas',
+  clientrects: 'ClientRects',
+  gpu: 'GPU',
+}
 
 const PRESET_OPTIONS = [
   { value: '', label: '选择预设...' },
@@ -109,11 +89,18 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
     onChange(serialize(next))
   }
 
+  const toggleDisableSpoofing = (item: DisableSpoofingValue) => {
+    const current = config.disableSpoofing ?? []
+    const next = current.includes(item)
+      ? current.filter(v => v !== item)
+      : [...current, item]
+    update({ disableSpoofing: next.length > 0 ? next : undefined })
+  }
+
   const handlePresetChange = (presetId: string) => {
     if (!presetId) return
     const preset = FINGERPRINT_PRESETS.find(p => p.id === presetId)
     if (!preset) return
-    // 应用预设时自动生成新种子，保留未知参数；语言/时区由代理自动匹配锁定
     const next: FingerprintConfig = {
       ...preset.config,
       seed: randomFingerprintSeed(),
@@ -135,14 +122,14 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
   }
 
   const advancedText = serialize(config).join('\n')
+  const disabledSpoofing = new Set(config.disableSpoofing ?? [])
 
   return (
     <div className="space-y-4">
-      {/* 指纹种子 */}
       <div className="p-3 rounded-lg bg-[var(--color-bg-hover)] border border-[var(--color-border)] space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">指纹种子（Fingerprint Seed）</span>
-          <span className="text-xs text-[var(--color-text-muted)]">决定所有随机噪声的根值，不同种子 = 不同指纹</span>
+          <span className="text-xs text-[var(--color-text-muted)]">决定噪声与硬件特征；deviceMemory 由种子在 8/16/32 中选取</span>
         </div>
         <div className="flex items-center gap-2">
           <Input
@@ -174,12 +161,11 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
         onClose={() => setConfirmSeedOpen(false)}
         onConfirm={() => update({ seed: randomFingerprintSeed() })}
         title="重新生成指纹种子"
-        content="重新生成后，当前指纹将完全改变，浏览器的 Canvas、Audio 等噪声特征都会随之变化。确定继续？"
+        content="重新生成后，当前指纹将完全改变，Canvas、Audio、GPU、deviceMemory 等特征都会随之变化。确定继续？"
         confirmText="确定重新生成"
         danger
       />
 
-      {/* 预设选择 */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-bg-hover)] border border-[var(--color-border)]">
         <Wand2 className="w-4 h-4 text-[var(--color-text-muted)] shrink-0" />
         <div className="flex-1 min-w-0">
@@ -192,15 +178,28 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
         <span className="text-xs text-[var(--color-text-muted)] shrink-0">选择后覆盖当前配置</span>
       </div>
 
-      {/* 基础身份 */}
       <div>
         <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">基础身份</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormItem label="浏览器品牌">
             <Select value={config.brand ?? ''} onChange={e => update({ brand: e.target.value || undefined })} options={BRAND_OPTIONS} />
           </FormItem>
+          <FormItem label="品牌版本" hint="可选，对应 --fingerprint-brand-version">
+            <Input
+              value={config.brandVersion ?? ''}
+              onChange={e => update({ brandVersion: e.target.value || undefined })}
+              placeholder="留空则使用内核默认"
+            />
+          </FormItem>
           <FormItem label="操作系统">
             <Select value={config.platform ?? ''} onChange={e => update({ platform: e.target.value || undefined })} options={PLATFORM_OPTIONS} />
+          </FormItem>
+          <FormItem label="系统版本" hint="可选，对应 --fingerprint-platform-version">
+            <Input
+              value={config.platformVersion ?? ''}
+              onChange={e => update({ platformVersion: e.target.value || undefined })}
+              placeholder="例如 15.2.0"
+            />
           </FormItem>
           <FormItem label="语言" hint="由代理出口自动匹配">
             <Input value={config.lang || '未匹配'} disabled className="opacity-80" />
@@ -211,11 +210,10 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
         </div>
       </div>
 
-      {/* 屏幕与硬件 */}
       <div>
         <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">屏幕与硬件</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormItem label="分辨率">
+          <FormItem label="窗口分辨率" hint="对应 --window-size">
             <Select
               value={config.resolution ?? ''}
               onChange={e => update({ resolution: e.target.value || undefined, customResolution: undefined })}
@@ -227,79 +225,48 @@ export function FingerprintPanel({ value, onChange }: FingerprintPanelProps) {
               <Input value={config.customResolution ?? ''} onChange={e => update({ customResolution: e.target.value || undefined })} placeholder="1600,900" />
             </FormItem>
           )}
-          <FormItem label="色深">
-            <Select value={config.colorDepth ?? ''} onChange={e => update({ colorDepth: e.target.value || undefined })} options={COLOR_DEPTH_OPTIONS} />
-          </FormItem>
           <FormItem label="CPU 核心数">
             <Select value={config.hardwareConcurrency ?? ''} onChange={e => update({ hardwareConcurrency: e.target.value || undefined })} options={HARDWARE_CONCURRENCY_OPTIONS} />
           </FormItem>
-          <FormItem label="设备内存">
-            <Select value={config.deviceMemory ?? ''} onChange={e => update({ deviceMemory: e.target.value || undefined })} options={DEVICE_MEMORY_OPTIONS} />
-          </FormItem>
-          <FormItem label="触摸点数">
-            <Select value={config.touchPoints ?? ''} onChange={e => update({ touchPoints: e.target.value || undefined })} options={TOUCH_POINTS_OPTIONS} />
-          </FormItem>
         </div>
       </div>
 
-      {/* 渲染指纹 */}
       <div>
-        <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">渲染指纹</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormItem label="Canvas 噪声">
-            <Select
-              value={config.canvasNoise === undefined ? '' : String(config.canvasNoise)}
-              onChange={e => { const v = e.target.value; update({ canvasNoise: v === '' ? undefined : v === 'true' }) }}
-              options={BOOL_OPTIONS}
-            />
-          </FormItem>
-          <FormItem label="Audio 噪声">
-            <Select
-              value={config.audioNoise === undefined ? '' : String(config.audioNoise)}
-              onChange={e => { const v = e.target.value; update({ audioNoise: v === '' ? undefined : v === 'true' }) }}
-              options={BOOL_OPTIONS}
-            />
-          </FormItem>
+        <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">伪装开关</p>
+        <p className="text-xs text-[var(--color-text-muted)] mb-2">开启指纹种子后以下伪装默认生效；勾选表示通过 --disable-spoofing 关闭该项</p>
+        <div className="flex flex-wrap gap-2">
+          {DISABLE_SPOOFING_VALUES.map(item => {
+            const checked = disabledSpoofing.has(item)
+            return (
+              <label
+                key={item}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs cursor-pointer transition-colors ${
+                  checked
+                    ? 'border-[var(--color-border-strong)] bg-[var(--color-bg-hover)]'
+                    : 'border-[var(--color-border)] hover:border-[var(--color-border-strong)]'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleDisableSpoofing(item)}
+                />
+                关闭 {DISABLE_SPOOFING_LABELS[item]}
+              </label>
+            )
+          })}
         </div>
       </div>
 
-      {/* 网络与隐私 */}
       <div>
         <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">网络与隐私</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormItem label="WebRTC 策略">
             <Select value={config.webrtcPolicy ?? ''} onChange={e => update({ webrtcPolicy: e.target.value || undefined })} options={WEBRTC_OPTIONS} />
           </FormItem>
-          <FormItem label="Do Not Track">
-            <Select
-              value={config.doNotTrack === undefined ? '' : String(config.doNotTrack)}
-              onChange={e => { const v = e.target.value; update({ doNotTrack: v === '' ? undefined : v === 'true' }) }}
-              options={BOOL_OPTIONS}
-            />
-          </FormItem>
-          <FormItem label="媒体设备 (摄像头,麦克风,扬声器)">
-            <Input
-              value={config.mediaDevices ?? ''}
-              onChange={e => update({ mediaDevices: e.target.value || undefined })}
-              placeholder="2,1,1"
-            />
-          </FormItem>
         </div>
       </div>
 
-      {/* 字体 */}
-      <div>
-        <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2 uppercase tracking-wide">字体</p>
-        <FormItem label="字体列表">
-          <Input
-            value={config.fonts ?? ''}
-            onChange={e => update({ fonts: e.target.value || undefined })}
-            placeholder="Arial,Helvetica,Times New Roman（逗号分隔）"
-          />
-        </FormItem>
-      </div>
-
-      {/* 高级模式 */}
       <div className="border border-[var(--color-border)] rounded-lg overflow-hidden">
         <button
           type="button"

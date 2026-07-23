@@ -101,7 +101,7 @@ function InlineSettingsForm({
           value={form.defaultFingerprintArgs}
           onChange={e => setForm(prev => ({ ...prev, defaultFingerprintArgs: e.target.value }))}
           rows={4}
-          placeholder="例如：--fingerprint-brand=Chrome"
+          placeholder={"例如：--fingerprint-brand=Chrome\n--fingerprint-platform=macos"}
           className="font-mono text-[12.5px]"
         />
       </FormItem>

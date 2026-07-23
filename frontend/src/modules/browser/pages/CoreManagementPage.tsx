@@ -360,17 +360,17 @@ export function CoreManagementPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="max-w-2xl text-[12.5px] leading-5 text-[var(--color-text-muted)]">
-            管理可用的{' '}
+            管理{' '}
             <button
               type="button"
               onClick={() => BrowserOpenURL('https://github.com/adryfish/fingerprint-chromium/releases')}
               className="mx-0.5 inline-flex items-center gap-0.5 font-medium text-[var(--color-primary)] underline underline-offset-2 hover:opacity-80"
             >
-              fingerprint-chromium
+              fingerprint-chromium 148+
               <ExternalLink className="h-3 w-3" />
             </button>
             {' '}
-            ，设置默认内核与全局启动参数。
+            内核，并设置默认内核与全局启动参数。
           </p>
         </div>
         <Button size="sm" onClick={handleAdd}>

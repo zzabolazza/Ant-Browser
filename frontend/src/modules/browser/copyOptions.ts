@@ -12,29 +12,27 @@ export interface BrowserProfileAutomationTargetOption {
 
 export const BROWSER_PROFILE_AUTOMATION_TARGET_OPTIONS: BrowserProfileAutomationTargetOption[] = [
   { value: 'seed', label: '指纹种子', detail: '生成新种子' },
-  { value: 'identity', label: '浏览器身份', detail: '品牌 / 平台' },
+  { value: 'identity', label: '浏览器身份', detail: '品牌 / 平台 / 版本' },
   { value: 'locale', label: '语言与时区', detail: '语言 / 时区' },
-  { value: 'screen', label: '屏幕参数', detail: '分辨率 / 色深' },
-  { value: 'hardware', label: '硬件参数', detail: 'CPU / 内存' },
-  { value: 'render', label: '渲染特征', detail: 'Canvas / Audio' },
-  { value: 'fonts', label: '字体', detail: '字体列表' },
-  { value: 'network', label: '网络隐私', detail: 'WebRTC / DNT' },
-  { value: 'devices', label: '设备数量', detail: '媒体设备 / 触摸点' },
+  { value: 'screen', label: '窗口尺寸', detail: '分辨率' },
+  { value: 'hardware', label: '硬件参数', detail: 'CPU 核心数' },
+  { value: 'spoofing', label: '伪装开关', detail: 'disable-spoofing' },
+  { value: 'network', label: '网络隐私', detail: 'WebRTC' },
 ]
 
 export const BROWSER_PROFILE_AUTOMATION_TARGET_PREFIXES: Record<BrowserProfileAutomationTarget, string[]> = {
   seed: ['--fingerprint'],
-  identity: ['--fingerprint-brand', '--fingerprint-platform'],
-  locale: ['--lang', '--timezone'],
-  screen: ['--window-size', '--fingerprint-color-depth'],
-  hardware: ['--fingerprint-hardware-concurrency', '--fingerprint-device-memory'],
-  render: [
-    '--fingerprint-canvas-noise',
-    '--fingerprint-audio-noise',
+  identity: [
+    '--fingerprint-brand',
+    '--fingerprint-brand-version',
+    '--fingerprint-platform',
+    '--fingerprint-platform-version',
   ],
-  fonts: ['--fingerprint-fonts'],
-  network: ['--webrtc-ip-handling-policy', '--fingerprint-do-not-track'],
-  devices: ['--fingerprint-media-devices', '--fingerprint-touch-points'],
+  locale: ['--lang', '--timezone'],
+  screen: ['--window-size'],
+  hardware: ['--fingerprint-hardware-concurrency'],
+  spoofing: ['--disable-spoofing'],
+  network: ['--webrtc-ip-handling-policy'],
 }
 
 export const DEFAULT_BROWSER_PROFILE_AUTOMATION_TARGETS: BrowserProfileAutomationTarget[] = ['seed']
